@@ -3,35 +3,48 @@ from .value import Value
 
 class Merged(Value):
     '''
+    Wrap two Dictionary, List or Plain Value objects for later evaluation
+    during the interpolation step.
+
+    Use the merge method to add additional Value objects to an existing
+    Merged object.
     '''
+    type = Value.MERGE
 
     def __init__(self, first, second):
-        '''
-        Wrap two Dictionary, List or Plain Value objects for
-        later evaluation during the interpolation step.
+        super().__init__([ first.uri, second.uri ], False)
+        self._values = [ first, second ]
 
-        Use the merge method to add additional Value objects to an
-        existing Merged object.
+    def __repr__(self):
+        return '{0}[{1}]'.format(self.__class__.__name__, ','.join(map(repr, self._values)))
+
+    def __str__(self):
+        return '[{0}]'.format(','.join(map(str, self._values)))
+
+    def unresolved(self):
         '''
-        super().__init__(Value.MERGE, [ first.uri, second.uri ])
-        self.values = [ first, second ]
+        Merged Values are only created if at least one of the Values to
+        be merged is unresolved
+        '''
+        return True
+
+    def unresolved_paths(self, path):
+        '''
+        Merged Values always have at least one contained Item with references
+        '''
+        return { path }
+
+    def references(self):
+        refs = []
+        for v in self._values:
+            refs.extend(v.references())
+        return refs
 
     def merge(self, other):
         if other.type == Value.MERGE:
-            self.values.extend(other.values)
+            self._values.extend(other._values)
         else:
-            self.values.append(other)
+            self._values.append(other)
+        if other.complex:
+            self.complex = True
         return self
-
-    def merge_under(self, other):
-        if other.type == Value.MERGE:
-            return merge(other)
-        else:
-            self.values.insert(0, other)
-            return self
-
-    def __str__(self):
-        return '[{0}]'.format(','.join(map(str, self.values)))
-
-    def __repr__(self):
-        return '{0}[{1}]'.format(self.__class__.__name__, ','.join(map(repr, self.values)))

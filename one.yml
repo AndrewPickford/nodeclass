@@ -5,3 +5,6 @@ alpha:
   list:
     - 1
     - 2
+  ref:
+    a: ${alpha:dict:a}
+    c: ${alpha:dict:c}

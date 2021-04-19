@@ -21,17 +21,19 @@ class Composite(Item):
         super().__init__(items)
         self._references = []
         for i in self.contents:
-            if i.complex:
-                self._references.extend(i.references)
+            if i.unresolved:
+                self._references.extend(i.references())
         if len(self._references) > 0:
-            self.complex = True
+            self.unresolved = True
 
-    @property
+    def __str__(self):
+        return ''.join(map(str, self.contents))
+
     def references(self):
         return self._references
 
     def resolve(self, context, inventory):
-        if self.complex:
+        if self.unresolved:
             try:
                 items = [ i.resolve(context,inventory) for i in self.contents ]
                 return Composite(items)
@@ -46,6 +48,3 @@ class Composite(Item):
             return self.contents[0].render()
         # Multiple items, concatenate into a string
         return ''.join([ str(i.render()) for i in self.contents ])
-
-    def __str__(self):
-        return ''.join(map(str, self.contents))

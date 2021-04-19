@@ -19,25 +19,27 @@ class Reference(Item):
 
     def __init__(self, item):
         super().__init__(item)
-        self.complex = True
-        if self.contents.complex:
-            self._references = self.contents.references
+        self.unresolved = True
+        if self.contents.unresolved:
+            self._references = self.contents.references()
         else:
-            self._references = [ Path(self.contents.render()) ]
+            self._references = [ Path.FromString(self.contents.render()) ]
 
-    @property
+    def __str__(self):
+        rs = SETTINGS.reference_sentinels
+        return '{0}{1}{2}'.format(rs[0], self.contents, rs[1])
+
     def references(self):
         return self._references
 
     def resolve(self, context, inventory):
         '''
-        context: dictionary of already resolved Items, which are all
+        context: dictionary of already resolved Items, which are all renderable
+            Items (Scalar or Composite)
+        inventory: dictionary of inventory query answers, which are all
             renderable Items (Scalar or Composite)
-        inventory: dictionary of inventory query answers, which are
-            all renderable Items (Scalar or Composite)
-
         '''
-        if self.contents.complex:
+        if self.contents.unresolved:
             try:
                 return self.contents.resolve(context, inventory)
             except ItemResolveError as e:
@@ -48,7 +50,3 @@ class Reference(Item):
                 return context[path]
             except KeyError as e:
                 raise ItemResolveError(self)
-
-    def __str__(self):
-        rs = SETTINGS.reference_sentinels
-        return '{0}{1}{2}'.format(rs[0], self.contents, rs[1])

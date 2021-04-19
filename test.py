@@ -3,7 +3,7 @@
 import sys
 import yaml
 
-from reclass.value import value
+from reclass.interpolator import Full
 
 _SafeLoader = yaml.CSafeLoader if yaml.__with_libyaml__ else yaml.SafeLoader
 
@@ -16,8 +16,6 @@ with open('one.yml') as f:
 with open('two.yml') as f:
     two = yaml.load(f, Loader=_SafeLoader)
 
-a = value(one, 'one.yml')
-b = value(two, 'two.yml')
-a = a.merge(b)
-
-print(a.render())
+interpolator = Full()
+result = interpolator.interpolate([ one, two ], {})
+print(result)

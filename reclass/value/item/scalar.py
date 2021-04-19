@@ -18,4 +18,7 @@ class Scalar(Item):
         return self
 
     def render(self):
+        '''
+        Return the Item contents
+        '''
         return self.contents

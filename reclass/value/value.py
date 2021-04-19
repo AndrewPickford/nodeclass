@@ -1,4 +1,6 @@
-class Value:
+from abc import ABC, abstractmethod
+
+class Value(ABC):
     '''
     '''
 
@@ -7,35 +9,60 @@ class Value:
     LIST = 2
     MERGE = 3
 
-    def __init__(self, type, uri):
-        self.type = type
+    def __init__(self, uri, iterable):
         self.uri = uri
+        self.iterable = iterable
 
+    def unresolved(self):
+        '''
+        Returns True if the Value requires any references, else returns False
+        '''
+        return False
+
+    def unresolved_paths(self, path):
+        '''
+        Return a set of all the paths in this Value and any contained Values
+        that have references.
+
+        path: Path prefix
+        '''
+        return set()
+
+    def references(self):
+        '''
+        Return a list of the references needed by this Value alone, excluding
+        any references required by contained values.
+        '''
+        return []
+
+    @abstractmethod
     def merge(self, other):
         '''
-        Merge two Values in preparation for interpolation.
-        Potentially changes the current object, this depends on the
-        type of objects being merged.
+        Merge a Value onto another Value in preparation for interpolation.
+        Potentially changes the current object, this depends on the type of
+        objects being merged.
         May return self or a different Value object.
 
         Usage:
 
         foo = foo.merge(bar)
 
+        It is not allowed to merge an already merged Value onto another Value,
+        for example:
+
+        a = value.Create(dictA)
+        b = value.Create(dictB)
+        c = value.Create(dictC)
+        d = value.Create(dictD)
+        e = value.Create(dictE)
+
+        a = a.merge(b)   #  allowed, unmerged Dictionaries b and c are merged
+        a = a.merge(c)   #  onto a in turn
+
+        d = d.merge(e)   #  allowed
+        a = a.merge(d)   #  not allowed, d has already been merged with e
+
         other: value to merge in
         returns: merged Value object
         '''
-        raise MergeUndefinedError()
-
-    def render(self):
-        '''
-        Return the underlying object in a Value, depending on the type of object:
-
-        Dictionary: dict of rendered contents
-        List: list of rendered contents
-        Plain: the rendered Item
-
-        Merged objects cannot be rendered.
-        Plain objects containing references cannot be rendered.
-        '''
-        raise ValueRenderUndefinedError(self)
+        pass
