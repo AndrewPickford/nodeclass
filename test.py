@@ -18,4 +18,4 @@ with open('two.yml') as f:
 
 interpolator = Full()
 result = interpolator.interpolate([ one, two ], {})
-print(result)
+print(yaml.dump(result, default_flow_style=False))

@@ -4,8 +4,6 @@
 # This file is part of reclass
 #
 from abc import ABC, abstractmethod
-
-from enum import Enum
 from .exceptions import ItemRenderUndefinedError
 
 
@@ -42,12 +40,12 @@ class Item(ABC):
         return []
 
     @abstractmethod
-    def resolve(self, context, inventory):
+    def resolve_to_item(self, context, inventory):
         '''
-        For references look up in the context dictionary the referenced Item and return it.
+        Handle references which require a new Item when resolved.
 
         For nested references, such as ${one_${two}}, resolve the inner most reference
-        and return a new reference item.
+        and return a new reference Item.
 
         For inventory queries using the context and inventory dictionaries return a new Item
         representing the queries answer.

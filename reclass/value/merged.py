@@ -12,7 +12,7 @@ class Merged(Value):
     type = Value.MERGE
 
     def __init__(self, first, second):
-        super().__init__([ first.uri, second.uri ], False)
+        super().__init__([ first.uri, second.uri ])
         self._values = [ first, second ]
 
     def __repr__(self):

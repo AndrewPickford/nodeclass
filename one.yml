@@ -8,3 +8,6 @@ alpha:
   ref:
     a: ${alpha:dict:a}
     c: ${alpha:dict:c}
+    x: ${alpha:dict}
+    y: ${alpha:list}
+    z: ${alpha:dict:a}-${alpha:dict:b}-${alpha:dict:c}

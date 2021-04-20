@@ -32,21 +32,38 @@ class Reference(Item):
     def references(self):
         return self._references
 
-    def resolve(self, context, inventory):
+    def resolve_to_item(self, context, inventory):
         '''
-        context: dictionary of already resolved Items, which are all renderable
-            Items (Scalar or Composite)
-        inventory: dictionary of inventory query answers, which are all
-            renderable Items (Scalar or Composite)
+        Resolve one level of indirection, returning a new Item. This handles
+        nested references.
+        It is an error here for references to resolve to Dictionary, List or Merge
+        Values as they should have been handled by resolve_to_value.
         '''
         if self.contents.unresolved:
+            ref = self.contents.resolve_to_item(context, inventory)
+            return Reference(ref)
+        else:
+            path = Path.FromString(str(self.contents.render()))
             try:
-                return self.contents.resolve(context, inventory)
+                return context[path].item
             except ItemResolveError as e:
                 raise ItemResolveError(self)
-        else:
-            path = Path.FromString(self.contents.render())
-            try:
-                return context[path]
-            except KeyError as e:
-                raise ItemResolveError(self)
+
+    def resolve_to_value(self, context, inventory):
+        '''
+        Resolve one level of indirection, returning the Value this reference
+        is pointing at. Or in the case of nested references return None,
+        indicating a call to resolve_to_item is required to get a new Item
+        for wrapping in a new Plain Value.
+
+        context: dictionary of parameters
+        inventory: dictionary of inventory query answers
+        returns: a new Value or None
+        '''
+        if self.contents.unresolved:
+            return None
+        path = Path.FromString(str(self.contents.render()))
+        try:
+            return context[path]
+        except KeyError as e:
+            raise ItemResolveError(self)

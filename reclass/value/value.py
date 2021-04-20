@@ -9,9 +9,8 @@ class Value(ABC):
     LIST = 2
     MERGE = 3
 
-    def __init__(self, uri, iterable):
+    def __init__(self, uri):
         self.uri = uri
-        self.iterable = iterable
 
     def unresolved(self):
         '''

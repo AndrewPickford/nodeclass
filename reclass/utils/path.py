@@ -34,6 +34,7 @@ class Path:
     def __init__(self, keys):
         self._keys = keys
         self._hash = hash(''.join(map(str, self._keys)))
+        self.last = len(self._keys) - 1
 
     def __eq__(self, other):
         if self._hash != self._hash:

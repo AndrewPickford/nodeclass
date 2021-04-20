@@ -5,6 +5,7 @@
 #
 from .exceptions import ItemResolveError
 from .item import Item
+from .scalar import Scalar
 
 
 class Composite(Item):
@@ -20,11 +21,10 @@ class Composite(Item):
     def __init__(self, items):
         super().__init__(items)
         self._references = []
+        self.unresolved = True
         for i in self.contents:
             if i.unresolved:
                 self._references.extend(i.references())
-        if len(self._references) > 0:
-            self.unresolved = True
 
     def __str__(self):
         return ''.join(map(str, self.contents))
@@ -32,19 +32,22 @@ class Composite(Item):
     def references(self):
         return self._references
 
-    def resolve(self, context, inventory):
-        if self.unresolved:
+    def resolve_to_item(self, context, inventory):
+        if len(self._references) > 0:
             try:
-                items = [ i.resolve(context,inventory) for i in self.contents ]
+                items = [ i.resolve_to_item(context,inventory) for i in self.contents ]
                 return Composite(items)
             except ItemResolveError as e:
                 raise ItemResolveError(self)
         else:
-            return self
+            # no unresolved references so flatten to a single Scalar Item
+            if len(self.contents) == 1:
+                return self.contents[0]
+            else:
+                return Scalar(''.join([ str(i.render()) for i in self.contents ]))
 
-    def render(self):
-        # Preserve type if only one item
-        if len(self.contents) == 1:
-            return self.contents[0].render()
-        # Multiple items, concatenate into a string
-        return ''.join([ str(i.render()) for i in self.contents ])
+    def resolve_to_value(self, context, inventory):
+        '''
+        Composite items cannot resolve directly to a Value
+        '''
+        return None

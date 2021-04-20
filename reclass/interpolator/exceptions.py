@@ -9,6 +9,11 @@ class InteroplationError(Exception):
         super().__init__()
 
 
+class InteroplationExcessiveRevisitsError(InteroplationError):
+    def __init__(self):
+        super().__init__()
+
+
 class InteroplationInfiniteRecursionError(InteroplationError):
     def __init__(self):
         super().__init__()

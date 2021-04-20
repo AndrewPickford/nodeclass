@@ -13,6 +13,3 @@ class InvQuery(Item):
 
     def __init__(self, contents):
         super().__init__(contents)
-
-    def render(self):
-        return self.contents

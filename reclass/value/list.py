@@ -7,7 +7,7 @@ class List(Value):
     type = Value.LIST
 
     def __init__(self, input, uri, create_func):
-        super().__init__(uri, True)
+        super().__init__(uri)
         self._list = [ create_func(i, uri) for i in input ]
 
     def __getitem__(self, path):
@@ -23,13 +23,13 @@ class List(Value):
         return '({0}; {1})'.format(str(self._list), str(self.uri))
 
     def getsubitem(self, path, depth):
-        if self._list[path[depth]].iterable:
+        if depth < path.last:
             return self._list[path[depth]][path, depth+1]
         else:
             return self._list[path[depth]]
 
     def setsubitem(self, path, depth, value):
-        if self._list[path[depth]].iterable:
+        if depth < path.last:
             self._list[path[depth]][path, depth+1, value]
         else:
             self._list[path[depth]] = value
@@ -55,8 +55,8 @@ class List(Value):
         else:
             raise MergeTypeError(self, other)
 
-    def render(self):
+    def render_all(self):
         '''
         Return a new list containing the renders of all Values in this List
         '''
-        return [ i.render() for i in self._list ]
+        return [ i.render_all() for i in self._list ]

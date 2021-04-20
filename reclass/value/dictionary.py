@@ -15,7 +15,7 @@ class Dictionary(Value):
     type = Value.DICTIONARY
 
     def __init__(self, input, uri, create_func):
-        super().__init__(uri, True)
+        super().__init__(uri)
         self._dictionary = dict()
         self._immutables = set()
         self._overwrites = set()
@@ -41,13 +41,13 @@ class Dictionary(Value):
         return '({0}; {1})'.format(str(self._dictionary), str(self.uri))
 
     def getsubitem(self, path, depth):
-        if self._dictionary[path[depth]].iterable:
-            return self._dictionary[path[depth]].getsubitem(path, depth+1)
+        if depth < path.last:
+            return self._dictionary[path[depth]].getsubitem(path, depth + 1)
         else:
             return self._dictionary[path[depth]]
 
     def setsubitem(self, path, depth, value):
-        if self._dictionary[path[depth]].iterable:
+        if depth < path.last:
             self._dictionary[path[depth]].setsubitem(path, depth+1, value)
         else:
             self._dictionary[path[depth]] = value
@@ -64,8 +64,8 @@ class Dictionary(Value):
             for k, v in other._dictionary.items():
                 if k in self._dictionary:
                     if k in self._immutables:
-                        # raise an error if a key is present in both the current and other
-                        # object and the key in the current object is marked as immutable
+                        # raise an error if a key in this dictionary is marked as immutable
+                        # and is also present in the other dictionary
                         raise MergeOverImmutableError(self, other)
                     if k in other._overwrites:
                         # if the key in the other dictionary is marked as an overwrite just
@@ -86,8 +86,8 @@ class Dictionary(Value):
         else:
             raise MergeTypeError(self, other)
 
-    def render(self):
+    def render_all(self):
         '''
         Return a new dict containing the renders of all Values in this Dictionary
         '''
-        return { k: v.render() for k, v in self._dictionary.items() }
+        return { k: v.render_all() for k, v in self._dictionary.items() }

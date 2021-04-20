@@ -12,7 +12,7 @@ class Plain(Value):
     type = Value.PLAIN
 
     def __init__(self, input, uri):
-        super().__init__(uri, False)
+        super().__init__(uri)
         if isinstance(input, str):
             self.item = self.parser.parse(input)
         else:
@@ -55,11 +55,29 @@ class Plain(Value):
         else:
             raise MergeTypeError(self, other)
 
+    def resolve(self, context, inventory):
+        '''
+        Step through one level of indirection.
+
+        Check if the Item we have is a simple reference, ${foo}, which can be
+        resolved as the Value in the context dictionary the reference is pointing
+        to. If this is the case return the referenced Value.
+        If not use resolve_to_item to return a new item which has removed a level
+        of indirection. Set self.item to this Item and return self as the resolved
+        Value.
+        '''
+        value = self.item.resolve_to_value(context, inventory)
+        if value is None:
+            self.item = self.item.resolve_to_item(context, inventory)
+            return self
+        else:
+            return value
+
     def render(self):
         '''
         Return a render of the underlying Item in this Value
         '''
         return self.item.render()
 
-    def resolve(self, context, inventory):
-        return self.item.resolve(context, inventory)
+    def render_all(self):
+        return self.render()
