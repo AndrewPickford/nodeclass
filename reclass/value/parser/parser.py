@@ -10,7 +10,6 @@ from reclass.value.item import Composite, InvQuery, Reference, Scalar
 from .exceptions import ParseError
 from .functions import full_parser, simple_parser, Tags
 
-
 class Parser:
     '''
     A wrapper class to hide the complexity of parsing a string.

@@ -14,16 +14,16 @@ class Composite(Item):
     part of a composite item.
 
     A Composite item is rendered to a string, or in the unusal but valid case of a
-    Composite item holding only a single item the contained item is rendered without
+    Composite item holding only a single Item the contained Item is rendered without
     forcing it into a string representation.
     '''
 
     def __init__(self, items):
         super().__init__(items)
         self._references = []
-        self.unresolved = True
         for i in self.contents:
             if i.unresolved:
+                self.unresolved = True
                 self._references.extend(i.references())
 
     def __str__(self):
@@ -33,21 +33,42 @@ class Composite(Item):
         return self._references
 
     def resolve_to_item(self, context, inventory):
+        '''
+        '''
         if len(self._references) > 0:
             try:
                 items = [ i.resolve_to_item(context,inventory) for i in self.contents ]
-                return Composite(items)
+                comp = Composite(items)
+                if len(comp._references) > 0:
+                    # nested references, return Item for later resolving
+                    return comp
+                else:
+                    # all references resolved, flatten Item
+                    return comp.flatten()
             except ItemResolveError as e:
                 raise ItemResolveError(self)
         else:
             # no unresolved references so flatten to a single Scalar Item
-            if len(self.contents) == 1:
-                return self.contents[0]
-            else:
-                return Scalar(''.join([ str(i.render()) for i in self.contents ]))
+            return self.flatten()
 
     def resolve_to_value(self, context, inventory):
         '''
-        Composite items cannot resolve directly to a Value
+        Composite items cannot resolve directly to a Value, so just return None to
+        indicate to use resolve_to_item.
         '''
         return None
+
+    def flatten(self):
+        '''
+        Join the composites parts into a single Scalar Item
+        '''
+        if len(self.contents) == 1:
+            return self.contents[0]
+        else:
+            return Scalar(''.join([ str(i.render()) for i in self.contents ]))
+
+    def render(self):
+        '''
+        Return the render of the flattened contents
+        '''
+        return self.flatten().render()

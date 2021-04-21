@@ -6,9 +6,14 @@ class List(Value):
     '''
     type = Value.LIST
 
-    def __init__(self, input, uri, create_func):
+    def __init__(self, input, uri, factory):
         super().__init__(uri)
-        self._list = [ create_func(i, uri) for i in input ]
+        self._list = [ factory(i, uri) for i in input ]
+
+    def __copy__(self):
+        c = List([], self.uri, None)
+        c._list = [ copy.copy(v) for v in self._list ]
+        return c
 
     def __getitem__(self, path):
         return self.getsubitem(path, 0)

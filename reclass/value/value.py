@@ -7,7 +7,7 @@ class Value(ABC):
     PLAIN = 0
     DICTIONARY = 1
     LIST = 2
-    MERGE = 3
+    MERGED = 3
 
     def __init__(self, uri):
         self.uri = uri

@@ -18,6 +18,13 @@ class Plain(Value):
         else:
             self.item = Scalar(input)
 
+    def __copy__(self):
+        '''
+        No need to actually copy as whatever final value this renders to any 'copy' will need to
+        render to the same thing.
+        '''
+        return self
+
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self.item), repr(self.uri))
 
@@ -49,7 +56,7 @@ class Plain(Value):
             # if the current object is unresolved return a Merged object for later
             # interpolation, otherwise raise an error
             if other.unresolved:
-                return Merge(self, other)
+                return Merged(self, other)
             else:
                 raise MergeTypeError(self, other)
         else:
@@ -65,13 +72,17 @@ class Plain(Value):
         If not use resolve_to_item to return a new item which has removed a level
         of indirection. Set self.item to this Item and return self as the resolved
         Value.
+
+        context: Dictionary of resolved parameter values
+        inventory: Dictionary of required inventory query answers
+        returns: tuple of resolved Value and bool of if new unresolved path could be present
         '''
         value = self.item.resolve_to_value(context, inventory)
         if value is None:
             self.item = self.item.resolve_to_item(context, inventory)
-            return self
+            return self, True
         else:
-            return value
+            return value, False
 
     def render(self):
         '''

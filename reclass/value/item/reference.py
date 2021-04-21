@@ -36,8 +36,13 @@ class Reference(Item):
         '''
         Resolve one level of indirection, returning a new Item. This handles
         nested references.
+
         It is an error here for references to resolve to Dictionary, List or Merge
-        Values as they should have been handled by resolve_to_value.
+        Values as they should have already been handled by resolve_to_value.
+
+        context: Dictionary of parameters
+        inventory: Dictionary of inventory query answers
+        returns: resolved Item
         '''
         if self.contents.unresolved:
             ref = self.contents.resolve_to_item(context, inventory)
@@ -52,12 +57,15 @@ class Reference(Item):
     def resolve_to_value(self, context, inventory):
         '''
         Resolve one level of indirection, returning the Value this reference
-        is pointing at. Or in the case of nested references return None,
-        indicating a call to resolve_to_item is required to get a new Item
-        for wrapping in a new Plain Value.
+        is pointing at. This handles simple single references, such as ${foo},
+        regardless of what type of Value the reference is pointing at.
 
-        context: dictionary of parameters
-        inventory: dictionary of inventory query answers
+        In the case of nested references return None, indicating a call to
+        resolve_to_item is required to get a new Item for wrapping in a Plain
+        Value.
+
+        context: Dictionary of parameters
+        inventory: Dictionary of inventory query answers
         returns: a new Value or None
         '''
         if self.contents.unresolved:

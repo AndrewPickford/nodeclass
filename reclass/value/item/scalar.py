@@ -15,6 +15,9 @@ class Scalar(Item):
         super().__init__(contents)
 
     def resolve_to_item(self, context, inventory):
+        '''
+        Already resolved, return self
+        '''
         return self
 
     def render(self):

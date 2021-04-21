@@ -17,7 +17,8 @@ class Settings:
         'reference_sentinels': ('${', '}')
     }
 
-    def __init__(self, options={}):
+    def __init__(self, options=None):
+        options = options or {}
         for opt_name, opt_value in self.known_opts.items():
             setattr(self, opt_name, options.get(opt_name, opt_value))
         self.path_split = r'(?<!\\)' + re.escape(self.delimiter)

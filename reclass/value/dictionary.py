@@ -1,3 +1,4 @@
+import copy
 from reclass.settings import SETTINGS
 from .exceptions import MergeOverImmutableError, MergeTypeError
 from .merged import Merged
@@ -14,19 +15,26 @@ class Dictionary(Value):
     '''
     type = Value.DICTIONARY
 
-    def __init__(self, input, uri, create_func):
+    def __init__(self, input, uri, factory):
+        def process_key(key):
+            if key[0] == SETTINGS.overwrite_prefix:
+                key = key[1:]
+                self._overwrites.add(key)
+            elif key[0] == SETTINGS.immutable_prefix:
+                key = key[1:]
+                self._immutables.add(key)
+            return key
+
         super().__init__(uri)
-        self._dictionary = dict()
+        self._dictionary = {}
         self._immutables = set()
         self._overwrites = set()
-        for k, v in input.items():
-            if k[0] == SETTINGS.overwrite_prefix:
-                k = k[1:]
-                self._overwrites.add(k)
-            elif k[0] == SETTINGS.immutable_prefix:
-                k = k[1:]
-                self._immutables.add(k)
-            self._dictionary[k] = create_func(v, uri)
+        self._dictionary = { process_key(k): factory(v, uri) for k, v in input.items() }
+
+    def __copy__(self):
+        c = Dictionary({}, self.uri, None)
+        c._dictionary = { k: copy.copy(v) for k, v in self._dictionary.items() }
+        return c
 
     def __getitem__(self, path):
         return self.getsubitem(path, 0)

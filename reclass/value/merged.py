@@ -1,3 +1,4 @@
+import copy
 from .value import Value
 
 
@@ -9,7 +10,7 @@ class Merged(Value):
     Use the merge method to add additional Value objects to an existing
     Merged object.
     '''
-    type = Value.MERGE
+    type = Value.MERGED
 
     def __init__(self, first, second):
         super().__init__([ first.uri, second.uri ])
@@ -41,10 +42,29 @@ class Merged(Value):
         return refs
 
     def merge(self, other):
-        if other.type == Value.MERGE:
-            self._values.extend(other._values)
-        else:
-            self._values.append(other)
-        if other.complex:
-            self.complex = True
+        '''
+        Merged objects merge new objects on top by appending to the list of
+        values to merge.
+        It is not allowed to merge to Merged objected together.
+        '''
+        if other.type == Value.MERGED:
+            raise MergeTypeError(self, other)
+        self._values.append(other)
         return self
+
+    def resolve(self, context, inventory):
+        '''
+        '''
+        unresolved = False
+        for i, v in enumerate(self._values):
+            if v.unresolved():
+                self._values[i], unres = v.resolve(context, inventory)
+                if unres:
+                    unresolved = True
+        if unresolved:
+            return self, False
+        else:
+            val = copy.copy(self._values[0])
+            for v in self._values[1:]:
+                val = val.merge(v)
+            return val, True
