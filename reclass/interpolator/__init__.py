@@ -1,1 +1,1 @@
-from .full import Full
+from .interpolators import Interpolators

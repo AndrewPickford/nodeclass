@@ -6,19 +6,20 @@ class Full:
     '''
     '''
 
+    @classmethod
+    def merge(cls, klasses):
+        parameters = Value.Create({}, '')
+        for k in klasses:
+            d = Value.Create(k.parameters, k.uri)
+            parameters.merge(d)
+        return parameters
+
     def interpolate(self, klasses, inventory):
         self.inventory = inventory
-        self.merge(klasses)
+        self.parameters = self.merge(klasses)
         self.initialise()
         self.resolve()
         return self.parameters.render_all()
-
-    def merge(self, klasses):
-        self.parameters = Value.Create({}, '')
-        for k in klasses:
-            d = Value.Create(k.parameters, k.uri)
-            self.parameters.merge(d)
-        return
 
     def initialise(self):
         self.unresolved = dict.fromkeys(self.parameters.unresolved_paths(Path.Empty()), False)
@@ -44,7 +45,7 @@ class Full:
             raise InteroplationInfiniteRecursionError(path)
         self.unresolved[path] = True
 
-        while self.parameters[path].unresolved():
+        while self.parameters[path].unresolved:
             self.resolve_value(path)
         del self.unresolved[path]
         return
@@ -59,7 +60,7 @@ class Full:
         error if the visit count threshold is exceeded.
         '''
         val = self.parameters[path]
-        for r in val.references():
+        for r in val.references:
             if r in self.unresolved:
                 self.resolve_path(r)
         val, new_paths = val.resolve(self.parameters, self.inventory)
@@ -67,7 +68,7 @@ class Full:
             self.unresolved.update(dict.fromkeys(val.unresolved_paths(path), False))
         self.parameters[path] = val
 
-        if val.unresolved():
+        if val.unresolved:
             # a nested reference or a Merged value following a chain of references
             self.visit_count[path] = self.visit_count.get(path, 0) + 1
             if self.visit_count[path] > 255:

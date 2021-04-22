@@ -3,8 +3,7 @@
 import sys
 import yaml
 
-from reclass.node import Klass
-from reclass.interpolator import Full
+from reclass import Interpolators, Klass
 
 _SafeLoader = yaml.CSafeLoader if yaml.__with_libyaml__ else yaml.SafeLoader
 
@@ -19,7 +18,7 @@ with open('two.yml') as f:
 with open('three.yml') as f:
     three = yaml.load(f, Loader=_SafeLoader)
 
-interpolator = Full()
+interpolator = Interpolators.Full()
 inventory = {}
 klasses = [ Klass(one, 'one.yml'), Klass(two, 'two.yml'), Klass(three, 'three.yml') ]
 
