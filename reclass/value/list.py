@@ -1,4 +1,5 @@
 from .exceptions import MergeTypeError
+from .merged import Merged
 from .value import Value
 
 class List(Value):
@@ -16,26 +17,26 @@ class List(Value):
         return c
 
     def __getitem__(self, path):
-        return self.getsubitem(path, 0)
+        return self._getsubitem(path, 0)
 
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self._list), repr(self.uri))
 
     def __setitem__(self, path, value):
-        self.setsubitem(path, 0, value)
+        self._setsubitem(path, 0, value)
 
     def __str__(self):
         return '({0}; {1})'.format(str(self._list), str(self.uri))
 
-    def getsubitem(self, path, depth):
+    def _getsubitem(self, path, depth):
         if depth < path.last:
-            return self._list[path[depth]][path, depth+1]
+            return self._list[path[depth]]._getsubitem(path, depth+1)
         else:
             return self._list[path[depth]]
 
-    def setsubitem(self, path, depth, value):
+    def _setsubitem(self, path, depth, value):
         if depth < path.last:
-            self._list[path[depth]][path, depth+1, value]
+            self._list[path[depth]]._setsubitem(path, depth+1, value)
         else:
             self._list[path[depth]] = value
 
@@ -53,8 +54,8 @@ class List(Value):
         elif other.type == Value.PLAIN:
             # if the plain Value is a reference return a Merge object
             # for later interpolation, otherwise raise an error
-            if other.complex:
-                return Merge(self, other)
+            if other.unresolved:
+                return Merged(self, other)
             else:
                 raise MergeTypeError(self, other)
         else:

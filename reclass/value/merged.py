@@ -22,6 +22,7 @@ class Merged(Value):
     def __str__(self):
         return '[{0}]'.format(','.join(map(str, self._values)))
 
+    @property
     def unresolved(self):
         '''
         Merged Values are only created if at least one of the Values to
@@ -29,17 +30,18 @@ class Merged(Value):
         '''
         return True
 
+    @property
+    def references(self):
+        refs = []
+        for v in self._values:
+            refs.extend(v.references)
+        return refs
+
     def unresolved_paths(self, path):
         '''
         Merged Values always have at least one contained Item with references
         '''
         return { path }
-
-    def references(self):
-        refs = []
-        for v in self._values:
-            refs.extend(v.references())
-        return refs
 
     def merge(self, other):
         '''
@@ -57,7 +59,7 @@ class Merged(Value):
         '''
         unresolved = False
         for i, v in enumerate(self._values):
-            if v.unresolved():
+            if v.unresolved:
                 self._values[i], unres = v.resolve(context, inventory)
                 if unres:
                     unresolved = True

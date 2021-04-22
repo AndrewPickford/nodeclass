@@ -1,8 +1,7 @@
 from .exceptions import MergeTypeError
+from .item import Parser, Scalar
 from .merged import Merged
 from .value import Value
-from .item import Scalar
-from .parser import Parser
 
 
 class Plain(Value):
@@ -31,8 +30,13 @@ class Plain(Value):
     def __str__(self):
         return '({0}; {1})'.format(str(self.item), str(self.uri))
 
+    @property
     def unresolved(self):
         return self.item.unresolved
+
+    @property
+    def references(self):
+        return self.item.references
 
     def unresolved_paths(self, path):
         if self.item.unresolved:
@@ -40,22 +44,19 @@ class Plain(Value):
         else:
             return set()
 
-    def references(self):
-        return self.item.references()
-
     def merge(self, other):
         if other.type == Value.PLAIN:
             # if both Plain objects have no references just handle the merge
             # by returning the other object, otherwise return a Merged object
             # for later interpolation
-            if self.item.unresolved or other.item.unresolved:
+            if self.unresolved or other.unresolved:
                 return Merged(self, other)
             else:
                 return other
         elif other.type == Value.DICTIONARY or other.type == Value.LIST:
             # if the current object is unresolved return a Merged object for later
             # interpolation, otherwise raise an error
-            if other.unresolved:
+            if self.unresolved:
                 return Merged(self, other)
             else:
                 raise MergeTypeError(self, other)

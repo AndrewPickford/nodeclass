@@ -24,11 +24,12 @@ class Composite(Item):
         for i in self.contents:
             if i.unresolved:
                 self.unresolved = True
-                self._references.extend(i.references())
+                self._references.extend(i.references)
 
     def __str__(self):
         return ''.join(map(str, self.contents))
 
+    @property
     def references(self):
         return self._references
 

@@ -27,12 +27,14 @@ class Item(ABC):
     def __str__(self):
         return str(self.contents)
 
+    @property
     def references(self):
         '''
         List of paths referenced by this Item
         '''
         return []
 
+    @property
     def inventory_queries(self):
         '''
         List of inventory queries required

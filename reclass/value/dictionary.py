@@ -37,26 +37,26 @@ class Dictionary(Value):
         return c
 
     def __getitem__(self, path):
-        return self.getsubitem(path, 0)
+        return self._getsubitem(path, 0)
 
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self._dictionary), repr(self.uri))
 
     def __setitem__(self, path, value):
-        self.setsubitem(path, 0, value)
+        self._setsubitem(path, 0, value)
 
     def __str__(self):
         return '({0}; {1})'.format(str(self._dictionary), str(self.uri))
 
-    def getsubitem(self, path, depth):
+    def _getsubitem(self, path, depth):
         if depth < path.last:
-            return self._dictionary[path[depth]].getsubitem(path, depth + 1)
+            return self._dictionary[path[depth]]._getsubitem(path, depth + 1)
         else:
             return self._dictionary[path[depth]]
 
-    def setsubitem(self, path, depth, value):
+    def _setsubitem(self, path, depth, value):
         if depth < path.last:
-            self._dictionary[path[depth]].setsubitem(path, depth+1, value)
+            self._dictionary[path[depth]]._setsubitem(path, depth+1, value)
         else:
             self._dictionary[path[depth]] = value
 
@@ -72,10 +72,12 @@ class Dictionary(Value):
             for k, v in other._dictionary.items():
                 if k in self._dictionary:
                     if k in self._immutables:
-                        # raise an error if a key in this dictionary is marked as immutable
-                        # and is also present in the other dictionary
+                        # raise an error if a key is present in both dictionaries and is
+                        # marked as immutable in this dictionary
+                        # NOTE: What to do if the key is marked as immutable in the other
+                        # dictionary?
                         raise MergeOverImmutableError(self, other)
-                    if k in other._overwrites:
+                    elif k in other._overwrites:
                         # if the key in the other dictionary is marked as an overwrite just
                         # replace the value instead of merging
                         self._dictionary[k] = v
@@ -83,11 +85,12 @@ class Dictionary(Value):
                         self._dictionary[k] = self._dictionary[k].merge(v)
                 else:
                     self._dictionary[k] = v
+                self._immutables.update(other._immutables)
             return self
         elif other.type == Value.PLAIN:
             # if the Plain value is unresolved return a Merged object for later
             # interpolation, otherwise raise an error
-            if other.unresolved():
+            if other.unresolved:
                 return Merged(self, other)
             else:
                 raise MergeTypeError(self, other)

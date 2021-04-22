@@ -6,9 +6,12 @@
 import pyparsing as pp
 
 from reclass.settings import SETTINGS
-from reclass.value.item import Composite, InvQuery, Reference, Scalar
+from .composite import Composite
 from .exceptions import ParseError
 from .functions import full_parser, simple_parser, Tags
+from .invquery import InvQuery
+from .reference import Reference
+from .scalar import Scalar
 
 class Parser:
     '''

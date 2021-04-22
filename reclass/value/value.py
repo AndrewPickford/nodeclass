@@ -12,11 +12,20 @@ class Value(ABC):
     def __init__(self, uri):
         self.uri = uri
 
+    @property
     def unresolved(self):
         '''
         Returns True if the Value requires any references, else returns False
         '''
         return False
+
+    @property
+    def references(self):
+        '''
+        Return a list of the references needed by this Value alone, excluding
+        any references required by contained values.
+        '''
+        return []
 
     def unresolved_paths(self, path):
         '''
@@ -26,13 +35,6 @@ class Value(ABC):
         path: Path prefix
         '''
         return set()
-
-    def references(self):
-        '''
-        Return a list of the references needed by this Value alone, excluding
-        any references required by contained values.
-        '''
-        return []
 
     @abstractmethod
     def merge(self, other):

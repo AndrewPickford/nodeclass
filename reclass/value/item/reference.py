@@ -21,7 +21,7 @@ class Reference(Item):
         super().__init__(item)
         self.unresolved = True
         if self.contents.unresolved:
-            self._references = self.contents.references()
+            self._references = self.contents.references
         else:
             self._references = [ Path.FromString(self.contents.render()) ]
 
@@ -29,6 +29,7 @@ class Reference(Item):
         rs = SETTINGS.reference_sentinels
         return '{0}{1}{2}'.format(rs[0], self.contents, rs[1])
 
+    @property
     def references(self):
         return self._references
 
