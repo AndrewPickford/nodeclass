@@ -43,7 +43,7 @@ class Merged(Value):
         '''
         return { path }
 
-    def merge(self, other):
+    def merge(self, other, settings):
         '''
         Merged objects merge new objects on top by appending to the list of
         values to merge.
@@ -54,19 +54,23 @@ class Merged(Value):
         self._values.append(other)
         return self
 
-    def resolve(self, context, inventory):
+    def resolve(self, context, inventory, settings):
         '''
         '''
-        unresolved = False
+        potential_unresolved = False
         for i, v in enumerate(self._values):
             if v.unresolved:
-                self._values[i], unres = v.resolve(context, inventory)
-                if unres:
-                    unresolved = True
-        if unresolved:
-            return self, False
+                self._values[i], potential_unres = v.resolve(context, inventory, settings)
+                if potential_unres:
+                    potential_unresolved = True
+        if potential_unresolved:
+            # there still may be unresolved references so return self and wait
+            # until higher level logic calls our resolve method again.
+            return self, True
         else:
+            # everything is resolved so merge the values we have together and
+            # return the new merged Value
             val = copy.copy(self._values[0])
             for v in self._values[1:]:
-                val = val.merge(v)
+                val = val.merge(v, settings)
             return val, True

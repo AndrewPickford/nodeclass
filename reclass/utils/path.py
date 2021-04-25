@@ -4,15 +4,14 @@
 # This file is part of reclass
 #
 import re
-
-from reclass.settings import SETTINGS
+from reclass.settings import defaults
 
 
 class Path:
     '''
     Represents a path into a nested dictionary.
+    Should not be created directly instead use the factory functions:
 
-    Should not be created directly instead use the generator functions:
 
     path = Path.Empty()
     path = Path.FromList([ 'foo', 'bar' ])
@@ -20,16 +19,16 @@ class Path:
     '''
 
     @classmethod
-    def Empty(cls):
+    def empty(cls):
         return cls([])
 
     @classmethod
-    def FromList(cls, keys):
+    def fromlist(cls, keys):
         return cls(map(str, path))
 
     @classmethod
-    def FromString(cls, string):
-        return cls(re.split(SETTINGS.path_split, string))
+    def fromstring(cls, string, path_split):
+        return cls(re.split(path_split, string))
 
     def __init__(self, keys):
         self._keys = keys
@@ -53,10 +52,13 @@ class Path:
         return self._hash
 
     def __str__(self):
-        return SETTINGS.delimiter.join(map(str, self._keys))
+        return self.string(defaults.delimiter)
 
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__, str(self))
+
+    def string(self, delimiter):
+        return delimiter.join(map(str, self._keys))
 
     def subpath(self, key):
         return Path(self._keys + [ key ])

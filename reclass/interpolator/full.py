@@ -1,3 +1,6 @@
+from collections import defaultdict
+from copy import copy
+from reclass.item import Parser
 from reclass.utils import Path
 from reclass.value import Value
 from .exceptions import InteroplationExcessiveRevisitsError, InteroplationInfiniteRecursionError
@@ -6,13 +9,9 @@ class Full:
     '''
     '''
 
-    @classmethod
-    def merge(cls, klasses):
-        parameters = Value.Create({}, '')
-        for k in klasses:
-            d = Value.Create(k.parameters, k.uri)
-            parameters.merge(d)
-        return parameters
+    def __init__(self, settings):
+        self.settings = copy(settings)
+        self.parser = Parser(settings)
 
     def interpolate(self, klasses, inventory):
         self.inventory = inventory
@@ -22,9 +21,16 @@ class Full:
         return self.parameters.render_all()
 
     def initialise(self):
-        self.unresolved = dict.fromkeys(self.parameters.unresolved_paths(Path.Empty()), False)
-        self.visit_count = {}
+        self.unresolved = dict.fromkeys(self.parameters.unresolved_paths(Path.empty()), False)
+        self.visit_count = defaultdict(int)
         return
+
+    def merge(self, klasses):
+        parameters = Value.Create({}, '', self.settings, self.parser.parse)
+        for k in klasses:
+            d = Value.Create(k.parameters, k.uri, self.settings, self.parser.parse)
+            parameters.merge(d, self.settings)
+        return parameters
 
     def resolve(self):
         while len(self.unresolved) > 0:
@@ -38,7 +44,7 @@ class Full:
         resolve_value until:
             the Value resolves
             we revisit this path and hence have circular references
-            the visit count for this path is exceeded
+            the visit count for the Value at this path is exceeded
         '''
         if self.unresolved[path]:
             # this path has been visited before so we are in a circular reference
@@ -63,14 +69,14 @@ class Full:
         for r in val.references:
             if r in self.unresolved:
                 self.resolve_path(r)
-        val, new_paths = val.resolve(self.parameters, self.inventory)
+        val, new_paths = val.resolve(self.parameters, self.inventory, self.settings)
         if new_paths:
             self.unresolved.update(dict.fromkeys(val.unresolved_paths(path), False))
         self.parameters[path] = val
 
         if val.unresolved:
             # a nested reference or a Merged value following a chain of references
-            self.visit_count[path] = self.visit_count.get(path, 0) + 1
+            self.visit_count[path] += 1
             if self.visit_count[path] > 255:
                 # this path has been revisited an excessive number of times there is probably
                 # an error somewhere

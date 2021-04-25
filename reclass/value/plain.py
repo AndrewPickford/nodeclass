@@ -1,5 +1,5 @@
+from reclass.item import Scalar
 from .exceptions import MergeTypeError
-from .item import Parser, Scalar
 from .merged import Merged
 from .value import Value
 
@@ -7,13 +7,12 @@ from .value import Value
 class Plain(Value):
     '''
     '''
-    parser = Parser()
     type = Value.PLAIN
 
-    def __init__(self, input, uri):
+    def __init__(self, input, uri, parse_func):
         super().__init__(uri)
         if isinstance(input, str):
-            self.item = self.parser.parse(input)
+            self.item = parse_func(input)
         else:
             self.item = Scalar(input)
 
@@ -44,7 +43,7 @@ class Plain(Value):
         else:
             return set()
 
-    def merge(self, other):
+    def merge(self, other, settings):
         if other.type == Value.PLAIN:
             # if both Plain objects have no references just handle the merge
             # by returning the other object, otherwise return a Merged object
@@ -63,7 +62,7 @@ class Plain(Value):
         else:
             raise MergeTypeError(self, other)
 
-    def resolve(self, context, inventory):
+    def resolve(self, context, inventory, settings):
         '''
         Step through one level of indirection.
 
@@ -76,11 +75,13 @@ class Plain(Value):
 
         context: Dictionary of resolved parameter values
         inventory: Dictionary of required inventory query answers
-        returns: tuple of resolved Value and bool of if new unresolved path could be present
+        settings: control settings
+        returns: tuple of resolved Value and a bool which is true if new unresolved paths
+                 could be present in the return Value
         '''
-        value = self.item.resolve_to_value(context, inventory)
+        value = self.item.resolve_to_value(context, inventory, settings)
         if value is None:
-            self.item = self.item.resolve_to_item(context, inventory)
+            self.item = self.item.resolve_to_item(context, inventory, settings)
             return self, True
         else:
             return value, False

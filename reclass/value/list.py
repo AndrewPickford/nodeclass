@@ -46,7 +46,7 @@ class List(Value):
             paths.update(v.unresolved_paths(path.subpath(k)))
         return paths
 
-    def merge(self, other):
+    def merge(self, other, settings):
         if other.type == Value.LIST:
             # merge Lists together
             self._list.extend(other._list)

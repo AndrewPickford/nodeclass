@@ -1,5 +1,4 @@
 import copy
-from reclass.settings import SETTINGS
 from .exceptions import MergeOverImmutableError, MergeTypeError
 from .merged import Merged
 from .value import Value
@@ -9,30 +8,29 @@ class Dictionary(Value):
     '''
     Wrap a dict object
 
-    In the input dictionary keys starting with SETTINGS.overwrite_prefix ('~') will
-    always overwrite when merging. Keys starting SETTINGS.immutable_prefix ('=') will
+    In the input dictionary keys starting with settings.overwrite_prefix ('~') will
+    always overwrite when merging. Keys starting settings.immutable_prefix ('=') will
     raise an error if a merge happens with that key.
     '''
     type = Value.DICTIONARY
 
-    def __init__(self, input, uri, factory):
+    def __init__(self, input, uri, settings, factory):
         def process_key(key):
-            if key[0] == SETTINGS.overwrite_prefix:
+            if key[0] == settings.overwrite_prefix:
                 key = key[1:]
                 self._overwrites.add(key)
-            elif key[0] == SETTINGS.immutable_prefix:
+            elif key[0] == settings.immutable_prefix:
                 key = key[1:]
                 self._immutables.add(key)
             return key
 
         super().__init__(uri)
-        self._dictionary = {}
         self._immutables = set()
         self._overwrites = set()
         self._dictionary = { process_key(k): factory(v, uri) for k, v in input.items() }
 
     def __copy__(self):
-        c = Dictionary({}, self.uri, None)
+        c = Dictionary({}, self.uri, None, None)
         c._dictionary = { k: copy.copy(v) for k, v in self._dictionary.items() }
         return c
 
@@ -66,7 +64,7 @@ class Dictionary(Value):
             paths.update(v.unresolved_paths(path.subpath(k)))
         return paths
 
-    def merge(self, other):
+    def merge(self, other, settings):
         if other.type == Value.DICTIONARY:
             # merge other Dictionary into this one
             for k, v in other._dictionary.items():
@@ -82,7 +80,7 @@ class Dictionary(Value):
                         # replace the value instead of merging
                         self._dictionary[k] = v
                     else:
-                        self._dictionary[k] = self._dictionary[k].merge(v)
+                        self._dictionary[k] = self._dictionary[k].merge(v, settings)
                 else:
                     self._dictionary[k] = v
                 self._immutables.update(other._immutables)

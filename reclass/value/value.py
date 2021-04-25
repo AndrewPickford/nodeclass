@@ -37,7 +37,7 @@ class Value(ABC):
         return set()
 
     @abstractmethod
-    def merge(self, other):
+    def merge(self, other, settings):
         '''
         Merge a Value onto another Value in preparation for interpolation.
         Potentially changes the current object, this depends on the type of
@@ -64,6 +64,7 @@ class Value(ABC):
         a = a.merge(d)   #  not allowed, d has already been merged with e
 
         other: value to merge in
+        settings: control settings for the merge
         returns: merged Value object
         '''
         pass

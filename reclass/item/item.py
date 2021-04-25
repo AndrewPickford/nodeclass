@@ -42,7 +42,7 @@ class Item(ABC):
         return []
 
     @abstractmethod
-    def resolve_to_item(self, context, inventory):
+    def resolve_to_item(self, context, inventory, settings):
         '''
         Handle references which require a new Item when resolved.
 
@@ -56,6 +56,7 @@ class Item(ABC):
 
         context: Value.Dictionary
         inventory: Value.Dictionary
+        settings: control settings
         returns: Item
         '''
         pass

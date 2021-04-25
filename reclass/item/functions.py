@@ -7,8 +7,6 @@ import enum
 import functools
 import pyparsing as pp
 
-from reclass.settings import SETTINGS
-
 Tags = enum.Enum('Tags', ['STR', 'REF', 'INV'])
 
 
@@ -18,7 +16,7 @@ def tag(name):
     return inner
 
 
-def full_parser():
+def full_parser(settings):
     '''
     Return the full, but slow parser.
 
@@ -27,10 +25,10 @@ def full_parser():
     '''
 
 
-    _ESCAPE = SETTINGS.escape_character
+    _ESCAPE = settings.escape_character
     _DOUBLE_ESCAPE = _ESCAPE + _ESCAPE
 
-    _REF_OPEN, _REF_CLOSE = SETTINGS.reference_sentinels
+    _REF_OPEN, _REF_CLOSE = settings.reference_sentinels
     _REF_CLOSE_FIRST = _REF_CLOSE[0]
     _REF_ESCAPE_OPEN = _ESCAPE + _REF_OPEN
     _REF_ESCAPE_CLOSE = _ESCAPE + _REF_CLOSE
@@ -38,7 +36,7 @@ def full_parser():
     _REF_DOUBLE_ESCAPE_CLOSE = _DOUBLE_ESCAPE + _REF_CLOSE
     _REF_EXCLUDES = _ESCAPE + _REF_OPEN + _REF_CLOSE
 
-    _INV_OPEN, _INV_CLOSE = SETTINGS.inv_query_sentinels
+    _INV_OPEN, _INV_CLOSE = settings.inv_query_sentinels
     _INV_CLOSE_FIRST = _INV_CLOSE[0]
     _INV_ESCAPE_OPEN = _ESCAPE + _INV_OPEN
     _INV_ESCAPE_CLOSE = _ESCAPE + _INV_CLOSE
@@ -89,7 +87,7 @@ def full_parser():
     return line.leaveWhitespace()
 
 
-def simple_parser():
+def simple_parser(settings):
     '''
         Return the simple parser which can parse a string with a single reference, eg:
 
@@ -103,9 +101,9 @@ def simple_parser():
         as possible.
     '''
 
-    ESCAPE = SETTINGS.escape_character
-    REF_OPEN, REF_CLOSE = SETTINGS.reference_sentinels
-    INV_OPEN, INV_CLOSE = SETTINGS.inv_query_sentinels
+    ESCAPE = settings.escape_character
+    REF_OPEN, REF_CLOSE = settings.reference_sentinels
+    INV_OPEN, INV_CLOSE = settings.inv_query_sentinels
     EXCLUDES = ESCAPE + REF_OPEN + REF_CLOSE + INV_OPEN + INV_CLOSE
 
     string = pp.CharsNotIn(EXCLUDES).setParseAction(tag(Tags.STR.value))

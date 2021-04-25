@@ -5,7 +5,6 @@
 #
 import pyparsing as pp
 
-from reclass.settings import SETTINGS
 from .composite import Composite
 from .exceptions import ParseError
 from .functions import full_parser, simple_parser, Tags
@@ -13,9 +12,11 @@ from .invquery import InvQuery
 from .reference import Reference
 from .scalar import Scalar
 
-class Parser:
+
+class Parser():
     '''
     A wrapper class to hide the complexity of parsing a string.
+    Thread local to allow different threads to use different settings.
 
     Usage: create a Parser object then use the parse method on a
     string to create the Item representation of that string:
@@ -24,11 +25,12 @@ class Parser:
     item = parser.parse('bar is ${foo}')
     '''
 
-    def __init__(self):
-        self.full_parser = full_parser()
-        self.simple_parser = simple_parser()
-        self.ref_sent = SETTINGS.reference_sentinels[0]
-        self.inv_query_sent = SETTINGS.inv_query_sentinels[0]
+    def __init__(self, settings):
+        self.full_parser = full_parser(settings)
+        self.simple_parser = simple_parser(settings)
+        self.ref_sent = settings.reference_sentinels[0]
+        self.inv_query_sent = settings.inv_query_sentinels[0]
+        self.path_split = settings.path_split
 
     def parse(self, input):
         '''
@@ -72,22 +74,18 @@ class Parser:
                        Tags.REF.value: (lambda s, v: s._create_ref(v)),
                        Tags.INV.value: (lambda s, v: s._create_inv(v)) }
 
-    @classmethod
-    def _create_items(cls, tokens):
-        return [ cls._item_builders[t](cls, v) for t, v in tokens ]
+    def _create_items(self, tokens):
+        return [ self._item_builders[t](self, v) for t, v in tokens ]
 
-    @classmethod
-    def _create_ref(cls, tokens):
-        items = [ cls._item_builders[t](cls, v) for t, v in tokens ]
+    def _create_ref(self, tokens):
+        items = [ self._item_builders[t](self, v) for t, v in tokens ]
         if len(items) == 1:
-            return Reference(items[0])
+            return Reference(items[0], self.path_split)
         else:
-            return Reference(Composite(items))
+            return Reference(Composite(items), self.path_split)
 
-    @classmethod
-    def _create_inv(cls, tokens):
+    def _create_inv(self, tokens):
         items = [ Scalar(v) for t, v in tokens ]
         if len(items) == 1:
             return InvQuery(items[0])
         return InvQuery(Composite(items))
-
