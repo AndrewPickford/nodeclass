@@ -1,6 +1,5 @@
-from reclass.item import Scalar
 from .exceptions import MergeTypeError
-from .merged import Merged
+from .merged import Merged as BaseMerged
 from .value import Value
 
 
@@ -8,13 +7,11 @@ class Plain(Value):
     '''
     '''
     type = Value.PLAIN
+    Merged = BaseMerged
 
-    def __init__(self, input, uri, parse_func):
-        super().__init__(uri)
-        if isinstance(input, str):
-            self.item = parse_func(input)
-        else:
-            self.item = Scalar(input)
+    def __init__(self, item, url):
+        super().__init__(url)
+        self.item = item
 
     def __copy__(self):
         '''
@@ -24,10 +21,15 @@ class Plain(Value):
         return self
 
     def __repr__(self):
-        return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self.item), repr(self.uri))
+        return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self.item), repr(self.url))
 
     def __str__(self):
-        return '({0}; {1})'.format(str(self.item), str(self.uri))
+        return '({0}; {1})'.format(str(self.item), str(self.url))
+
+    def _unresolved_ancestor(self, path, depth):
+        if depth <= path.last and self.item.unresolved:
+            return True
+        raise KeyError('{0} not present'.format(str(path)))
 
     @property
     def unresolved(self):
@@ -43,26 +45,25 @@ class Plain(Value):
         else:
             return set()
 
-    def merge(self, other, settings):
+    def merge(self, other):
         if other.type == Value.PLAIN:
             # if both Plain objects have no references just handle the merge
             # by returning the other object, otherwise return a Merged object
             # for later interpolation
             if self.unresolved or other.unresolved:
-                return Merged(self, other)
+                return self.Merged(self, other)
             else:
                 return other
         elif other.type == Value.DICTIONARY or other.type == Value.LIST:
             # if the current object is unresolved return a Merged object for later
             # interpolation, otherwise raise an error
             if self.unresolved:
-                return Merged(self, other)
-            else:
-                raise MergeTypeError(self, other)
-        else:
-            raise MergeTypeError(self, other)
+                return self.Merged(self, other)
+            elif self.item.contents is None and self.settings.allow_none_overwrite:
+                return other
+        raise MergeTypeError(self, other)
 
-    def resolve(self, context, inventory, settings):
+    def resolve(self, context, inventory):
         '''
         Step through one level of indirection.
 
@@ -75,13 +76,12 @@ class Plain(Value):
 
         context: Dictionary of resolved parameter values
         inventory: Dictionary of required inventory query answers
-        settings: control settings
         returns: tuple of resolved Value and a bool which is true if new unresolved paths
                  could be present in the return Value
         '''
-        value = self.item.resolve_to_value(context, inventory, settings)
+        value = self.item.resolve_to_value(context, inventory)
         if value is None:
-            self.item = self.item.resolve_to_item(context, inventory, settings)
+            self.item = self.item.resolve_to_item(context, inventory)
             return self, True
         else:
             return value, False

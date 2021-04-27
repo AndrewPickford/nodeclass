@@ -1,2 +1,0 @@
-_SafeLoader = yaml.CSafeLoader if yaml.__with_libyaml__ else yaml.SafeLoader
-

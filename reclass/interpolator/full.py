@@ -1,9 +1,8 @@
 from collections import defaultdict
 from copy import copy
-from reclass.item import Parser
-from reclass.utils import Path
-from reclass.value import Value
-from .exceptions import InteroplationExcessiveRevisitsError, InteroplationInfiniteRecursionError
+from reclass.item.parser import Parser
+from reclass.value.factory import ValueFactory
+from .exceptions import InterpolationExcessiveRevisitsError, InterpolationCircularReferenceError
 
 class Full:
     '''
@@ -11,25 +10,23 @@ class Full:
 
     def __init__(self, settings):
         self.settings = copy(settings)
-        self.parser = Parser(settings)
+        self.parser = Parser(self.settings)
+        self.Path = self.parser.Path
+        self.value_factory = ValueFactory(self.settings, self.parser, self.parser.Scalar)
 
-    def interpolate(self, klasses, inventory):
+    def interpolate(self, classes, inventory):
         self.inventory = inventory
-        self.parameters = self.merge(klasses)
-        self.initialise()
+        self.parameters = self.merge(classes)
+        self.unresolved = dict.fromkeys(self.parameters.unresolved_paths(self.Path.empty()), False)
+        self.visit_count = defaultdict(int)
         self.resolve()
         return self.parameters.render_all()
 
-    def initialise(self):
-        self.unresolved = dict.fromkeys(self.parameters.unresolved_paths(Path.empty()), False)
-        self.visit_count = defaultdict(int)
-        return
-
-    def merge(self, klasses):
-        parameters = Value.Create({}, '', self.settings, self.parser.parse)
-        for k in klasses:
-            d = Value.Create(k.parameters, k.uri, self.settings, self.parser.parse)
-            parameters.merge(d, self.settings)
+    def merge(self, classes):
+        parameters = self.value_factory.make_value_dictionary({}, '')
+        for klass in classes:
+            vd = self.value_factory.make_value_dictionary(klass.parameters, klass.url)
+            parameters.merge(vd)
         return parameters
 
     def resolve(self):
@@ -46,10 +43,10 @@ class Full:
             we revisit this path and hence have circular references
             the visit count for the Value at this path is exceeded
         '''
-        if self.unresolved[path]:
-            # this path has been visited before so we are in a circular reference
-            raise InteroplationInfiniteRecursionError(path)
         self.unresolved[path] = True
+
+        if self.parameters.unresolved_ancestor(path):
+            self.resolve_path(path.parent())
 
         while self.parameters[path].unresolved:
             self.resolve_value(path)
@@ -66,10 +63,16 @@ class Full:
         error if the visit count threshold is exceeded.
         '''
         val = self.parameters[path]
-        for r in val.references:
-            if r in self.unresolved:
-                self.resolve_path(r)
-        val, new_paths = val.resolve(self.parameters, self.inventory, self.settings)
+        for reference in val.references:
+            if self.parameters.unresolved_ancestor(reference):
+                self.resolve_path(reference.parent())
+            if reference in self.unresolved:
+                if self.unresolved[reference] == True:
+                    # The referenced path has already been visited and is still unresolved
+                    # so we have a circular reference
+                    raise InterpolationCircularReferenceError(path, reference)
+                self.resolve_path(reference)
+        val, new_paths = val.resolve(self.parameters, self.inventory)
         if new_paths:
             self.unresolved.update(dict.fromkeys(val.unresolved_paths(path), False))
         self.parameters[path] = val
@@ -80,6 +83,6 @@ class Full:
             if self.visit_count[path] > 255:
                 # this path has been revisited an excessive number of times there is probably
                 # an error somewhere
-                raise InteroplationExcessiveRevisitsError(path)
+                raise InterpolationExcessiveRevisitsError(path)
             self.resolve_value(path)
         return

@@ -1,4 +1,5 @@
 import copy
+from .exceptions import MergeTypeError
 from .value import Value
 
 
@@ -13,7 +14,7 @@ class Merged(Value):
     type = Value.MERGED
 
     def __init__(self, first, second):
-        super().__init__([ first.uri, second.uri ])
+        super().__init__([ first.url, second.url ])
         self._values = [ first, second ]
 
     def __repr__(self):
@@ -21,6 +22,11 @@ class Merged(Value):
 
     def __str__(self):
         return '[{0}]'.format(','.join(map(str, self._values)))
+
+    def _unresolved_ancestor(self, path, depth):
+        if depth <= path.last:
+            return True
+        raise KeyError('{0} not present'.format(str(path)))
 
     @property
     def unresolved(self):
@@ -43,24 +49,24 @@ class Merged(Value):
         '''
         return { path }
 
-    def merge(self, other, settings):
+    def merge(self, other):
         '''
         Merged objects merge new objects on top by appending to the list of
         values to merge.
-        It is not allowed to merge to Merged objected together.
+        Merging two Merged objects should never happen.
         '''
         if other.type == Value.MERGED:
             raise MergeTypeError(self, other)
         self._values.append(other)
         return self
 
-    def resolve(self, context, inventory, settings):
+    def resolve(self, context, inventory):
         '''
         '''
         potential_unresolved = False
         for i, v in enumerate(self._values):
             if v.unresolved:
-                self._values[i], potential_unres = v.resolve(context, inventory, settings)
+                self._values[i], potential_unres = v.resolve(context, inventory)
                 if potential_unres:
                     potential_unresolved = True
         if potential_unresolved:
@@ -72,5 +78,5 @@ class Merged(Value):
             # return the new merged Value
             val = copy.copy(self._values[0])
             for v in self._values[1:]:
-                val = val.merge(v, settings)
+                val = val.merge(v)
             return val, True

@@ -8,15 +8,24 @@ from reclass.settings import defaults
 
 
 class Path:
-    '''
-    Represents a path into a nested dictionary.
-    Should not be created directly instead use the factory functions:
+    ''' Represent a path into a nested dictionary.
+    Create using factory functions:
 
+    >>> path = Path.empty()
+    >>> str(path)
+    ''
 
-    path = Path.Empty()
-    path = Path.FromList([ 'foo', 'bar' ])
-    path = Path.FromString('foo:bar')
+    >>> path = Path.fromstring('foo:bar')
+    >>> str(path)
+    'foo:bar'
+
+    >>> path = Path.fromlist(['foo', 'bar'])
+    >>> str(path)
+    'foo:bar'
     '''
+
+    delimiter = defaults.delimiter
+    path_split = r'(?<!\\)' + re.escape(defaults.delimiter)
 
     @classmethod
     def empty(cls):
@@ -24,41 +33,41 @@ class Path:
 
     @classmethod
     def fromlist(cls, keys):
-        return cls(map(str, path))
+        return cls([ str(k) for k in keys])
 
     @classmethod
-    def fromstring(cls, string, path_split):
-        return cls(re.split(path_split, string))
+    def fromstring(cls, string):
+        return cls(re.split(cls.path_split, string))
 
     def __init__(self, keys):
-        self._keys = keys
+        self.keys = keys
+        self.last = len(self.keys) - 1
         self._hash = hash(str(self))
-        self.last = len(self._keys) - 1
 
     def __eq__(self, other):
         if self._hash != self._hash:
             return False
-        return self._keys == other._keys
+        return self.keys == other.keys
 
     def __getitem__(self, n):
-        return self._keys[n]
+        return self.keys[n]
 
     def __ne__(self, other):
         if self._hash != self._hash:
             return True
-        return self._keys != other._keys
+        return self.keys != other.keys
 
     def __hash__(self):
         return self._hash
 
     def __str__(self):
-        return self.string(defaults.delimiter)
+        return self.delimiter.join(map(str, self.keys))
 
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__, str(self))
 
-    def string(self, delimiter):
-        return delimiter.join(map(str, self._keys))
+    def parent(self):
+        return type(self)(self.keys[:-1])
 
     def subpath(self, key):
-        return Path(self._keys + [ key ])
+        return type(self)(self.keys + [ key ])

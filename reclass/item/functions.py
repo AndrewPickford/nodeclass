@@ -4,7 +4,6 @@
 # This file is part of reclass
 #
 import enum
-import functools
 import pyparsing as pp
 
 Tags = enum.Enum('Tags', ['STR', 'REF', 'INV'])
@@ -42,7 +41,6 @@ def full_parser(settings):
     _INV_ESCAPE_CLOSE = _ESCAPE + _INV_CLOSE
     _INV_DOUBLE_ESCAPE_OPEN = _DOUBLE_ESCAPE + _INV_OPEN
     _INV_DOUBLE_ESCAPE_CLOSE = _DOUBLE_ESCAPE + _INV_CLOSE
-    _INV_EXCLUDES = _ESCAPE + _INV_OPEN + _INV_CLOSE
 
     _EXCLUDES = _ESCAPE + _REF_OPEN + _REF_CLOSE + _INV_OPEN + _INV_CLOSE
 

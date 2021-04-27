@@ -1,0 +1,7 @@
+classes:
+- alpha
+- beta
+- gamma
+
+parameters:
+  test: zzz

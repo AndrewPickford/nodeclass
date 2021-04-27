@@ -3,8 +3,7 @@
 #
 # This file is part of reclass
 #
-from reclass.settings import defaults
-from reclass.utils import Path
+from reclass.utils.path import Path as BasePath
 from .exceptions import ItemResolveError
 from .item import Item
 
@@ -17,22 +16,25 @@ class Reference(Item):
     representing the path to the referenced entry.
     '''
 
-    def __init__(self, item, path_split):
+    Path = BasePath
+
+    def __init__(self, item):
         super().__init__(item)
         self.unresolved = True
         if self.contents.unresolved:
             self._references = self.contents.references
         else:
-            self._references = [ Path.fromstring(self.contents.render(), path_split) ]
+            self._references = [ self.Path.fromstring(self.contents.render()) ]
 
     def __str__(self):
-        return self.string(defaults.reference_sentinels)
+        rs = self.settings.reference_sentinels
+        return '{0}{1}{2}'.format(rs[0], self.contents, rs[1])
 
     @property
     def references(self):
         return self._references
 
-    def resolve_to_item(self, context, inventory, settings):
+    def resolve_to_item(self, context, inventory):
         '''
         Resolve one level of indirection, returning a new Item. This handles
         nested references.
@@ -46,16 +48,16 @@ class Reference(Item):
         returns: resolved Item
         '''
         if self.contents.unresolved:
-            ref = self.contents.resolve_to_item(context, inventory, settings)
-            return Reference(ref, settings.path_split)
+            ref = self.contents.resolve_to_item(context, inventory)
+            return Reference(ref)
         else:
-            path = Path.fromstring(str(self.contents.render()), settings.path_split)
+            path = self.Path.fromstring(str(self.contents.render()))
             try:
                 return context[path].item
-            except ItemResolveError as e:
+            except ItemResolveError:
                 raise ItemResolveError(self)
 
-    def resolve_to_value(self, context, inventory, settings):
+    def resolve_to_value(self, context, inventory):
         '''
         Resolve one level of indirection, returning the Value this reference
         is pointing at. This handles simple single references, such as ${foo},
@@ -72,11 +74,8 @@ class Reference(Item):
         '''
         if self.contents.unresolved:
             return None
-        path = Path.fromstring(str(self.contents.render()), settings.path_split)
+        path = self.Path.fromstring(str(self.contents.render()))
         try:
             return context[path]
-        except KeyError as e:
+        except KeyError:
             raise ItemResolveError(self)
-
-    def string(sentinels):
-        return '{0}{1}{2}'.format(sentinels[0], self.contents, sentinels[1])

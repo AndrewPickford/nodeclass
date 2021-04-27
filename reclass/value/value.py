@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from reclass.settings import defaults
 
 class Value(ABC):
     '''
@@ -9,8 +10,10 @@ class Value(ABC):
     LIST = 2
     MERGED = 3
 
-    def __init__(self, uri):
-        self.uri = uri
+    settings = defaults
+
+    def __init__(self, url):
+        self.url = url
 
     @property
     def unresolved(self):
@@ -37,7 +40,7 @@ class Value(ABC):
         return set()
 
     @abstractmethod
-    def merge(self, other, settings):
+    def merge(self, other):
         '''
         Merge a Value onto another Value in preparation for interpolation.
         Potentially changes the current object, this depends on the type of
@@ -64,7 +67,6 @@ class Value(ABC):
         a = a.merge(d)   #  not allowed, d has already been merged with e
 
         other: value to merge in
-        settings: control settings for the merge
         returns: merged Value object
         '''
         pass

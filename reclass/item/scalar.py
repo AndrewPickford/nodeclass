@@ -14,7 +14,7 @@ class Scalar(Item):
     def __init__(self, contents):
         super().__init__(contents)
 
-    def resolve_to_item(self, context, inventory, settings):
+    def resolve_to_item(self, context, inventory):
         '''
         Already resolved, return self
         '''

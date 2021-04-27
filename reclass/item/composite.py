@@ -5,8 +5,7 @@
 #
 from .exceptions import ItemResolveError
 from .item import Item
-from .scalar import Scalar
-
+from .scalar import Scalar as BaseScalar
 
 class Composite(Item):
     '''
@@ -17,6 +16,8 @@ class Composite(Item):
     Composite item holding only a single Item the contained Item is rendered without
     forcing it into a string representation.
     '''
+
+    Scalar = BaseScalar
 
     def __init__(self, items):
         super().__init__(items)
@@ -33,26 +34,26 @@ class Composite(Item):
     def references(self):
         return self._references
 
-    def resolve_to_item(self, context, inventory, settings):
+    def resolve_to_item(self, context, inventory):
         '''
         '''
         if len(self._references) > 0:
             try:
-                items = [ i.resolve_to_item(context, inventory, settings) for i in self.contents ]
-                comp = Composite(items)
+                items = [ i.resolve_to_item(context, inventory) for i in self.contents ]
+                comp = type(self)(items)
                 if len(comp._references) > 0:
                     # nested references, return Item for later resolving
                     return comp
                 else:
                     # all references resolved, flatten Item
                     return comp.flatten()
-            except ItemResolveError as e:
+            except ItemResolveError:
                 raise ItemResolveError(self)
         else:
             # no unresolved references so flatten to a single Scalar Item
             return self.flatten()
 
-    def resolve_to_value(self, context, inventory, settings):
+    def resolve_to_value(self, context, inventory):
         '''
         Composite items cannot resolve directly to a Value, so just return None to
         indicate to use resolve_to_item.
@@ -66,7 +67,7 @@ class Composite(Item):
         if len(self.contents) == 1:
             return self.contents[0]
         else:
-            return Scalar(''.join([ str(i.render()) for i in self.contents ]))
+            return self.Scalar(''.join([ str(i.render()) for i in self.contents ]))
 
     def render(self):
         '''

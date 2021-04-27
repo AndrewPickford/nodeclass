@@ -5,6 +5,7 @@
 #
 import pyparsing as pp
 
+from reclass.utils.path import Path
 from .composite import Composite
 from .exceptions import ParseError
 from .functions import full_parser, simple_parser, Tags
@@ -31,6 +32,11 @@ class Parser():
         self.ref_sent = settings.reference_sentinels[0]
         self.inv_query_sent = settings.inv_query_sentinels[0]
         self.path_split = settings.path_split
+        self.Path = type('CustomPath', (Path, ), { 'delimiter': settings.delimiter })
+        self.Scalar = Scalar
+        self.Reference = type('CustomReference', (Reference, ), { 'path': self.Path, 'settings': settings })
+        self.Composite = type('CustomComposite', (Composite, ), { 'scalar': self.Scalar, 'settings': settings })
+        self.InvQuery = type('CustomInvQuery', (InvQuery, ), { 'settings': settings })
 
     def parse(self, input):
         '''
@@ -68,7 +74,7 @@ class Parser():
         items = self._create_items(tokens)
         if len(items) == 1:
             return items[0]
-        return Composite(items)
+        return self.Composite(items)
 
     _item_builders = { Tags.STR.value: (lambda s, v: Scalar(v)),
                        Tags.REF.value: (lambda s, v: s._create_ref(v)),
@@ -80,12 +86,12 @@ class Parser():
     def _create_ref(self, tokens):
         items = [ self._item_builders[t](self, v) for t, v in tokens ]
         if len(items) == 1:
-            return Reference(items[0], self.path_split)
+            return self.Reference(items[0])
         else:
-            return Reference(Composite(items), self.path_split)
+            return self.Reference(self.Composite(items))
 
     def _create_inv(self, tokens):
-        items = [ Scalar(v) for t, v in tokens ]
+        items = [ self.Scalar(v) for t, v in tokens ]
         if len(items) == 1:
-            return InvQuery(items[0])
-        return InvQuery(Composite(items))
+            return self.InvQuery(items[0])
+        return self.InvQuery(self.Composite(items))
