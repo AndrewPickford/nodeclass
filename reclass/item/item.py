@@ -36,12 +36,11 @@ class Item(ABC):
         '''
         return []
 
-    @property
-    def inventory_queries(self):
+    def inventory_query(self):
         '''
-        List of inventory queries required
+        Inventory queries required
         '''
-        return []
+        return None
 
     @abstractmethod
     def resolve_to_item(self, context, inventory, settings):

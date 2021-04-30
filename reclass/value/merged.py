@@ -13,9 +13,15 @@ class Merged(Value):
     '''
     type = Value.MERGED
 
-    def __init__(self, first, second):
-        super().__init__([ first.url, second.url ])
+    def __init__(self, first, second, copy_on_change=False):
+        super().__init__(url=[ first.url, second.url ], copy_on_change=copy_on_change)
         self._values = [ first, second ]
+
+    def __copy__(self):
+        c = type(self)(first=None, second=None, copy_on_change=False)
+        c._values = copy.copy(self._values)
+        c.url = [ c._values[0].url, c._values[1].url ]
+        return c
 
     def __repr__(self):
         return '{0}[{1}]'.format(self.__class__.__name__, ','.join(map(repr, self._values)))
@@ -43,11 +49,22 @@ class Merged(Value):
             refs.extend(v.references)
         return refs
 
+    def inventory_queries(self):
+        queries = set()
+        for v in self._values:
+            queries.update(v.inventory_queries())
+        return queries
+
     def unresolved_paths(self, path):
         '''
         Merged Values always have at least one contained Item with references
         '''
         return { path }
+
+    def set_copy_on_change(self):
+        self.copy_on_change = True
+        for v in self._values:
+            v.set_copy_on_change()
 
     def merge(self, other):
         '''
@@ -57,8 +74,9 @@ class Merged(Value):
         '''
         if other.type == Value.MERGED:
             raise MergeTypeError(self, other)
-        self._values.append(other)
-        return self
+        merged = copy.copy(self) if self.copy_on_change else self
+        merged._values.append(other)
+        return merged
 
     def resolve(self, context, inventory):
         '''
@@ -76,7 +94,8 @@ class Merged(Value):
         else:
             # everything is resolved so merge the values we have together and
             # return the new merged Value
-            val = copy.copy(self._values[0])
+            self.set_copy_on_change()
+            val = self._values[0]
             for v in self._values[1:]:
                 val = val.merge(v)
             return val, True

@@ -8,7 +8,6 @@ import pyparsing as pp
 
 Tags = enum.Enum('Tags', ['STR', 'REF', 'INV'])
 
-
 def tag(name):
     def inner(string, location, tokens):
         return (name, tokens[0])
@@ -35,7 +34,7 @@ def full_parser(settings):
     _REF_DOUBLE_ESCAPE_CLOSE = _DOUBLE_ESCAPE + _REF_CLOSE
     _REF_EXCLUDES = _ESCAPE + _REF_OPEN + _REF_CLOSE
 
-    _INV_OPEN, _INV_CLOSE = settings.inv_query_sentinels
+    _INV_OPEN, _INV_CLOSE = settings.inventory_query_sentinels
     _INV_CLOSE_FIRST = _INV_CLOSE[0]
     _INV_ESCAPE_OPEN = _ESCAPE + _INV_OPEN
     _INV_ESCAPE_CLOSE = _ESCAPE + _INV_CLOSE
@@ -80,14 +79,12 @@ def full_parser(settings):
     content = pp.Combine(pp.OneOrMore(ref_not_open + inv_not_open + text))
     string = pp.MatchFirst([double_escape, ref_escape_open, inv_escape_open, content]).setParseAction(tag(Tags.STR.value))
 
-    item = reference | inv_query | string
-    line = pp.OneOrMore(item) + pp.StringEnd()
+    line = pp.StringStart() + (pp.OneOrMore(reference | string) | inv_query) + pp.StringEnd()
     return line.leaveWhitespace()
 
 
 def simple_parser(settings):
-    '''
-        Return the simple parser which can parse a string with a single reference, eg:
+    ''' Return the simple parser which can parse a string with a single reference
 
         ${foo}
         foo_${bar}_foo
@@ -101,7 +98,7 @@ def simple_parser(settings):
 
     ESCAPE = settings.escape_character
     REF_OPEN, REF_CLOSE = settings.reference_sentinels
-    INV_OPEN, INV_CLOSE = settings.inv_query_sentinels
+    INV_OPEN, INV_CLOSE = settings.inventory_query_sentinels
     EXCLUDES = ESCAPE + REF_OPEN + REF_CLOSE + INV_OPEN + INV_CLOSE
 
     string = pp.CharsNotIn(EXCLUDES).setParseAction(tag(Tags.STR.value))

@@ -15,5 +15,5 @@ inventory = {}
 
 data, url = nodes['one']
 node = Node('one', data, url, classes)
-result = interpolator.interpolate(node.classes, inventory)
+result = interpolator.parameters(node.classes, inventory)
 print(yaml.dump(result, default_flow_style=False))

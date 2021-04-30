@@ -9,16 +9,9 @@ class Plain(Value):
     type = Value.PLAIN
     Merged = BaseMerged
 
-    def __init__(self, item, url):
-        super().__init__(url)
+    def __init__(self, item, url, copy_on_change=True):
+        super().__init__(url=url, copy_on_change=copy_on_change)
         self.item = item
-
-    def __copy__(self):
-        '''
-        No need to actually copy as whatever final value this renders to any 'copy' will need to
-        render to the same thing.
-        '''
-        return self
 
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self.item), repr(self.url))
@@ -39,11 +32,20 @@ class Plain(Value):
     def references(self):
         return self.item.references
 
+    def inventory_queries(self):
+        query = self.item.inventory_query()
+        if query is None:
+            return set()
+        return { query }
+
     def unresolved_paths(self, path):
         if self.item.unresolved:
             return { path }
         else:
             return set()
+
+    def set_copy_on_change(self):
+        self.copy_on_change = True
 
     def merge(self, other):
         if other.type == Value.PLAIN:
@@ -81,10 +83,14 @@ class Plain(Value):
         '''
         value = self.item.resolve_to_value(context, inventory)
         if value is None:
-            self.item = self.item.resolve_to_item(context, inventory)
-            return self, True
+            if self.copy_on_change:
+                return type(self)(self.item.resolve_to_item(context, inventory), self.url), True
+            else:
+                self.item = self.item.resolve_to_item(context, inventory)
+                return self, True
         else:
-            return value, False
+            value.set_copy_on_change()
+            return value, True
 
     def render(self):
         '''

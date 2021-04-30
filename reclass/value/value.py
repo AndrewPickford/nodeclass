@@ -12,8 +12,9 @@ class Value(ABC):
 
     settings = defaults
 
-    def __init__(self, url):
+    def __init__(self, url, copy_on_change):
         self.url = url
+        self.copy_on_change = copy_on_change
 
     @property
     def unresolved(self):
@@ -30,6 +31,12 @@ class Value(ABC):
         '''
         return []
 
+    def inventory_queries(self):
+        '''
+        Return a set of all the inventory queries in this Value and any contained Values.
+        '''
+        return set()
+
     def unresolved_paths(self, path):
         '''
         Return a set of all the paths in this Value and any contained Values
@@ -38,6 +45,15 @@ class Value(ABC):
         path: Path prefix
         '''
         return set()
+
+    @abstractmethod
+    def set_copy_on_change(self):
+        '''
+        Set the copy on change flag on this Value and any Values this value contains.
+        Changes to this value will then copy the value, change the copy and return
+        the changed copy.
+        '''
+        pass
 
     @abstractmethod
     def merge(self, other):

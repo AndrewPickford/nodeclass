@@ -24,5 +24,5 @@ interpolator = Interpolators.Full(defaults)
 inventory = {}
 klasses = [ Klass(one, 'one.yml'), Klass(two, 'two.yml'), Klass(three, 'three.yml') ]
 
-result = interpolator.interpolate(klasses, inventory)
+result = interpolator.parameters(klasses, inventory)
 print(yaml.dump(result, default_flow_style=False))

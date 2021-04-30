@@ -1,19 +1,19 @@
 from py.test import raises
-
-from reclass.interpolator import Interpolators
+from reclass.interpolator import Interpolator
 from reclass.node.klass import Klass
 from reclass.settings import defaults, Settings
 from reclass.value.exceptions import MergeOverImmutableError, MergeTypeError
 
 
-interpolator_default = Interpolators.Full(defaults)
+interpolator_default = Interpolator(defaults)
+merger_default = interpolator_default.merger
 
-def cpar(parameters_dict):
-    return Klass({'parameters': parameters_dict}, '')
+def kpar(parameters_dict):
+    return Klass(classname='', class_dict={'parameters': parameters_dict}, url='')
 
-def merge(base, merge, interpolator = interpolator_default):
-    classes = [ cpar(base), cpar(merge) ]
-    merged = interpolator.merge(classes)
+def merge(base, merge, merger = merger_default):
+    klasses = [ kpar(base), kpar(merge) ]
+    merged = merger.merge_parameters(klasses)
     return merged.render_all()
 
 
@@ -89,24 +89,24 @@ def test_merge_list_dict():
             {'a': { 'one': 1, 'two': 2, 'three': 3}})
 
 def test_merge_allow_none_overwrite_false():
-    interpolator = Interpolators.Full(Settings({'allow_none_overwrite': False}))
+    interpolator = Interpolator(Settings({'allow_none_overwrite': False}))
     with raises(MergeTypeError):
         merge(
             {'a': None},
             {'a': [1, 2, 3]},
-            interpolator = interpolator)
+            merger = interpolator.merger)
     with raises(MergeTypeError):
         merge(
             {'a': None},
             {'a': { 'x': 'x', 'y': 'y'}},
-            interpolator = interpolator)
+            merger = interpolator.merger)
 
 def test_merge_allow_none_overwrite_true():
-    interpolator = Interpolators.Full(Settings({'allow_none_overwrite': True}))
+    interpolator = Interpolator(Settings({'allow_none_overwrite': True}))
     result = merge(
         {'a': None, 'b': None, 'c': None},
         {'a': 'abc', 'b': [1, 2, 3], 'c': {'x': 'x', 'y': 'y'}},
-        interpolator = interpolator)
+        merger = interpolator.merger)
     expected = {'a': 'abc', 'b': [1, 2, 3], 'c': {'x': 'x', 'y': 'y'}}
     assert result == expected
 

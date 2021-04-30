@@ -17,5 +17,5 @@ inventory = {}
 one = Klass({'parameters': {'one': '${three:a}', 'two': {'a': 1, 'b': 2}, 'three': '${two}'}}, '')
 klasses = [ one ]
 
-result = interpolator.interpolate(klasses, inventory)
+result = interpolator.parameters(klasses, inventory)
 print(yaml.dump(result, default_flow_style=False))

@@ -1,4 +1,1 @@
-from .full import Full as FullInterpolator
-
-class Interpolators:
-    Full = FullInterpolator
+from .interpolator import Interpolator

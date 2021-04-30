@@ -9,23 +9,17 @@ class List(Value):
     type = Value.LIST
     Merged = BaseMerged
 
-    def __init__(self, input, url):
-        super().__init__(url)
+    def __init__(self, input, url, copy_on_change=True):
+        super().__init__(url=url, copy_on_change=copy_on_change)
         self._list = input
 
     def __copy__(self):
-        c = type(self)([], self.url)
-        c._list = [ copy.copy(v) for v in self._list ]
+        c = type(self)([], self.url, copy_on_change=False)
+        c._list = copy.copy(self._list)
         return c
-
-    def __getitem__(self, path):
-        return self._getsubitem(path, 0)
 
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self._list), repr(self.url))
-
-    def __setitem__(self, path, value):
-        self._setsubitem(path, 0, value)
 
     def __str__(self):
         return '({0}; {1})'.format(str(self._list), str(self.url))
@@ -42,6 +36,14 @@ class List(Value):
         else:
             self._list[path[depth]] = value
 
+    def _setsubitem_copy_on_change(self, path, depth, value):
+        new = copy.copy(self) if self.copy_on_change else self
+        if depth < path.last:
+            new._list[path[depth]] = new._list[path[depth]]._setsubitem_copy_on_change(path, depth+1, value)
+        else:
+            new._list[path[depth]] = value
+        return new
+
     def _unresolved_ancestor(self, path, depth):
         if depth < path.last:
             return self._list[path[depth]]._unresolved_ancestor(path, depth + 1)
@@ -52,17 +54,29 @@ class List(Value):
     def unresolved_ancestor(self, path):
         return self._unresolved_ancestor(path, 0)
 
+    def inventory_queries(self):
+        queries = set()
+        for v in self._list:
+            queries.update(v.inventory_queries())
+        return queries
+
     def unresolved_paths(self, path):
         paths = set()
         for k, v in enumerate(self._list):
             paths.update(v.unresolved_paths(path.subpath(k)))
         return paths
 
+    def set_copy_on_change(self):
+        self.copy_on_change = True
+        for v in self._list:
+            v.set_copy_on_change()
+
     def merge(self, other):
         if other.type == Value.LIST:
+            merged = copy.copy(self) if self.copy_on_change else self
             # merge Lists together
-            self._list.extend(other._list)
-            return self
+            merged._list.extend(other._list)
+            return merged
         elif other.type == Value.PLAIN:
             # if the plain Value is a reference return a Merge object
             # for later interpolation, otherwise raise an error

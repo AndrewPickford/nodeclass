@@ -11,10 +11,11 @@ classes = StorageFactory.classes('yaml_fs:classes')
 nodes = StorageFactory.nodes('yaml_fs:nodes')
 
 interpolator = Interpolators.Full(defaults)
-inventory = {}
+inventory_interpolator = Interpolators.Inventory(defaults)
 
 nodename = 'wn-taai-001.farm.nikhef.nl'
 node_dict, url = nodes[nodename]
 node = Node(nodename, node_dict, url, classes)
-result = interpolator.interpolate(node.classes, inventory)
-print(yaml.dump(result, default_flow_style=False))
+
+node.interpolate(interpolator, inventory_interpolator, nodes, classes)
+print(yaml.dump(node.to_dict(), default_flow_style=False, Dumper=yaml.CSafeDumper))
