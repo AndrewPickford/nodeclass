@@ -5,12 +5,13 @@
 #
 import pyparsing as pp
 
-from .composite import Composite
+from reclass.invquery.parser import Parser as BaseInvQueryParser
+from .composite import Composite as BaseComposite
 from .exceptions import ParseError
-from .invquery import InvQuery
+from .invquery import InvQuery as BaseInvQuery
 from .parser_functions import full_parser, simple_parser, Tags
-from .reference import Reference
-from .scalar import Scalar
+from .reference import Reference as BaseReference
+from .scalar import Scalar as BaseScalar
 
 
 class Parser():
@@ -29,16 +30,18 @@ class Parser():
     >>> print(repr(item))
     XComposite([XScalar('bar is '), XReference(XScalar('foo'))])
     '''
+    Composite = BaseComposite
+    InvQuery = BaseInvQuery
+    Reference = BaseReference
+    Scalar = BaseScalar
+    InvQueryParser = BaseInvQueryParser
 
-    def __init__(self, settings, path_class, invquery_parser):
+    def __init__(self, settings):
         self.full_parser = full_parser(settings)
         self.simple_parser = simple_parser(settings)
+        self.invquery_parser = self.InvQueryParser()
         self.ref_sent = settings.reference_sentinels[0]
         self.invquery_sent = settings.inventory_query_sentinels[0]
-        self.Scalar = type('XScalar', (Scalar, ), {})
-        self.Reference = type('XReference', (Reference, ), { 'Path': path_class, 'settings': settings })
-        self.Composite = type('XComposite', (Composite, ), { 'Scalar': self.Scalar, 'settings': settings })
-        self.InvQuery = type('XInvQuery', (InvQuery, ), { 'invquery_parser': invquery_parser, 'settings': settings })
         self.cache = {}
 
     def parse(self, input):
@@ -100,7 +103,6 @@ class Parser():
             return self.Reference(self.Composite(items))
 
     def _create_inv(self, tokens):
-        items = [ self.Scalar(v) for t, v in tokens ]
-        if len(items) == 1:
-            return self.InvQuery(items[0])
-        return self.InvQuery(self.Composite(items))
+        expression = ''.join([ v for t, v in tokens ])
+        query = self.invquery_parser.parse(expression)
+        return self.InvQuery(query)

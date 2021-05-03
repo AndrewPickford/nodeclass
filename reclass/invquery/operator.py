@@ -14,10 +14,10 @@ class OpTest:
             raise InventoryQueryParseError(token, 'unknown operator {0}'.format(token.data))
 
     def __eq_(self, other):
-        if self.negate == other.negate:
-           return True
-        else:
-           return False
+        if self.__class__ == other.__class__:
+            if self.negate == other.negate:
+                return True
+        return False
 
     def __ne__(self, other):
         return not self.__eq__(other)

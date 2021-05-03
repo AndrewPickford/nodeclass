@@ -9,11 +9,13 @@ class Klass:
         url : location of class (plain file + file name, git repo + file name, ...)
         '''
         self.name = classname
-        self.classes = class_dict.get('classes', [])
-        self.applications = class_dict.get('applications', [])
-        self.exports = class_dict.get('exports', {})
-        self.parameters = class_dict.get('parameters', {})
         self.url = url
+        # It is possible for classes, applications, exports and parameters in the yaml
+        # to be None. Change these to an empty list or dict as appropriate.
+        self.classes = class_dict.get('classes', None) or []
+        self.applications = class_dict.get('applications', None) or []
+        self.exports = class_dict.get('exports', None) or {}
+        self.parameters = class_dict.get('parameters', None) or {}
 
     def __repr__(self):
         return '{0}(name={1}, url={2}, classes={3}, applications={4}, exports={5}, parameters={6})'.format(

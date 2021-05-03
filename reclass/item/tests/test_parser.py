@@ -1,4 +1,3 @@
-import enum
 import pyparsing as pp
 import pytest
 from reclass.item.parser_functions import Tags
@@ -108,12 +107,10 @@ def test_full_item_parser(string, expected):
 
 @pytest.mark.parametrize('string', test_simple_parser_errors)
 def test_simple_parser_errors(string):
-    with pytest.raises(pp.ParseException) as exc_info:
-        result = parser_simple.parseString(string)
+    with pytest.raises(pp.ParseException):
+        parser_simple.parseString(string)
 
 @pytest.mark.parametrize('string', test_full_parser_errors)
 def test_full_parser_errors(string):
-    with pytest.raises(pp.ParseException) as exc_info:
-        print(string)
-        result = parser_full.parseString(string)
-        print(result)
+    with pytest.raises(pp.ParseException):
+        parser_full.parseString(string)

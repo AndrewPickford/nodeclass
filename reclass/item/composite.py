@@ -21,11 +21,11 @@ class Composite(Item):
 
     def __init__(self, items):
         super().__init__(items)
-        self._references = []
+        self._references = set()
         for i in self.contents:
             if i.unresolved:
                 self.unresolved = True
-                self._references.extend(i.references)
+                self._references |= i.references
 
     def __str__(self):
         return ''.join(map(str, self.contents))
@@ -34,12 +34,12 @@ class Composite(Item):
     def references(self):
         return self._references
 
-    def resolve_to_item(self, context, inventory):
+    def resolve_to_item(self, context, inventory, environment):
         '''
         '''
         if len(self._references) > 0:
             try:
-                items = [ i.resolve_to_item(context, inventory) for i in self.contents ]
+                items = [ i.resolve_to_item(context, inventory, environment) for i in self.contents ]
                 comp = type(self)(items)
                 if len(comp._references) > 0:
                     # nested references, return Item for later resolving
@@ -53,7 +53,7 @@ class Composite(Item):
             # no unresolved references so flatten to a single Scalar Item
             return self.flatten()
 
-    def resolve_to_value(self, context, inventory):
+    def resolve_to_value(self, context, inventory, environment):
         '''
         Composite items cannot resolve directly to a Value, so just return None to
         indicate to use resolve_to_item.

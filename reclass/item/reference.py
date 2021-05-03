@@ -24,7 +24,7 @@ class Reference(Item):
         if self.contents.unresolved:
             self._references = self.contents.references
         else:
-            self._references = [ self.Path.fromstring(self.contents.render()) ]
+            self._references = { self.Path.fromstring(self.contents.render()) }
 
     def __str__(self):
         rs = self.settings.reference_sentinels
@@ -34,7 +34,7 @@ class Reference(Item):
     def references(self):
         return self._references
 
-    def resolve_to_item(self, context, inventory):
+    def resolve_to_item(self, context, inventory, environment):
         '''
         Resolve one level of indirection, returning a new Item. This handles
         nested references.
@@ -44,11 +44,11 @@ class Reference(Item):
 
         context: Dictionary of parameters
         inventory: Dictionary of inventory query answers
-        settings: control settings
+        environment: Environment to evaluate inventory queries in
         returns: resolved Item
         '''
         if self.contents.unresolved:
-            ref = self.contents.resolve_to_item(context, inventory)
+            ref = self.contents.resolve_to_item(context, inventory, environment)
             return Reference(ref)
         else:
             path = self.Path.fromstring(str(self.contents.render()))
@@ -57,7 +57,7 @@ class Reference(Item):
             except ItemResolveError:
                 raise ItemResolveError(self)
 
-    def resolve_to_value(self, context, inventory):
+    def resolve_to_value(self, context, inventory, environment):
         '''
         Resolve one level of indirection, returning the Value this reference
         is pointing at. This handles simple single references, such as ${foo},
@@ -69,7 +69,7 @@ class Reference(Item):
 
         context: Dictionary of parameters
         inventory: Dictionary of inventory query answers
-        settings: control settings
+        environment: Environment to evaluate inventory queries in
         returns: a new Value or None
         '''
         if self.contents.unresolved:

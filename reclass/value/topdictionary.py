@@ -1,24 +1,73 @@
 from .dictionary import Dictionary as BaseDictionary
-import copy
-from .exceptions import MergeOverImmutableError, MergeTypeError
-from .merged import Merged as BaseMerged
+from .exceptions import MergeTypeError
 from .value import Value
 
-
-class TopDictionary(BaseDictionary):
-    ''' The top level dictionary of a nested group of dictionaries
+class TopDictionary:
+    ''' The top level interface to nested group of dictionaries
     '''
 
     Dictionary = BaseDictionary
+    type = Value.TOP_DICTIONARY
 
-    def __init__(self, input, url, copy_on_change=False):
-        super().__init__(input=input, url=url, copy_on_change=copy_on_change)
+    def __init__(self, input, url):
+        self._dictionary = self.Dictionary(input, url)
+        self.url = url
+        self.frozen = False
+
+    def __copy__(self):
+        cls = self.__class__
+        new = cls.__new__(cls)
+        new.__dict__.update(self.__dict__)
+        new.frozen = False
+        return new
+
+    def __contains__(self, path):
+        return self._dictionary._contains(path, 0)
 
     def __getitem__(self, path):
-        return self._getsubitem(path, 0)
+        return self._dictionary._getsubitem(path, 0)
+
+    def __repr__(self):
+        return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self._dictionary), repr(self.url))
 
     def __setitem__(self, path, value):
-        if self._getsubitem(path, 0).copy_on_change:
-            self._setsubitem_copy_on_change(path, 0, value)
+        if self.frozen:
+            raise RuntimeError('Trying to change frozen {0}'.format(self.__class__.__name__))
+        if self._dictionary._getsubitem(path, 0).copy_on_change:
+            self._dictionary = self._dictionary._setsubitem_copy_on_change(path, 0, value)
         else:
-            self._setsubitem(path, 0, value)
+            self._dictionary._setsubitem(path, 0, value)
+
+    def __str__(self):
+        return '({0}; {1})'.format(str(self._dictionary), str(self.url))
+
+    def extract(self, paths):
+        extracted = self._dictionary._extract(paths, 0)
+        return type(self)(extracted._dictionary, self.url)
+
+    def inventory_queries(self):
+        return self._dictionary.inventory_queries()
+
+    def merge(self, other):
+        if self.frozen:
+            raise RuntimeError('Trying to change frozen {0}'.format(self.__class__.__name__))
+        if other.type == Value.TOP_DICTIONARY:
+            self._dictionary = self._dictionary.merge(other._dictionary)
+        else:
+            raise MergeTypeError(self, other)
+
+    def render_all(self):
+        return self._dictionary.render_all()
+
+    def repr_all(self):
+        return self._dictionary.repr_all()
+
+    def set_copy_on_change(self):
+        self.frozen = True
+        self._dictionary.set_copy_on_change()
+
+    def unresolved_ancestor(self, path):
+        return self._dictionary._unresolved_ancestor(path, 0)
+
+    def unresolved_paths(self, path):
+        return self._dictionary.unresolved_paths(path)

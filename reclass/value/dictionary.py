@@ -1,4 +1,5 @@
 import copy
+from collections import defaultdict
 from .exceptions import MergeOverImmutableError, MergeTypeError
 from .merged import Merged as BaseMerged
 from .value import Value
@@ -11,12 +12,17 @@ class Dictionary(Value):
     In the input dictionary keys starting with self.settings.overwrite_prefix ('~') will
     always overwrite when merging. Keys starting self.settings.immutable_prefix ('=') will
     raise an error if a merge happens with that key.
+
+    All keys for items contained in a Dictionary object are converted to strings, as references
+    to keys always refer to the string representation of the key.
     '''
     type = Value.DICTIONARY
     Merged = BaseMerged
 
-    def __init__(self, input, url, copy_on_change=True):
+    def __init__(self, input, url, copy_on_change=True, check_for_prefix=True):
         def process_key(key):
+            if not check_for_prefix:
+                return key
             if key[0] == self.settings.overwrite_prefix:
                 key = key[1:]
                 self._overwrites.add(key)
@@ -28,20 +34,45 @@ class Dictionary(Value):
         super().__init__(url=url, copy_on_change=copy_on_change)
         self._immutables = set()
         self._overwrites = set()
-        self._dictionary = { process_key(k): v for k, v in input.items() }
+        self._dictionary = { process_key(str(k)): v for k, v in input.items() }
 
     def __copy__(self):
-        c = type(self)(input={}, url=self.url, copy_on_change=False)
-        c._immutables = copy.copy(self._immutables)
-        c._overwrites = copy.copy(self._overwrites)
-        c._dictionary = copy.copy(self._dictionary)
-        return c
+        cls = self.__class__
+        new = cls.__new__(cls)
+        new.url = self.url
+        new._immutables = copy.copy(self._immutables)
+        new._overwrites = copy.copy(self._overwrites)
+        new._dictionary = copy.copy(self._dictionary)
+        new.copy_on_change = False
+        return new
 
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self._dictionary), repr(self.url))
 
     def __str__(self):
         return '({0}; {1})'.format(str(self._dictionary), str(self.url))
+
+    def _contains(self, path, depth):
+        if depth < path.last:
+            return self._dictionary[path[depth]]._contains(path, depth + 1)
+        else:
+            return path[depth] in self._dictionary
+
+    def _extract(self, paths, depth):
+        extracted = type(self)(input={}, url=self.url, copy_on_change=False)
+        set_keys = set()
+        descend_keys = defaultdict(set)
+        for path in paths:
+            if depth < path.last:
+                descend_keys[path[depth]].add(path)
+            else:
+                set_keys.add(path[depth])
+        descend_keys = { k: v for k, v in descend_keys.items() if k not in set_keys }
+        for key in set_keys:
+            extracted._dictionary[key] = self._dictionary[key]
+        for key, key_paths in descend_keys.items():
+            extracted._dictionary[key] = self._dictionary[key]._extract(key_paths, depth + 1)
+        return extracted
 
     def _getsubitem(self, path, depth):
         if depth < path.last:
@@ -64,31 +95,15 @@ class Dictionary(Value):
         return new
 
     def _unresolved_ancestor(self, path, depth):
-        if depth < path.last:
+        if depth < path.last and path[depth] in self._dictionary:
             return self._dictionary[path[depth]]._unresolved_ancestor(path, depth + 1)
-        elif path[depth] in self._dictionary:
-            return False
-        raise KeyError('{0} not present'.format(str(path)))
-
-    def unresolved_ancestor(self, path):
-        return self._unresolved_ancestor(path, 0)
+        return False
 
     def inventory_queries(self):
         queries = set()
         for v in self._dictionary.values():
             queries.update(v.inventory_queries())
         return queries
-
-    def unresolved_paths(self, path):
-        paths = set()
-        for k, v in self._dictionary.items():
-            paths.update(v.unresolved_paths(path.subpath(k)))
-        return paths
-
-    def set_copy_on_change(self):
-        self.copy_on_change = True
-        for v in self._dictionary.values():
-            v.set_copy_on_change()
 
     def merge(self, other):
         if other.type == Value.DICTIONARY:
@@ -127,3 +142,17 @@ class Dictionary(Value):
         Return a new dict containing the renders of all Values in this Dictionary
         '''
         return { k: v.render_all() for k, v in self._dictionary.items() }
+
+    def repr_all(self):
+        return { k: v.repr_all() for k, v in self._dictionary.items() }
+
+    def set_copy_on_change(self):
+        self.copy_on_change = True
+        for v in self._dictionary.values():
+            v.set_copy_on_change()
+
+    def unresolved_paths(self, path):
+        paths = set()
+        for k, v in self._dictionary.items():
+            paths.update(v.unresolved_paths(path.subpath(k)))
+        return paths

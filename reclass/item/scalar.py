@@ -13,7 +13,7 @@ class Scalar(Item):
     def __init__(self, contents):
         super().__init__(contents)
 
-    def resolve_to_item(self, context, inventory):
+    def resolve_to_item(self, context, inventory, environment):
         ''' Already resolved, return self
         '''
         return self

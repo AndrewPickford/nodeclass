@@ -9,6 +9,7 @@ class Value(ABC):
     DICTIONARY = 1
     LIST = 2
     MERGED = 3
+    TOP_DICTIONARY = 4
 
     settings = defaults
 
@@ -17,19 +18,19 @@ class Value(ABC):
         self.copy_on_change = copy_on_change
 
     @property
+    def references(self):
+        '''
+        Return a set of the references needed by this Value alone, excluding
+        any references required by contained values.
+        '''
+        return set()
+
+    @property
     def unresolved(self):
         '''
         Returns True if the Value requires any references, else returns False
         '''
         return False
-
-    @property
-    def references(self):
-        '''
-        Return a list of the references needed by this Value alone, excluding
-        any references required by contained values.
-        '''
-        return []
 
     def inventory_queries(self):
         '''

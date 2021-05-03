@@ -32,13 +32,14 @@ class Item(ABC):
     @property
     def references(self):
         '''
-        List of paths referenced by this Item
+        Set of paths referenced by this Item
         '''
-        return []
+        return set()
 
+    @property
     def inventory_query(self):
         '''
-        Inventory queries required
+        Inventory query required
         '''
         return None
 

@@ -1,4 +1,5 @@
 import copy
+from collections import defaultdict
 from .exceptions import MergeTypeError
 from .merged import Merged as BaseMerged
 from .value import Value
@@ -14,9 +15,9 @@ class List(Value):
         self._list = input
 
     def __copy__(self):
-        c = type(self)([], self.url, copy_on_change=False)
-        c._list = copy.copy(self._list)
-        return c
+        new = type(self)([], self.url, copy_on_change=False)
+        new._list = copy.copy(self._list)
+        return new
 
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self._list), repr(self.url))
@@ -24,52 +25,63 @@ class List(Value):
     def __str__(self):
         return '({0}; {1})'.format(str(self._list), str(self.url))
 
-    def _getsubitem(self, path, depth):
+    def _contains(self, path, depth):
+        n = int(path[depth])
         if depth < path.last:
-            return self._list[path[depth]]._getsubitem(path, depth+1)
+            return self._list[n]._contains(path, depth + 1)
         else:
-            return self._list[path[depth]]
+            return n < len(self._list)
+
+    def _extract(self, paths, depth):
+        extracted = type(self)(input=[]*len(self._list), url=self.url, copy_on_change=False)
+        set_keys = set()
+        descend_keys = defaultdict(set)
+        for path in paths:
+            if depth < path.last:
+                descend_keys[int(path[depth])].add(path)
+            else:
+                set_keys.add(int(path[depth]))
+        for key in set_keys:
+            extracted._list[key] = self._list[key]
+        descend_keys = { k: v for k, v in descend_keys.items() if k not in set_keys }
+        for key, key_paths in descend_keys.items():
+            extracted._list[key] = self._list[key]._extract(key_paths, depth + 1)
+        return extracted
+
+    def _getsubitem(self, path, depth):
+        n = int(path[depth])
+        if depth < path.last:
+            return self._list[n]._getsubitem(path, depth+1)
+        else:
+            return self._list[n]
 
     def _setsubitem(self, path, depth, value):
+        n = int(path[depth])
         if depth < path.last:
-            self._list[path[depth]]._setsubitem(path, depth+1, value)
+            self._list[n]._setsubitem(path, depth+1, value)
         else:
-            self._list[path[depth]] = value
+            self._list[n] = value
 
     def _setsubitem_copy_on_change(self, path, depth, value):
         new = copy.copy(self) if self.copy_on_change else self
+        n = int(path[depth])
         if depth < path.last:
-            new._list[path[depth]] = new._list[path[depth]]._setsubitem_copy_on_change(path, depth+1, value)
+            new._list[n] = new._list[n]._setsubitem_copy_on_change(path, depth+1, value)
         else:
-            new._list[path[depth]] = value
+            new._list[n] = value
         return new
 
     def _unresolved_ancestor(self, path, depth):
-        if depth < path.last:
-            return self._list[path[depth]]._unresolved_ancestor(path, depth + 1)
-        elif path[depth] < len(self._list):
-            return False
-        raise KeyError('{0} not present'.format(str(path)))
-
-    def unresolved_ancestor(self, path):
-        return self._unresolved_ancestor(path, 0)
+        n = int(path[depth])
+        if depth < path.last and n < len(self._list):
+            return self._list[n]._unresolved_ancestor(path, depth + 1)
+        return False
 
     def inventory_queries(self):
         queries = set()
         for v in self._list:
             queries.update(v.inventory_queries())
         return queries
-
-    def unresolved_paths(self, path):
-        paths = set()
-        for k, v in enumerate(self._list):
-            paths.update(v.unresolved_paths(path.subpath(k)))
-        return paths
-
-    def set_copy_on_change(self):
-        self.copy_on_change = True
-        for v in self._list:
-            v.set_copy_on_change()
 
     def merge(self, other):
         if other.type == Value.LIST:
@@ -92,3 +104,17 @@ class List(Value):
         Return a new list containing the renders of all Values in this List
         '''
         return [ i.render_all() for i in self._list ]
+
+    def repr_all(self):
+        return [ i.repr_all() for i in self._list ]
+
+    def set_copy_on_change(self):
+        self.copy_on_change = True
+        for v in self._list:
+            v.set_copy_on_change()
+
+    def unresolved_paths(self, path):
+        paths = set()
+        for k, v in enumerate(self._list):
+            paths.update(v.unresolved_paths(path.subpath(k)))
+        return paths

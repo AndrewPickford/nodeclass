@@ -13,8 +13,8 @@ nodes = StorageFactory.nodes('yaml_fs:nodes')
 interpolator = Interpolator(defaults)
 
 nodename = 'schoffel.nikhef.nl'
-nodeklass, environment = nodes[nodename]
-node = Node(nodename, nodeklass, environment, klasses)
+protonode = nodes[nodename]
+node = Node(protonode.name, protonode.environment, protonode.klass, klasses)
 
 result = interpolator.interpolate(node, nodes, klasses)
-print(yaml.dump(result, default_flow_style=False, Dumper=yaml.CSafeDumper))
+print(yaml.dump(result.parameters.render_all(), default_flow_style=False, Dumper=yaml.CSafeDumper))

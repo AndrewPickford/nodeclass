@@ -3,23 +3,23 @@
 #
 # This file is part of reclass
 #
-from .dictionary import Dictionary
-from .list import List
-from .merged import Merged
-from .plain import Plain
-from .topdictionary import TopDictionary
+from reclass.item.scalar import Scalar as BaseScalar
+from .dictionary import Dictionary as BaseDictionary
+from .list import List as BaseList
+from .merged import Merged as BaseMerged
+from .plain import Plain as BasePlain
+from .topdictionary import TopDictionary as BaseTopDictionary
 
 class ValueFactory:
+    Dictionary = BaseDictionary
+    List = BaseList
+    Merged = BaseMerged
+    Plain = BasePlain
+    Scalar = BaseScalar
+    TopDictionary = BaseTopDictionary
+
     def __init__(self, settings, parser):
         self.parser = parser
-        self.Scalar = parser.Scalar
-        self.Merged = type('XMerged', (Merged, ), { 'settings': settings })
-        self.Plain = type('XPlain', (Plain, ), { 'settings': settings, 'Merged': self.Merged })
-        self.Dictionary = type('XDictionary', (Dictionary, ),
-            { 'settings': settings, 'Merged': self.Merged })
-        self.TopDictionary = type('XTopDictionary', (TopDictionary, ),
-            { 'settings': settings, 'Merged': self.Merged, 'Dictionary': self.Dictionary })
-        self.List = type('XList', (List, ), { 'settings': settings, 'Merged': self.Merged })
 
     def make_value_dictionary(self, dictionary, url):
         def process_top_dictionary(input, url):

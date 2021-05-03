@@ -13,6 +13,9 @@ class Plain(Value):
         super().__init__(url=url, copy_on_change=copy_on_change)
         self.item = item
 
+    def __copy__(self):
+        return type(self)(self.item, self.url, copy_on_change=False)
+
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self.item), repr(self.url))
 
@@ -20,32 +23,21 @@ class Plain(Value):
         return '({0}; {1})'.format(str(self.item), str(self.url))
 
     def _unresolved_ancestor(self, path, depth):
-        if depth <= path.last and self.item.unresolved:
-            return True
-        raise KeyError('{0} not present'.format(str(path)))
-
-    @property
-    def unresolved(self):
-        return self.item.unresolved
+        return True
 
     @property
     def references(self):
         return self.item.references
 
+    @property
+    def unresolved(self):
+        return self.item.unresolved
+
     def inventory_queries(self):
-        query = self.item.inventory_query()
+        query = self.item.inventory_query
         if query is None:
             return set()
         return { query }
-
-    def unresolved_paths(self, path):
-        if self.item.unresolved:
-            return { path }
-        else:
-            return set()
-
-    def set_copy_on_change(self):
-        self.copy_on_change = True
 
     def merge(self, other):
         if other.type == Value.PLAIN:
@@ -65,7 +57,7 @@ class Plain(Value):
                 return other
         raise MergeTypeError(self, other)
 
-    def resolve(self, context, inventory):
+    def resolve(self, context, inventory, environment):
         '''
         Step through one level of indirection.
 
@@ -78,19 +70,19 @@ class Plain(Value):
 
         context: Dictionary of resolved parameter values
         inventory: Dictionary of required inventory query answers
-        returns: tuple of resolved Value and a bool which is true if new unresolved paths
-                 could be present in the return Value
+        environment: Environment to evaluate inventory queries
+        returns: resolved Value
         '''
-        value = self.item.resolve_to_value(context, inventory)
+        value = self.item.resolve_to_value(context, inventory, environment)
         if value is None:
             if self.copy_on_change:
-                return type(self)(self.item.resolve_to_item(context, inventory), self.url), True
+                return type(self)(self.item.resolve_to_item(context, inventory, environment), self.url)
             else:
-                self.item = self.item.resolve_to_item(context, inventory)
-                return self, True
+                self.item = self.item.resolve_to_item(context, inventory, environment)
+                return self
         else:
             value.set_copy_on_change()
-            return value, True
+            return value
 
     def render(self):
         '''
@@ -100,3 +92,15 @@ class Plain(Value):
 
     def render_all(self):
         return self.render()
+
+    def repr_all(self):
+        return repr(self)
+
+    def set_copy_on_change(self):
+        self.copy_on_change = True
+
+    def unresolved_paths(self, path):
+        if self.item.unresolved:
+            return { path }
+        else:
+            return set()

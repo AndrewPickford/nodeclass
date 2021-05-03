@@ -2,4 +2,4 @@
 
 import pytest
 
-pytest.main(['--ignore', 'tests'])
+pytest.main(['-v', '--ignore', 'tests'])

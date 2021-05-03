@@ -23,6 +23,7 @@ class Path:
     >>> str(path)
     'foo:bar'
     '''
+    __slots__ = ['keys', 'last']
 
     delimiter = defaults.delimiter
     path_split = r'(?<!\\)' + re.escape(defaults.delimiter)
@@ -42,23 +43,17 @@ class Path:
     def __init__(self, keys):
         self.keys = keys
         self.last = len(self.keys) - 1
-        self._hash = hash(str(self))
 
     def __eq__(self, other):
-        if self._hash != self._hash:
-            return False
-        return self.keys == other.keys
+        if self.__class__ == other.__class__:
+            return self.keys == other.keys
+        return False
 
     def __getitem__(self, n):
         return self.keys[n]
 
-    def __ne__(self, other):
-        if self._hash != self._hash:
-            return True
-        return self.keys != other.keys
-
     def __hash__(self):
-        return self._hash
+        return hash(self.__str__())
 
     def __str__(self):
         return self.delimiter.join(map(str, self.keys))

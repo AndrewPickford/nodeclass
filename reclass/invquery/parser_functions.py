@@ -13,10 +13,14 @@ Tags = enum.Enum('Tags', ['VALUE_QUERY', 'IF_QUERY', 'LIST_IF_QUERY', 'OPTION', 
 
 Token = namedtuple('Token', ['type', 'data'])
 
-
 def tag(name):
     def inner(string, location, tokens):
         return Token(name, tokens[0])
+    return inner
+
+def tag_to_lower(name):
+    def inner(string, location, tokens):
+        return Token(name, tokens[0].lower())
     return inner
 
 
@@ -30,15 +34,12 @@ def inventory_query_parser():
     _NOT_EQUAL = '!='
     _AND = 'AND'
     _OR = 'OR'
-    _QUOTE = '\''
-    _DQUOTE = '"'
     _EXPORT = 'exports:'
     _PARAMETER = ('self:', 'parameters:')
 
-    s_end = pp.StringEnd()
     ignore_errors = pp.CaselessLiteral(_IGNORE_ERRORS)
     all_envs = pp.CaselessLiteral(_ALL_ENVS)
-    option = (ignore_errors | all_envs).setParseAction(tag(Tags.OPTION.value))
+    option = (ignore_errors | all_envs).setParseAction(tag_to_lower(Tags.OPTION.value))
     options = pp.ZeroOrMore(option)
 
     op_eq = pp.Literal(_EQUAL)
