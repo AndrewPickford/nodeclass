@@ -1,7 +1,7 @@
 from collections import namedtuple
 from .exceptions import UnknownStorageTypeError
 from .filesystem import FileSystemClasses, FileSystemNodes
-from .cache import KlassCache, NodeCache
+from .loader import KlassLoader, NodeLoader
 from .yaml import Yaml
 
 StorageType = namedtuple('StorageType', ['storage', 'args'])
@@ -15,28 +15,27 @@ class Factory:
         'yaml_fs': StorageType(FileSystemNodes, {'file_format': Yaml})
     }
 
-    @classmethod
-    def _classes(cls, uri):
+    def __init__(self, value_factory):
+        self.value_factory = value_factory
+
+    def classes(self, uri):
         storage_name, basedir = uri.split(':')
-        if storage_name in cls.storage_classes:
-            return cls.storage_classes[storage_name].storage(basedir=basedir, **cls.storage_classes[storage_name].args)
+        if storage_name in self.storage_classes:
+            return self.storage_classes[storage_name].storage(basedir=basedir, **self.storage_classes[storage_name].args)
         else:
             raise UnknownStorageTypeError(storage_name, uri)
 
-    @classmethod
-    def _nodes(cls, uri):
+    def nodes(self, uri):
         storage_name, basedir = uri.split(':')
-        if storage_name in cls.storage_nodes:
-            return cls.storage_nodes[storage_name].storage(basedir=basedir, **cls.storage_nodes[storage_name].args)
+        if storage_name in self.storage_nodes:
+            return self.storage_nodes[storage_name].storage(basedir=basedir, **self.storage_nodes[storage_name].args)
         else:
             raise UnknownStorageTypeError(storage_name, uri)
 
-    @classmethod
-    def klasses(cls, uri):
-        classes = cls._classes(uri)
-        return KlassCache(classes)
+    def klass_loader(self, uri):
+        classes_ = self.classes(uri)
+        return KlassLoader(classes_, self.value_factory)
 
-    @classmethod
-    def nodes(cls, uri):
-        nodes_ = cls._nodes(uri)
-        return NodeCache(nodes_)
+    def node_loader(self, uri):
+        nodes_ = self.nodes(uri)
+        return NodeLoader(nodes_, self.value_factory)

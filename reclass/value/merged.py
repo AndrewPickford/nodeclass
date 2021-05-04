@@ -91,8 +91,7 @@ class Merged(Value):
 
     def set_copy_on_change(self):
         self.copy_on_change = True
-        for v in self._values:
-            v.set_copy_on_change()
+        map(lambda x: x.set_copy_onchange(), self._values)
 
     def unresolved_paths(self, path):
         '''

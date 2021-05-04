@@ -15,9 +15,7 @@ class List(Value):
         self._list = input
 
     def __copy__(self):
-        new = type(self)([], self.url, copy_on_change=False)
-        new._list = copy.copy(self._list)
-        return new
+        return type(self)(copy.copy(self._list), self.url, copy_on_change=False)
 
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self._list), repr(self.url))

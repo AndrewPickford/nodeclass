@@ -5,17 +5,15 @@ class Node:
     ''' A reclass node
     '''
 
-    def __init__(self, name, environment, nodeklass, klass_loader):
+    def __init__(self, proto, klass_loader):
         '''
-        name: full name of node
-        environment: environment of the node
-        nodeklass: klass from the node file
+        proto: ProtoNode object
         klass_loader: dict like object of available classes, indexed by class name
         '''
-        self.name = name
-        self.environment = environment
-        self.nodeklass = nodeklass
-        self.baseklass = Klass('_base_', { 'parameters': self.base_parameters() }, '_base_')
+        self.name = proto.name
+        self.environment = proto.environment
+        self.nodeklass = proto.klass
+        self.baseklass = klass_loader.generated_klass('__base__', [], [], {}, self.base_parameters(), '__base__')
         self.klasses = []
         self.applications = []
         self.classes = []
@@ -24,6 +22,7 @@ class Node:
         self.all_klasses.extend([self.nodeklass, self.baseklass])
         self.all_classes = copy(self.classes)
         self.all_classes.append(self.name)
+        return
 
     def __repr__(self):
         return '{0}(name={1}, applications={2}, classes={3}, klass={4})'.format(self.__class__.__name__,
@@ -59,6 +58,7 @@ class Node:
         if append:
             self.classes.append(classname)
             self.klasses.append(klass)
+        return
 
     def to_dict(self):
         dictionary = {

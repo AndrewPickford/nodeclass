@@ -2,20 +2,18 @@
 
 import yaml
 from pprint import pprint
-from reclass.interpolator import Interpolators
+from reclass.controller import Controller
 from reclass.node.node import Node
 from reclass.settings import defaults
-from reclass.storage.factory import Factory as StorageFactory
 
-classes = StorageFactory.classes('yaml_fs:classes')
-nodes = StorageFactory.nodes('yaml_fs:nodes')
-
-interpolator = Interpolators.Full(defaults)
-inventory_interpolator = Interpolators.Inventory(defaults)
+controller = Controller(defaults)
+node_loader = controller.storage_factory.node_loader('yaml_fs:nodes')
+klass_loader = controller.storage_factory.klass_loader('yaml_fs:classes')
 
 nodename = 'wn-taai-001.farm.nikhef.nl'
-node_dict, url = nodes[nodename]
-node = Node(nodename, node_dict, url, classes)
+proto_node = node_loader[nodename]
+node = Node(proto_node, klass_loader)
 
-node.interpolate(interpolator, inventory_interpolator, nodes, classes)
-print(yaml.dump(node.to_dict(), default_flow_style=False, Dumper=yaml.CSafeDumper))
+interpolator = controller.interpolator
+result = interpolator.interpolate(node, node_loader, klass_loader)
+print(yaml.dump(result.as_dict(), default_flow_style=False, Dumper=yaml.CSafeDumper))

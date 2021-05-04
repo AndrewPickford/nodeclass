@@ -2,20 +2,18 @@ class Klass:
     ''' A reclass class.
     '''
 
-    def __init__(self, classname, class_dict, url):
+    def __init__(self, proto, parameters, exports):
         '''
-        classname: name of the class
-        class_dict: dict of reclass data
-        url : location of class (plain file + file name, git repo + file name, ...)
+        proto: a ProtoKlass object
+        parameters: a Value wrapped TopDictionary of parameters
+        exports: a Value wrapped TopDictionary of exports
         '''
-        self.name = classname
-        self.url = url
-        # It is possible for classes, applications, exports and parameters in the yaml
-        # to be None. Change these to an empty list or dict as appropriate.
-        self.classes = class_dict.get('classes', None) or []
-        self.applications = class_dict.get('applications', None) or []
-        self.exports = class_dict.get('exports', None) or {}
-        self.parameters = class_dict.get('parameters', None) or {}
+        self.name = proto.name
+        self.url = proto.url
+        self.classes = proto.classes
+        self.applications = proto.applications
+        self.exports = exports
+        self.parameters = parameters
 
     def __repr__(self):
         return '{0}(name={1}, url={2}, classes={3}, applications={4}, exports={5}, parameters={6})'.format(

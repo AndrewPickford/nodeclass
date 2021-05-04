@@ -1,3 +1,4 @@
+from reclass.utils.path import Path as BasePath
 from .dictionary import Dictionary as BaseDictionary
 from .exceptions import MergeTypeError
 from .value import Value
@@ -7,17 +8,19 @@ class TopDictionary:
     '''
 
     Dictionary = BaseDictionary
+    Path = BasePath
     type = Value.TOP_DICTIONARY
 
-    def __init__(self, input, url):
+    def __init__(self, input, url, frozen=True):
         self._dictionary = self.Dictionary(input, url)
         self.url = url
-        self.frozen = False
+        self.frozen = frozen
 
     def __copy__(self):
         cls = self.__class__
         new = cls.__new__(cls)
-        new.__dict__.update(self.__dict__)
+        new._dictionary = self._dictionary
+        new.url = self.url
         new.frozen = False
         return new
 
@@ -45,6 +48,10 @@ class TopDictionary:
         extracted = self._dictionary._extract(paths, 0)
         return type(self)(extracted._dictionary, self.url)
 
+    def freeze(self):
+        self.frozen = True
+        self._dictionary.set_copy_on_change()
+
     def inventory_queries(self):
         return self._dictionary.inventory_queries()
 
@@ -62,12 +69,8 @@ class TopDictionary:
     def repr_all(self):
         return self._dictionary.repr_all()
 
-    def set_copy_on_change(self):
-        self.frozen = True
-        self._dictionary.set_copy_on_change()
-
     def unresolved_ancestor(self, path):
         return self._dictionary._unresolved_ancestor(path, 0)
 
-    def unresolved_paths(self, path):
-        return self._dictionary.unresolved_paths(path)
+    def unresolved_paths(self):
+        return self._dictionary.unresolved_paths(self.Path.empty())
