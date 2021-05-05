@@ -1,5 +1,3 @@
-import yaml
-import copy
 from collections import namedtuple, OrderedDict
 from reclass.node.node import Node
 

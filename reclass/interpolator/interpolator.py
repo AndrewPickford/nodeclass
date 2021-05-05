@@ -1,4 +1,3 @@
-import copy
 from .exports_resolver import ExportsResolver
 from .interpolatednode import InterpolatedNode
 from .inventory import Inventory

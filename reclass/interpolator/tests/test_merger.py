@@ -1,27 +1,33 @@
 import pytest
-from reclass.interpolator import Interpolator
+from reclass.controller import Controller
 from reclass.node.klass import Klass
+from reclass.node.protoklass import ProtoKlass
 from reclass.settings import defaults, Settings
 from reclass.value.exceptions import MergeOverImmutableError, MergeTypeError
 
 
-interpolator_default = Interpolator(defaults)
-merger_default = interpolator_default.merger
+controller_default = Controller(defaults)
 
-def kpar(parameters_dict):
-    return Klass(classname='', class_dict={'parameters': parameters_dict}, url='')
+def kpar(parameters_dict, controller):
+    proto = ProtoKlass(name='', class_dict={}, url ='')
+    parameters = controller.value_factory.make_value_dictionary(parameters_dict, proto.url)
+    exports = controller.value_factory.make_value_dictionary({}, proto.url)
+    return Klass(proto, parameters, exports)
 
-def kexp(exports_dict):
-    return Klass(classname='', class_dict={'exports': exports_dict}, url='')
+def kexp(exports_dict, controller):
+    proto = ProtoKlass(name='', class_dict={}, url ='')
+    parameters = controller.value_factory.make_value_dictionary({}, proto.url)
+    exports = controller.value_factory.make_value_dictionary(exports_dict, proto.url)
+    return Klass(proto, parameters, exports)
 
-def merge_parameters(base, merge, merger = merger_default):
-    klasses = [ kpar(base), kpar(merge) ]
-    merged = merger.merge_parameters(klasses)
+def merge_parameters(base, merge, controller = controller_default):
+    klasses = [ kpar(base, controller), kpar(merge, controller) ]
+    merged = controller.interpolator.merger.merge_parameters(klasses)
     return merged
 
-def merge_exports(base, merge, merger = merger_default):
-    klasses = [ kexp(base), kexp(merge) ]
-    merged = merger.merge_exports(klasses)
+def merge_exports(base, merge, controller = controller_default):
+    klasses = [ kexp(base, controller), kexp(merge, controller) ]
+    merged = controller.interpolator.merger.merge_exports(klasses)
     return merged
 
 merge_test_types = (merge_parameters, merge_exports)
@@ -116,25 +122,25 @@ def test_merge_list_dict(merge_func):
 
 @pytest.mark.parametrize('merge_func', merge_test_types)
 def test_merge_allow_none_overwrite_false(merge_func):
-    interpolator = Interpolator(Settings({'allow_none_overwrite': False}))
+    controller = Controller(Settings({'allow_none_overwrite': False}))
     with pytest.raises(MergeTypeError):
         merge_func(
             {'a': None},
             {'a': [1, 2, 3]},
-            merger = interpolator.merger)
+            controller = controller)
     with pytest.raises(MergeTypeError):
         merge_func(
             {'a': None},
             {'a': { 'x': 'x', 'y': 'y'}},
-            merger = interpolator.merger)
+            controller = controller)
 
 @pytest.mark.parametrize('merge_func', merge_test_types)
 def test_merge_allow_none_overwrite_true(merge_func):
-    interpolator = Interpolator(Settings({'allow_none_overwrite': True}))
+    controller = Controller(Settings({'allow_none_overwrite': True}))
     result = merge_func(
         {'a': None, 'b': None, 'c': None},
         {'a': 'abc', 'b': [1, 2, 3], 'c': {'x': 'x', 'y': 'y'}},
-        merger = interpolator.merger)
+        controller = controller)
     expected = {'a': 'abc', 'b': [1, 2, 3], 'c': {'x': 'x', 'y': 'y'}}
     result = result.render_all()
     assert result == expected
@@ -154,17 +160,3 @@ def test_merge_immutable_prefix(merge_func):
         merge_func(
             {'=one': 1},
             {'one': 2})
-
-def test_merge_over_parameters():
-    merged = merge_parameters(
-        {'one': {'b': 'beta'}, 'two': ['alpha']},
-        {'one': {'a': 'alpha'}, 'two': ['beta']})
-    k0 = kpar(
-        {'one': {'c': 'gamma'}, 'two': ['gamma']})
-    k1 = kpar(
-        {'one': {'d': 'delta'}, 'two': ['delta']})
-    result = merger_default.merge_over_parameters(merged, [ k0, k1 ])
-    result = result.render_all()
-    expected = {'one': {'a': 'alpha', 'b': 'beta', 'c': 'gamma', 'd': 'delta'},
-                'two': ['alpha', 'beta', 'gamma', 'delta']}
-    assert result == expected

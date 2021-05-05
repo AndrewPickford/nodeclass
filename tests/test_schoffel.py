@@ -16,4 +16,4 @@ node = Node(proto_node, klass_loader)
 
 interpolator = controller.interpolator
 result = interpolator.interpolate(node, node_loader, klass_loader)
-#print(yaml.dump(result.as_dict(), default_flow_style=False, Dumper=yaml.CSafeDumper))
+print(yaml.dump(result.as_dict(), default_flow_style=False, Dumper=yaml.CSafeDumper))

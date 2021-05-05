@@ -1,12 +1,12 @@
 import pyparsing as pp
 import pytest
+from reclass.controller import Controller
 from reclass.item.parser_functions import Tags
-from reclass.interpolator import Interpolator
 from reclass.settings import defaults
 
-interpolator_default = Interpolator(defaults)
-parser_simple = interpolator_default.item_parser.simple_parser
-parser_full = interpolator_default.item_parser.full_parser
+controller_default = Controller(defaults)
+parser_simple = controller_default.item_parser.simple_parser
+parser_full = controller_default.item_parser.full_parser
 
 INV = Tags.INV.value
 REF = Tags.REF.value

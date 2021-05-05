@@ -1,5 +1,4 @@
 from copy import copy
-from .klass import Klass
 
 class Node:
     ''' A reclass node
