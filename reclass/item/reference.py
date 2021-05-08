@@ -3,7 +3,7 @@
 #
 # This file is part of reclass
 #
-from reclass.utils.path import Path as BasePath
+from ..utils.path import Path
 from .exceptions import ItemResolveError
 from .item import Item
 
@@ -16,15 +16,13 @@ class Reference(Item):
     representing the path to the referenced entry.
     '''
 
-    Path = BasePath
-
     def __init__(self, item):
         super().__init__(item)
         self.unresolved = True
         if self.contents.unresolved:
             self._references = self.contents.references
         else:
-            self._references = { self.Path.fromstring(self.contents.render()) }
+            self._references = { Path.fromstring(self.contents.render()) }
 
     def __str__(self):
         rs = self.settings.reference_sentinels
@@ -51,7 +49,7 @@ class Reference(Item):
             ref = self.contents.resolve_to_item(context, inventory, environment)
             return Reference(ref)
         else:
-            path = self.Path.fromstring(str(self.contents.render()))
+            path = Path.fromstring(str(self.contents.render()))
             try:
                 return context[path].item
             except ItemResolveError:
@@ -74,7 +72,7 @@ class Reference(Item):
         '''
         if self.contents.unresolved:
             return None
-        path = self.Path.fromstring(str(self.contents.render()))
+        path = Path.fromstring(str(self.contents.render()))
         try:
             return context[path]
         except KeyError:

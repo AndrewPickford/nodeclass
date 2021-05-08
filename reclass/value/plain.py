@@ -1,5 +1,6 @@
+from ..context import CONTEXT
 from .exceptions import MergeTypeError
-from .merged import Merged as BaseMerged
+from .merged import Merged
 from .value import Value
 
 
@@ -7,7 +8,6 @@ class Plain(Value):
     '''
     '''
     type = Value.PLAIN
-    Merged = BaseMerged
 
     def __init__(self, item, url, copy_on_change=True):
         super().__init__(url=url, copy_on_change=copy_on_change)
@@ -45,15 +45,15 @@ class Plain(Value):
             # by returning the other object, otherwise return a Merged object
             # for later interpolation
             if self.unresolved or other.unresolved:
-                return self.Merged(self, other)
+                return Merged(self, other)
             else:
                 return other
         elif other.type == Value.DICTIONARY or other.type == Value.LIST:
             # if the current object is unresolved return a Merged object for later
             # interpolation, otherwise raise an error
             if self.unresolved:
-                return self.Merged(self, other)
-            elif self.item.contents is None and self.settings.allow_none_overwrite:
+                return Merged(self, other)
+            elif self.item.contents is None and CONTEXT.settings.allow_none_overwrite:
                 return other
         raise MergeTypeError(self, other)
 

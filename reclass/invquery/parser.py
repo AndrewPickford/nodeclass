@@ -1,24 +1,21 @@
 from .exceptions import InventoryQueryParseError
-from .query import IfQuery as BaseIfQuery
-from .query import ListIfQuery as BaseListIfQuery
+from .query import IfQuery
+from .query import ListIfQuery
 from .query import QueryOptions
-from .query import ValueQuery as BaseValueQuery
+from .query import ValueQuery
 from .parser_functions import inventory_query_parser, Tags
 
 
 class Parser:
     '''
     '''
-    IfQuery = BaseIfQuery
-    ListIfQuery = BaseListIfQuery
-    ValueQuery = BaseValueQuery
 
     def __init__(self):
         self.expression_parser = inventory_query_parser()
         self._query_type = {
-            Tags.IF_QUERY.value: self.IfQuery,
-            Tags.LIST_IF_QUERY.value: self.ListIfQuery,
-            Tags.VALUE_QUERY.value: self.ValueQuery
+            Tags.IF_QUERY.value: IfQuery,
+            Tags.LIST_IF_QUERY.value: ListIfQuery,
+            Tags.VALUE_QUERY.value: ValueQuery
         }
 
     def parse(self, expression):

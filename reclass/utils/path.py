@@ -4,8 +4,7 @@
 # This file is part of reclass
 #
 import re
-from reclass.settings import defaults
-
+from ..context import CONTEXT
 
 class Path:
     ''' Represent a path into a nested dictionary.
@@ -23,10 +22,8 @@ class Path:
     >>> str(path)
     'foo:bar'
     '''
-    __slots__ = ['keys', 'last']
 
-    delimiter = defaults.delimiter
-    path_split = r'(?<!\\)' + re.escape(defaults.delimiter)
+    __slots__ = ('keys', 'last')
 
     @classmethod
     def empty(cls):
@@ -38,7 +35,7 @@ class Path:
 
     @classmethod
     def fromstring(cls, string):
-        return cls(re.split(cls.path_split, string))
+        return cls(re.split(CONTEXT.path_split, string))
 
     def __init__(self, keys):
         self.keys = keys
@@ -56,7 +53,7 @@ class Path:
         return hash(self.__str__())
 
     def __str__(self):
-        return self.delimiter.join(map(str, self.keys))
+        return CONTEXT.delimiter.join(map(str, self.keys))
 
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__, str(self))

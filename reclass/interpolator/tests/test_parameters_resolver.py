@@ -1,31 +1,33 @@
-from py.test import raises
-
-from reclass.controller import Controller
+import pytest
+from reclass.context import reclass_context
+from reclass.item.parser import Parser as ItemParser
 from reclass.interpolator.exceptions import InterpolationCircularReferenceError
+from reclass.interpolator.merger import Merger
+from reclass.interpolator.parameters_resolver import ParametersResolver
 from reclass.node.klass import Klass
 from reclass.node.protoklass import ProtoKlass
-from reclass.settings import defaults, Settings
+from reclass.settings import Settings
 from reclass.value.exceptions import MergeOverImmutableError, MergeTypeError
+from reclass.value.make import make_value_dictionary
 
+merger = Merger()
+parameters_resolver = ParametersResolver()
 
-controller_default = Controller(defaults)
-
-def kpar(parameters_dict, controller):
+def kpar(parameters_dict):
     proto = ProtoKlass(name='', class_dict={}, url ='')
-    parameters = controller.value_factory.make_value_dictionary(parameters_dict, proto.url)
-    exports = controller.value_factory.make_value_dictionary({}, proto.url)
+    parameters = make_value_dictionary(parameters_dict, proto.url)
+    exports = make_value_dictionary({}, proto.url)
     return Klass(proto, parameters, exports)
 
-def resolve_parameters(*dicts, inventory = None, controller = controller_default):
+def resolve_parameters(*dicts, inventory = None):
     '''
     dicts: one or more dicts to merge and resolve
     inventory: inventory to use during the resolve step
-    controller: master controller
     '''
-    klasses = [ kpar(k, controller) for k in dicts ]
+    klasses = [ kpar(k) for k in dicts ]
     inventory = None
-    merged_parameters = controller.interpolator.merger.merge_parameters(klasses)
-    resolved_parameters = controller.interpolator.parameters_resolver.resolve(environment = None, parameters = merged_parameters, inventory = inventory)
+    merged_parameters = merger.merge_parameters(klasses)
+    resolved_parameters = parameters_resolver.resolve(environment = None, parameters = merged_parameters, inventory = inventory)
     return resolved_parameters.render_all()
 
 
@@ -55,7 +57,7 @@ def test_parameters_resolver_ref_list():
     assert result == expected
 
 def test_parameters_resolver_circular_references():
-    with raises(InterpolationCircularReferenceError) as exc_info:
+    with pytest.raises(InterpolationCircularReferenceError) as exc_info:
         resolve_parameters({'a': '${b}', 'b': '${a}'})
     # interpolation can start with foo or bar
     assert (str(exc_info.value.path), str(exc_info.value.reference)) in \
@@ -123,36 +125,31 @@ def test_parameters_resolver_deep_refs_in_referenced_dicts():
     assert result == expected
 
 def test_parameters_resolver_allow_none_overwrite_false():
-    controller = Controller(Settings({'allow_none_overwrite': False}))
-    with raises(MergeTypeError):
-        resolve_parameters(
-            {'a': None},
-            {'a': [1, 2, 3]},
-            controller = controller)
-    with raises(MergeTypeError):
-        resolve_parameters(
-            {'a': None},
-            {'a': { 'x': 'x', 'y': 'y'}},
-            controller = controller)
-    with raises(MergeTypeError):
-        resolve_parameters(
-            {'a': None},
-            {'a': '${b}', 'b': [1, 2, 3]},
-            controller = controller)
-    with raises(MergeTypeError):
-        resolve_parameters(
-            {'a': None},
-            {'a': '${b}', 'b': { 'x': 'x', 'y': 'y'}},
-            controller = controller)
+    with reclass_context(Settings({'allow_none_overwrite': False})):
+        with pytest.raises(MergeTypeError):
+            resolve_parameters(
+                {'a': None},
+                {'a': [1, 2, 3]})
+        with pytest.raises(MergeTypeError):
+            resolve_parameters(
+                {'a': None},
+                {'a': { 'x': 'x', 'y': 'y'}})
+        with pytest.raises(MergeTypeError):
+            resolve_parameters(
+                {'a': None},
+                {'a': '${b}', 'b': [1, 2, 3]})
+        with pytest.raises(MergeTypeError):
+            resolve_parameters(
+                {'a': None},
+                {'a': '${b}', 'b': { 'x': 'x', 'y': 'y'}})
 
 def test_parameters_resolver_allow_none_overwrite_true():
-    controller = Controller(Settings({'allow_none_overwrite': True}))
-    result = resolve_parameters(
-        {'a': None, 'b': None, 'c': None, 'd': None, 'e': None, 'f': None},
-        {'a': 'abc', 'b': [1, 2, 3], 'c': {'a': 'aaa', 'b': 'bbb'}, 'd': '${a}', 'e': '${b}', 'f': '${c}'},
-        controller = controller)
-    expected = {'a': 'abc', 'b': [1, 2, 3], 'c': {'a': 'aaa', 'b': 'bbb'}, 'd': 'abc', 'e': [1, 2, 3], 'f': {'a': 'aaa', 'b': 'bbb'}}
-    assert result == expected
+    with reclass_context(Settings({'allow_none_overwrite': True})):
+        result = resolve_parameters(
+            {'a': None, 'b': None, 'c': None, 'd': None, 'e': None, 'f': None},
+            {'a': 'abc', 'b': [1, 2, 3], 'c': {'a': 'aaa', 'b': 'bbb'}, 'd': '${a}', 'e': '${b}', 'f': '${c}'})
+        expected = {'a': 'abc', 'b': [1, 2, 3], 'c': {'a': 'aaa', 'b': 'bbb'}, 'd': 'abc', 'e': [1, 2, 3], 'f': {'a': 'aaa', 'b': 'bbb'}}
+        assert result == expected
 
 def test_parameters_resolver_overwrite_prefix():
     result = resolve_parameters(
@@ -162,11 +159,11 @@ def test_parameters_resolver_overwrite_prefix():
     assert result == expected
 
 def test_parameters_resolver_immutable_prefix():
-    with raises(MergeOverImmutableError):
+    with pytest.raises(MergeOverImmutableError):
         resolve_parameters(
             {'=a': '${b}', 'b': {'x': 'x', 'y': 'y'}},
             {'a': {'z': 'z'}})
-    with raises(MergeOverImmutableError):
+    with pytest.raises(MergeOverImmutableError):
         resolve_parameters(
             {'=c': '${d}', 'd': [1, 2, 3]},
             {'c': [4, 5, 6]})

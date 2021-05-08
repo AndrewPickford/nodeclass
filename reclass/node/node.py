@@ -16,7 +16,7 @@ class Node:
         self.klasses = []
         self.applications = []
         self.classes = []
-        self.load_classes(self.nodeklass, self.name, klass_loader, classes_found=set(), applications_found=set(), append=False)
+        self.load_classes(self.nodeklass, self.name, klass_loader, classes_found=set(), applications_found=set(), is_node_klass=True)
         self.all_klasses = copy(self.klasses)
         self.all_klasses.extend([self.nodeklass, self.baseklass])
         self.all_classes = copy(self.classes)
@@ -43,7 +43,7 @@ class Node:
         }
         return params
 
-    def load_classes(self, klass, classname, klass_loader, classes_found, applications_found, append=True):
+    def load_classes(self, klass, classname, klass_loader, classes_found, applications_found, is_node_klass=False):
         '''
         '''
         classes_found.add(classname)
@@ -54,7 +54,7 @@ class Node:
         for name in klass.classes:
             if name not in classes_found:
                 self.load_classes(klass_loader[name], name, klass_loader, classes_found, applications_found)
-        if append:
+        if is_node_klass is False:
             self.classes.append(classname)
             self.klasses.append(klass)
         return

@@ -1,11 +1,9 @@
-from reclass.utils.path import Path as BasePath
+from reclass.utils.path import Path
 from .exceptions import InventoryQueryParseError
 from .parser_functions import Tags
 
 
 class Operand:
-    Path = BasePath
-
     def __init__(self, token):
         if token.type not in [ Tags.STRING.value, Tags.INT.value, Tags.FLOAT.value, Tags.EXPORT.value, Tags.PARAMETER.value ]:
             raise InventoryQueryParseError(token, 'unknown operand {0}'.format(token.data))
@@ -17,7 +15,7 @@ class Operand:
         else:
             InventoryQueryParseError(token, 'unknown operand {0}'.format(token.data))
         if self.type in [ Tags.EXPORT.value, Tags.PARAMETER.value ]:
-            self.path = self.Path.fromstring(self.data)
+            self.path = Path.fromstring(self.data)
         else:
             self.path = None
 
@@ -44,11 +42,11 @@ class Operand:
     @property
     def exports(self):
         if self.type == Tags.EXPORT.value:
-            return { self.Path.fromstring(self.data) }
+            return { Path.fromstring(self.data) }
         return set()
 
     @property
     def references(self):
         if self.type == Tags.PARAMETER.value:
-            return { self.Path.fromstring(self.data) }
+            return { Path.fromstring(self.data) }
         return set()

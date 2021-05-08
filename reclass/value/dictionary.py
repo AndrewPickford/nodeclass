@@ -1,7 +1,8 @@
 import copy
 from collections import defaultdict
+from ..context import CONTEXT
 from .exceptions import MergeOverImmutableError, MergeTypeError
-from .merged import Merged as BaseMerged
+from .merged import Merged
 from .value import Value
 
 
@@ -9,24 +10,23 @@ class Dictionary(Value):
     '''
     Wrap a dict object
 
-    In the input dictionary keys starting with self.settings.overwrite_prefix ('~') will
-    always overwrite when merging. Keys starting self.settings.immutable_prefix ('=') will
+    In the input dictionary keys starting with CONTEXT.settings.overwrite_prefix ('~') will
+    always overwrite when merging. Keys starting CONTEXT.settings.immutable_prefix ('=') will
     raise an error if a merge happens with that key.
 
     All keys for items contained in a Dictionary object are converted to strings, as references
     to keys always refer to the string representation of the key.
     '''
     type = Value.DICTIONARY
-    Merged = BaseMerged
 
     def __init__(self, input, url, copy_on_change=True, check_for_prefix=True):
         def process_key(key):
             if not check_for_prefix:
                 return key
-            if key[0] == self.settings.overwrite_prefix:
+            if key[0] == overwrite_prefix:
                 key = key[1:]
                 self._overwrites.add(key)
-            elif key[0] == self.settings.immutable_prefix:
+            elif key[0] == immutable_prefix:
                 key = key[1:]
                 self._immutables.add(key)
             return key
@@ -34,6 +34,8 @@ class Dictionary(Value):
         super().__init__(url=url, copy_on_change=copy_on_change)
         self._immutables = set()
         self._overwrites = set()
+        overwrite_prefix = CONTEXT.settings.overwrite_prefix
+        immutable_prefix = CONTEXT.settings.immutable_prefix
         self._dictionary = { process_key(str(k)): v for k, v in input.items() }
 
     def __copy__(self):
@@ -131,7 +133,7 @@ class Dictionary(Value):
             # if the Plain value is unresolved return a Merged object for later
             # interpolation, otherwise raise an error
             if other.unresolved:
-                return self.Merged(self, other)
+                return Merged(self, other)
             else:
                 raise MergeTypeError(self, other)
         else:

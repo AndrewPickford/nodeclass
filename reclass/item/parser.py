@@ -5,16 +5,16 @@
 #
 import pyparsing as pp
 
-from reclass.invquery.parser import Parser as BaseInvQueryParser
-from .composite import Composite as BaseComposite
+from ..invquery.parser import Parser as InvQueryParser
+from .composite import Composite
 from .exceptions import ParseError
-from .invquery import InvQuery as BaseInvQuery
+from .invquery import InvQuery
 from .parser_functions import full_parser, simple_parser, Tags
-from .reference import Reference as BaseReference
-from .scalar import Scalar as BaseScalar
+from .reference import Reference
+from .scalar import Scalar
 
 
-class Parser():
+class Parser:
     '''
     A wrapper class to hide the complexity of parsing a string.
     Thread local to allow different threads to use different settings.
@@ -22,24 +22,18 @@ class Parser():
     Usage: create a Parser object then use the parse method on a
     string to create the Item representation of that string:
 
-    >>> from reclass.settings import defaults
-    >>> parser = Parser(defaults)
+    >>> parser = Parser()
     >>> item = parser.parse('bar is ${foo}')
     >>> print(str(item))
     bar is ${foo}
     >>> print(repr(item))
-    XComposite([XScalar('bar is '), XReference(XScalar('foo'))])
+    Composite([Scalar('bar is '), Reference(Scalar('foo'))])
     '''
-    Composite = BaseComposite
-    InvQuery = BaseInvQuery
-    Reference = BaseReference
-    Scalar = BaseScalar
-    InvQueryParser = BaseInvQueryParser
 
     def __init__(self, settings):
         self.full_parser = full_parser(settings)
         self.simple_parser = simple_parser(settings)
-        self.invquery_parser = self.InvQueryParser()
+        self.invquery_parser = InvQueryParser()
         self.ref_sent = settings.reference_sentinels[0]
         self.invquery_sent = settings.inventory_query_sentinels[0]
         self.cache = {}
@@ -66,7 +60,7 @@ class Parser():
             # speed up: if there are no sentinels in the string then do not parse
             # the input string as the returned item must be a simple scalar item
             # containing the string
-            return self.Scalar(input)
+            return Scalar(input)
         elif sentinel_count == 1:
             # speed up: if only a single sentinel is present then it is most likely
             # a simple reference so try the simpler and much faster single reference
@@ -84,11 +78,11 @@ class Parser():
         if len(items) == 1:
             item = items[0]
         else:
-            item = self.Composite(items)
+            item = Composite(items)
         self.cache[input] = item
         return item
 
-    _item_builders = { Tags.STR.value: (lambda s, v: s.Scalar(v)),
+    _item_builders = { Tags.STR.value: (lambda s, v: Scalar(v)),
                        Tags.REF.value: (lambda s, v: s._create_ref(v)),
                        Tags.INV.value: (lambda s, v: s._create_inv(v)) }
 
@@ -98,11 +92,11 @@ class Parser():
     def _create_ref(self, tokens):
         items = [ self._item_builders[t](self, v) for t, v in tokens ]
         if len(items) == 1:
-            return self.Reference(items[0])
+            return Reference(items[0])
         else:
-            return self.Reference(self.Composite(items))
+            return Reference(Composite(items))
 
     def _create_inv(self, tokens):
         expression = ''.join([ v for t, v in tokens ])
         query = self.invquery_parser.parse(expression)
-        return self.InvQuery(query)
+        return InvQuery(query)

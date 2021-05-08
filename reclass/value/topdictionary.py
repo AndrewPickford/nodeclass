@@ -1,5 +1,5 @@
-from reclass.utils.path import Path as BasePath
-from .dictionary import Dictionary as BaseDictionary
+from reclass.utils.path import Path
+from .dictionary import Dictionary
 from .exceptions import MergeTypeError
 from .value import Value
 
@@ -7,12 +7,10 @@ class TopDictionary:
     ''' The top level interface to nested group of dictionaries
     '''
 
-    Dictionary = BaseDictionary
-    Path = BasePath
     type = Value.TOP_DICTIONARY
 
     def __init__(self, input, url, frozen=True):
-        self._dictionary = self.Dictionary(input, url)
+        self._dictionary = Dictionary(input, url)
         self.url = url
         self.frozen = frozen
 
@@ -73,4 +71,4 @@ class TopDictionary:
         return self._dictionary._unresolved_ancestor(path, 0)
 
     def unresolved_paths(self):
-        return self._dictionary.unresolved_paths(self.Path.empty())
+        return self._dictionary.unresolved_paths(Path.empty())

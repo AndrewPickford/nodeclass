@@ -4,7 +4,6 @@
 # This file is part of reclass
 #
 from abc import ABC, abstractmethod
-from reclass.settings import defaults
 
 
 class Item(ABC):
@@ -16,8 +15,6 @@ class Item(ABC):
     An item with self.unresolved == True contains has unresolved references and cannot
     be rendered.
     '''
-
-    settings = defaults
 
     def __init__(self, contents):
         self.contents = contents

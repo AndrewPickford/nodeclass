@@ -1,16 +1,15 @@
 import pyparsing as pp
 import pytest
-from reclass.controller import Controller
-from reclass.item.parser_functions import Tags
-from reclass.settings import defaults
+import reclass.item.parser_functions as parser_functions
+from reclass.settings import Settings
 
-controller_default = Controller(defaults)
-parser_simple = controller_default.item_parser.simple_parser
-parser_full = controller_default.item_parser.full_parser
+settings = Settings()
+simple_parser = parser_functions.simple_parser(settings)
+full_parser = parser_functions.full_parser(settings)
 
-INV = Tags.INV.value
-REF = Tags.REF.value
-STR = Tags.STR.value
+INV = parser_functions.Tags.INV.value
+REF = parser_functions.Tags.REF.value
+STR = parser_functions.Tags.STR.value
 
 def clean(token):
     '''
@@ -64,11 +63,14 @@ test_full_parser += (
     (' foo ', [(STR, ' foo ')]),
     ('foo bar', [(STR, 'foo bar')]),
 
-    # Nested references
-    ('${foo}${bar}',[(REF, [(STR, 'foo')]), (REF, [(STR, 'bar')])]),
-    ('${foo${bar}}',[(REF, [(STR, 'foo'), (REF, [(STR, 'bar')])])]),
+    # Compound references
+    ('${foo}${bar}', [(REF, [(STR, 'foo')]), (REF, [(STR, 'bar')])]),
 
-    # Reference with nested inventory query, with parses to a reference to the literal
+    # Nested references
+    ('${foo${bar}}',[(REF, [(STR, 'foo'), (REF, [(STR, 'bar')])])]),
+    ('${foo${bar${baz}}}',[(REF, [(STR, 'foo'), (REF, [(STR, 'bar'), (REF, [(STR, 'baz')])])])]),
+
+    # Reference with nested inventory query, which parses to a reference to the literal
     # string of inventory query. This is fine, inventory queries can not be nested inside
     # references.
     ('${$[foo]}', [(REF, [(STR, '$[foo]')])]),
@@ -81,7 +83,7 @@ test_full_parser += (
 )
 
 test_simple_parser_errors = [
-    # The simple parser does not parse: multiple references, inventory queries
+    # The simple parser does not parse multiple references or inventory queries
     '${foo}${bar}', '$[foo]'
 ]
 
@@ -97,20 +99,20 @@ test_full_parser_errors = [
 
 @pytest.mark.parametrize('string, expected', test_simple_parser)
 def test_simple_item_parser(string, expected):
-    result = clean(parser_simple.parseString(string))
+    result = clean(simple_parser.parseString(string))
     assert result == expected
 
 @pytest.mark.parametrize('string, expected', test_full_parser)
 def test_full_item_parser(string, expected):
-    result = clean(parser_full.parseString(string))
+    result = clean(full_parser.parseString(string))
     assert result == expected
 
 @pytest.mark.parametrize('string', test_simple_parser_errors)
 def test_simple_parser_errors(string):
     with pytest.raises(pp.ParseException):
-        parser_simple.parseString(string)
+        simple_parser.parseString(string)
 
 @pytest.mark.parametrize('string', test_full_parser_errors)
 def test_full_parser_errors(string):
     with pytest.raises(pp.ParseException):
-        parser_full.parseString(string)
+        full_parser.parseString(string)

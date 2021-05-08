@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from reclass.settings import defaults
 
 class Value(ABC):
     '''
@@ -10,8 +9,6 @@ class Value(ABC):
     LIST = 2
     MERGED = 3
     TOP_DICTIONARY = 4
-
-    settings = defaults
 
     def __init__(self, url, copy_on_change):
         self.url = url

@@ -4,13 +4,10 @@
 # This file is part of reclass
 #
 from .item import Item
-from .scalar import Scalar as BaseScalar
 
 class InvQuery(Item):
     ''' Holds an inventory query
     '''
-
-    Scalar = BaseScalar
 
     def __init__(self, inv_query):
         super().__init__(None)

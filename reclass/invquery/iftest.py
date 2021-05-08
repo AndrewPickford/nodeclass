@@ -1,16 +1,13 @@
 from .exceptions import InventoryQueryParseError
 from .parser_functions import Tags
-from .operand import Operand as BaseOperand
-from .operator import OpTest as BaseOpTest
+from .operand import Operand
+from .operator import OpTest
 
 class IfTest:
-    Operand = BaseOperand
-    OpTest = BaseOpTest
-
     def __init__(self, lhs_token, op_token, rhs_token):
-        self.lhs = self.Operand(lhs_token)
-        self.op = self.OpTest(op_token)
-        self.rhs = self.Operand(rhs_token)
+        self.lhs = Operand(lhs_token)
+        self.op = OpTest(op_token)
+        self.rhs = Operand(rhs_token)
         if Tags.EXPORT.value not in [ self.lhs.type, self.rhs.type ]:
             raise InventoryQueryParseError([self.lhs.type, self.rhs.typ], 'no exports defined in query')
         if self.lhs.type == Tags.EXPORT.value:

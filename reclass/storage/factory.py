@@ -15,27 +15,28 @@ class Factory:
         'yaml_fs': StorageType(FileSystemNodes, {'file_format': Yaml})
     }
 
-    def __init__(self, value_factory):
-        self.value_factory = value_factory
-
-    def classes(self, uri):
+    @classmethod
+    def classes(cls, uri):
         storage_name, basedir = uri.split(':')
-        if storage_name in self.storage_classes:
-            return self.storage_classes[storage_name].storage(basedir=basedir, **self.storage_classes[storage_name].args)
+        if storage_name in cls.storage_classes:
+            return cls.storage_classes[storage_name].storage(basedir=basedir, **cls.storage_classes[storage_name].args)
         else:
             raise UnknownStorageTypeError(storage_name, uri)
 
-    def nodes(self, uri):
+    @classmethod
+    def nodes(cls, uri):
         storage_name, basedir = uri.split(':')
-        if storage_name in self.storage_nodes:
-            return self.storage_nodes[storage_name].storage(basedir=basedir, **self.storage_nodes[storage_name].args)
+        if storage_name in cls.storage_nodes:
+            return cls.storage_nodes[storage_name].storage(basedir=basedir, **cls.storage_nodes[storage_name].args)
         else:
             raise UnknownStorageTypeError(storage_name, uri)
 
-    def klass_loader(self, uri):
-        classes_ = self.classes(uri)
-        return KlassLoader(classes_, self.value_factory)
+    @classmethod
+    def klass_loader(cls, uri):
+        classes_ = cls.classes(uri)
+        return KlassLoader(classes_)
 
-    def node_loader(self, uri):
-        nodes_ = self.nodes(uri)
-        return NodeLoader(nodes_, self.value_factory)
+    @classmethod
+    def node_loader(cls, uri):
+        nodes_ = cls.nodes(uri)
+        return NodeLoader(nodes_)

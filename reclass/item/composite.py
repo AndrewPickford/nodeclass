@@ -5,7 +5,7 @@
 #
 from .exceptions import ItemResolveError
 from .item import Item
-from .scalar import Scalar as BaseScalar
+from .scalar import Scalar
 
 class Composite(Item):
     '''
@@ -16,8 +16,6 @@ class Composite(Item):
     Composite item holding only a single Item the contained Item is rendered without
     forcing it into a string representation.
     '''
-
-    Scalar = BaseScalar
 
     def __init__(self, items):
         super().__init__(items)
@@ -67,7 +65,7 @@ class Composite(Item):
         if len(self.contents) == 1:
             return self.contents[0]
         else:
-            return self.Scalar(''.join([ str(i.render()) for i in self.contents ]))
+            return Scalar(''.join([ str(i.render()) for i in self.contents ]))
 
     def render(self):
         '''

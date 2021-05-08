@@ -1,10 +1,10 @@
-from reclass.item.scalar import Scalar as BaseScalar
-from reclass.value.dictionary import Dictionary as BaseDictionary
-from reclass.value.list import List as BaseList
-from reclass.value.plain import Plain as BasePlain
+from reclass.item.scalar import Scalar
+from reclass.value.dictionary import Dictionary
+from reclass.value.list import List
+from reclass.value.plain import Plain
 from .exceptions import InventoryQueryParseError
-from .iftest import IfTest as BaseIfTest
-from .operand import Operand as BaseOperand
+from .iftest import IfTest
+from .operand import Operand
 from .parser_functions import Tags
 
 class QueryOptions:
@@ -42,18 +42,14 @@ class Query:
 
 
 class IfQuery(Query):
-    IfTest = BaseIfTest
-    Dictionary = BaseDictionary
-    Operand = BaseOperand
-
     def __init__(self, tokens, options):
         super().__init__(options)
         if tokens[0].type != Tags.EXPORT.value:
             raise InventoryQueryParseError(tokens, 'if queries begin with an export to return')
         if tokens[1].type != Tags.IF.value:
             raise InventoryQueryParseError(tokens, 'if queries begin with start with an export followed by "if"')
-        self.returned = self.Operand(tokens[0])
-        self.test = self.IfTest(tokens[2], tokens[3], tokens[4])
+        self.returned = Operand(tokens[0])
+        self.test = IfTest(tokens[2], tokens[3], tokens[4])
 
     def __eq_(self, other):
         if self.__class__ == other.__class__:
@@ -77,7 +73,7 @@ class IfQuery(Query):
                 if self.returned.path in node.exports:
                     if self.test.evaluate(node.exports, context):
                         answer[name] = node.exports[self.returned.path]
-        return self.Dictionary(answer, 'invquery', check_for_prefix=False)
+        return Dictionary(answer, 'invquery', check_for_prefix=False)
 
     @property
     def exports(self):
@@ -89,16 +85,11 @@ class IfQuery(Query):
 
 
 class ListIfQuery(Query):
-    IfTest = BaseIfTest
-    List = BaseList
-    Plain = BasePlain
-    Scalar = BaseScalar
-
     def __init__(self, tokens, options):
         super().__init__(options)
         if tokens[0].type != Tags.IF.value:
             raise InventoryQueryParseError(tokens, 'list if queries begin with "if"')
-        self.test = self.IfTest(tokens[1], tokens[2], tokens[3])
+        self.test = IfTest(tokens[1], tokens[2], tokens[3])
 
     def __eq_(self, other):
         if self.__class__ == other.__class__:
@@ -120,8 +111,8 @@ class ListIfQuery(Query):
         for name, node in inventory.items():
             if node.environment == environment or self.all_envs:
                 if self.test.evaluate(node.exports, context):
-                    answer.append(self.Plain(self.Scalar(name), 'invquery'))
-        return self.List(answer, 'invquery')
+                    answer.append(Plain(Scalar(name), 'invquery'))
+        return List(answer, 'invquery')
 
     @property
     def exports(self):
@@ -133,14 +124,11 @@ class ListIfQuery(Query):
 
 
 class ValueQuery(Query):
-    Dictionary = BaseDictionary
-    Operand = BaseOperand
-
     def __init__(self, tokens, options):
         super().__init__(options)
         if tokens[0].type != Tags.EXPORT.value:
             raise InventoryQueryParseError(tokens, 'value queries begin with an export to return')
-        self.returned = self.Operand(tokens[0])
+        self.returned = Operand(tokens[0])
 
     def evaluate(self, context, inventory, environment):
         answer = {}
@@ -148,7 +136,7 @@ class ValueQuery(Query):
             if node.environment == environment or self.all_envs:
                 if self.returned.path in node.exports:
                     answer[name] = node.exports[self.returned.path]
-        return self.Dictionary(answer, 'invquery', check_for_prefix=False)
+        return Dictionary(answer, 'invquery', check_for_prefix=False)
 
     @property
     def exports(self):

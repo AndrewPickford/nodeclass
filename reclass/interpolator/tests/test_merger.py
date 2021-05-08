@@ -1,33 +1,35 @@
 import pytest
-from reclass.controller import Controller
+from reclass.context import reclass_context
+from reclass.interpolator.merger import Merger
 from reclass.node.klass import Klass
 from reclass.node.protoklass import ProtoKlass
-from reclass.settings import defaults, Settings
+from reclass.settings import Settings
 from reclass.value.exceptions import MergeOverImmutableError, MergeTypeError
+from reclass.value.make import make_value_dictionary
 
+reclass_context(Settings())
+merger = Merger()
 
-controller_default = Controller(defaults)
-
-def kpar(parameters_dict, controller):
+def kpar(parameters_dict):
     proto = ProtoKlass(name='', class_dict={}, url ='')
-    parameters = controller.value_factory.make_value_dictionary(parameters_dict, proto.url)
-    exports = controller.value_factory.make_value_dictionary({}, proto.url)
+    parameters = make_value_dictionary(parameters_dict, proto.url)
+    exports = make_value_dictionary({}, proto.url)
     return Klass(proto, parameters, exports)
 
-def kexp(exports_dict, controller):
+def kexp(exports_dict):
     proto = ProtoKlass(name='', class_dict={}, url ='')
-    parameters = controller.value_factory.make_value_dictionary({}, proto.url)
-    exports = controller.value_factory.make_value_dictionary(exports_dict, proto.url)
+    parameters = make_value_dictionary({}, proto.url)
+    exports = make_value_dictionary(exports_dict, proto.url)
     return Klass(proto, parameters, exports)
 
-def merge_parameters(base, merge, controller = controller_default):
-    klasses = [ kpar(base, controller), kpar(merge, controller) ]
-    merged = controller.interpolator.merger.merge_parameters(klasses)
+def merge_parameters(base, merge):
+    klasses = [ kpar(base), kpar(merge) ]
+    merged = merger.merge_parameters(klasses)
     return merged
 
-def merge_exports(base, merge, controller = controller_default):
-    klasses = [ kexp(base, controller), kexp(merge, controller) ]
-    merged = controller.interpolator.merger.merge_exports(klasses)
+def merge_exports(base, merge):
+    klasses = [ kexp(base), kexp(merge) ]
+    merged = merger.merge_exports(klasses)
     return merged
 
 merge_test_types = (merge_parameters, merge_exports)
@@ -122,28 +124,25 @@ def test_merge_list_dict(merge_func):
 
 @pytest.mark.parametrize('merge_func', merge_test_types)
 def test_merge_allow_none_overwrite_false(merge_func):
-    controller = Controller(Settings({'allow_none_overwrite': False}))
-    with pytest.raises(MergeTypeError):
-        merge_func(
-            {'a': None},
-            {'a': [1, 2, 3]},
-            controller = controller)
-    with pytest.raises(MergeTypeError):
-        merge_func(
-            {'a': None},
-            {'a': { 'x': 'x', 'y': 'y'}},
-            controller = controller)
+    with reclass_context(Settings({'allow_none_overwrite': False})):
+        with pytest.raises(MergeTypeError):
+            merge_func(
+                {'a': None},
+                {'a': [1, 2, 3]})
+        with pytest.raises(MergeTypeError):
+            merge_func(
+                {'a': None},
+                {'a': { 'x': 'x', 'y': 'y'}})
 
 @pytest.mark.parametrize('merge_func', merge_test_types)
 def test_merge_allow_none_overwrite_true(merge_func):
-    controller = Controller(Settings({'allow_none_overwrite': True}))
-    result = merge_func(
-        {'a': None, 'b': None, 'c': None},
-        {'a': 'abc', 'b': [1, 2, 3], 'c': {'x': 'x', 'y': 'y'}},
-        controller = controller)
-    expected = {'a': 'abc', 'b': [1, 2, 3], 'c': {'x': 'x', 'y': 'y'}}
-    result = result.render_all()
-    assert result == expected
+    with reclass_context(Settings({'allow_none_overwrite': True})):
+        result = merge_func(
+            {'a': None, 'b': None, 'c': None},
+            {'a': 'abc', 'b': [1, 2, 3], 'c': {'x': 'x', 'y': 'y'}})
+        expected = {'a': 'abc', 'b': [1, 2, 3], 'c': {'x': 'x', 'y': 'y'}}
+        result = result.render_all()
+        assert result == expected
 
 @pytest.mark.parametrize('merge_func', merge_test_types)
 def test_merge_overwrite_prefix(merge_func):

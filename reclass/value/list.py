@@ -1,14 +1,13 @@
 import copy
 from collections import defaultdict
 from .exceptions import MergeTypeError
-from .merged import Merged as BaseMerged
+from .merged import Merged
 from .value import Value
 
 class List(Value):
     '''
     '''
     type = Value.LIST
-    Merged = BaseMerged
 
     def __init__(self, input, url, copy_on_change=True):
         super().__init__(url=url, copy_on_change=copy_on_change)
@@ -91,7 +90,7 @@ class List(Value):
             # if the plain Value is a reference return a Merge object
             # for later interpolation, otherwise raise an error
             if other.unresolved:
-                return self.Merged(self, other)
+                return Merged(self, other)
             else:
                 raise MergeTypeError(self, other)
         else:

@@ -1,3 +1,6 @@
+from ..value.make import make_value_dictionary
+from .protoklass import ProtoKlass
+
 class Klass:
     ''' A reclass class.
     '''
@@ -24,3 +27,12 @@ class Klass:
         return '(name={0}, url={1}, classes={2}, applications={3}, exports={4}, parameters={5})'.format(
                    str(self.name), str(self.url), str(self.classes), str(self.applications),
                    str(self.exports), str(self.parameters))
+
+    @staticmethod
+    def from_class_dict(name, class_dict, url):
+        proto = ProtoKlass(name, class_dict, url)
+        parameters = make_value_dictionary(proto.parameters, proto.url)
+        exports = make_value_dictionary(proto.exports, proto.url)
+        parameters.freeze()
+        exports.freeze()
+        return Klass(proto, parameters, exports), proto.environment
