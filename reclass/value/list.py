@@ -7,6 +7,9 @@ from .value import Value
 class List(Value):
     '''
     '''
+
+    __slots__ = ('_list')
+
     type = Value.LIST
 
     def __init__(self, input, url, copy_on_change=True):
@@ -49,8 +52,7 @@ class List(Value):
         n = int(path[depth])
         if depth < path.last:
             return self._list[n]._getsubitem(path, depth+1)
-        else:
-            return self._list[n]
+        return self._list[n]
 
     def _setsubitem(self, path, depth, value):
         n = int(path[depth])

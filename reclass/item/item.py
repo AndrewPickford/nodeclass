@@ -16,6 +16,8 @@ class Item(ABC):
     be rendered.
     '''
 
+    __slots__ = ('contents', 'unresolved')
+
     def __init__(self, contents):
         self.contents = contents
         self.unresolved = False
@@ -41,7 +43,7 @@ class Item(ABC):
         return None
 
     @abstractmethod
-    def resolve_to_item(self, context, inventory, settings):
+    def resolve_to_item(self, context, inventory, environment):
         '''
         Handle references which require a new Item when resolved.
 
@@ -55,7 +57,7 @@ class Item(ABC):
 
         context: Value.Dictionary
         inventory: Value.Dictionary
-        settings: control settings
+        environment: node environment
         returns: Item
         '''
         pass

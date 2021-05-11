@@ -17,6 +17,9 @@ class Dictionary(Value):
     All keys for items contained in a Dictionary object are converted to strings, as references
     to keys always refer to the string representation of the key.
     '''
+
+    __slots__ = ('_dictionary', '_immutables', '_overwrites')
+
     type = Value.DICTIONARY
 
     def __init__(self, input, url, copy_on_change=True, check_for_prefix=True):
@@ -79,8 +82,7 @@ class Dictionary(Value):
     def _getsubitem(self, path, depth):
         if depth < path.last:
             return self._dictionary[path[depth]]._getsubitem(path, depth + 1)
-        else:
-            return self._dictionary[path[depth]]
+        return self._dictionary[path[depth]]
 
     def _setsubitem(self, path, depth, value):
         if depth < path.last:
@@ -116,8 +118,6 @@ class Dictionary(Value):
                     if k in merged._immutables:
                         # raise an error if a key is present in both dictionaries and is
                         # marked as immutable in this dictionary
-                        # NOTE: What to do if the key is marked as immutable in the other
-                        # dictionary?
                         raise MergeOverImmutableError(self, other)
                     elif k in other._overwrites:
                         # if the key in the other dictionary is marked as an overwrite just

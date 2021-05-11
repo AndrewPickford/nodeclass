@@ -1,29 +1,29 @@
-import pyparsing as pp
+import pyparsing
 import pytest
-import reclass.item.parser_functions as parser_functions
+import reclass.item.tokenizer as tokenizer
 from reclass.settings import Settings
 
 settings = Settings()
-simple_parser = parser_functions.simple_parser(settings)
-full_parser = parser_functions.full_parser(settings)
+simple_tokenizer = tokenizer.make_simple_tokenizer(settings)
+full_tokenizer = tokenizer.make_full_tokenizer(settings)
 
-INV = parser_functions.Tags.INV.value
-REF = parser_functions.Tags.REF.value
-STR = parser_functions.Tags.STR.value
+INV = tokenizer.Tags.INV.value
+REF = tokenizer.Tags.REF.value
+STR = tokenizer.Tags.STR.value
 
 def clean(token):
     '''
     Clean up pyparsing results for easy checking against expected values
     '''
-    if isinstance(token, pp.ParseResults):
+    if isinstance(token, pyparsing.ParseResults):
         token = token.asList()
         return [ clean(t) for t in token ]
     elif isinstance(token, tuple):
-        if isinstance(token[1], pp.ParseResults):
+        if isinstance(token[1], pyparsing.ParseResults):
             return (token[0], clean(token[1]) )
     return token
 
-test_simple_parser = (
+simple_tokenizer_test_data = [
     # Basic test cases.
     ('${foo}', [(REF, [(STR, 'foo')])]),
 
@@ -37,10 +37,11 @@ test_simple_parser = (
     ('bar ${foo baz}', [(STR, 'bar '), (REF, [(STR, 'foo baz')])]),
     ('bar${foo} baz', [(STR, 'bar'), (REF, [(STR, 'foo')]), (STR, ' baz')]),
     (' bar${foo} baz ', [(STR, ' bar'), (REF, [(STR, 'foo')]), (STR, ' baz ')]),
-)
+]
 
-test_full_parser = test_simple_parser
-test_full_parser += (
+full_tokenizer_test_data = []
+full_tokenizer_test_data.extend(simple_tokenizer_test_data)
+full_tokenizer_test_data += [
     # Single elements sanity.
     ('foo', [(STR, 'foo')]),
     ('$foo', [(STR, '$foo')]),
@@ -80,14 +81,14 @@ test_full_parser += (
     # inventory query expression parser.
     # WOULD BE BETTER IF THIS RAISED AN EXCEPTION IN THE PARSER
     ('$[${foo}]', [(INV, [(STR, '${foo}')])]),
-)
+]
 
-test_simple_parser_errors = [
+simple_tokenizer_test_errors = [
     # The simple parser does not parse multiple references or inventory queries
     '${foo}${bar}', '$[foo]'
 ]
 
-test_full_parser_errors = [
+full_tokenizer_test_errors = [
     # Nested inventory queries are not allowed
     '$[foo$[bar]]',
 
@@ -96,23 +97,22 @@ test_full_parser_errors = [
     '${bar}$[foo]', '${bar}$[foo]${baz}', '$[foo]${baz}',
 ]
 
-
-@pytest.mark.parametrize('string, expected', test_simple_parser)
-def test_simple_item_parser(string, expected):
-    result = clean(simple_parser.parseString(string))
+@pytest.mark.parametrize('string, expected', simple_tokenizer_test_data)
+def test_simple_item_tokenizer(string, expected):
+    result = clean(simple_tokenizer.parseString(string))
     assert result == expected
 
-@pytest.mark.parametrize('string, expected', test_full_parser)
-def test_full_item_parser(string, expected):
-    result = clean(full_parser.parseString(string))
+@pytest.mark.parametrize('string, expected', full_tokenizer_test_data)
+def test_full_item_tokenizer(string, expected):
+    result = clean(full_tokenizer.parseString(string))
     assert result == expected
 
-@pytest.mark.parametrize('string', test_simple_parser_errors)
-def test_simple_parser_errors(string):
-    with pytest.raises(pp.ParseException):
-        simple_parser.parseString(string)
+@pytest.mark.parametrize('string', simple_tokenizer_test_errors)
+def test_simple_item_tokenizer_errors(string):
+    with pytest.raises(pyparsing.ParseException):
+        simple_tokenizer.parseString(string)
 
-@pytest.mark.parametrize('string', test_full_parser_errors)
-def test_full_parser_errors(string):
-    with pytest.raises(pp.ParseException):
-        full_parser.parseString(string)
+@pytest.mark.parametrize('string', full_tokenizer_test_errors)
+def test_full_item_tokenizer_errors(string):
+    with pytest.raises(pyparsing.ParseException):
+        full_tokenizer.parseString(string)

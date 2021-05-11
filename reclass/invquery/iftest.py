@@ -1,25 +1,22 @@
-from .exceptions import InventoryQueryParseError
-from .parser_functions import Tags
-from .operand import Operand
-from .operator import OpTest
+from .conditional import Conditional
+from .logical import Logical
 
 class IfTest:
-    def __init__(self, lhs_token, op_token, rhs_token):
-        self.lhs = Operand(lhs_token)
-        self.op = OpTest(op_token)
-        self.rhs = Operand(rhs_token)
-        if Tags.EXPORT.value not in [ self.lhs.type, self.rhs.type ]:
-            raise InventoryQueryParseError([self.lhs.type, self.rhs.typ], 'no exports defined in query')
-        if self.lhs.type == Tags.EXPORT.value:
-            self.export = self.lhs
-            self.other = self.rhs
-        else:
-            self.export = self.rhs
-            self.other = self.lhs
+    def __init__(self, tokens):
+        self.conditionals = []
+        self.logicals = []
+        pos = 0
+        while pos < len(tokens):
+            conditional = Conditional(tokens[pos], tokens[pos+1], tokens[pos+2])
+            self.conditionals.append(conditional)
+            pos += 3
+            if pos < len(tokens):
+                self.logicals.append(Logical(tokens[pos]))
+            pos += 1
 
     def __eq_(self, other):
         if self.__class__ == other.__class__:
-            if self.lhs == other.lhs and self.op == other.op and self.rhs == other.rhs:
+            if self.conditionals == other.conditionals and self.logicals == other.logicals:
                 return True
         return False
 
@@ -27,25 +24,30 @@ class IfTest:
         return not self.__eq__(other)
 
     def __str__(self):
-        return '{0} {1} {2}'.format(self.lhs, self.op, self.rhs)
+        return '{0}'.format(self.conditionals)
 
     def __repr__(self):
-        return '{0}({1} {2} {3})'.format(self.__class__.__name__, repr(self.lhs), repr(self.op), repr(self.rhs))
+        return '{0}({1})'.format(self.__class__.__name__, repr(self.conditionals))
 
     def evaluate(self, node_exports, context):
-        if self.export.path not in node_exports:
-            return False
-        export = node_exports[self.export.path].render()
-        if self.other.type == Tags.PARAMETER.value:
-            other = context[self.other.path].render()
+        if len(self.conditionals) == 1:
+            return self.conditionals[0].evaluate(node_exports, context)
         else:
-            other = self.other.data
-        return export == other
+            result = self.conditionals[0].evaluate(node_exports, context)
+            for i, logical in enumerate(self.logicals):
+                result = logical.combine(result, self.conditionals[i+1].evaluate(node_exports, context))
+        return result
 
     @property
     def exports(self):
-        return self.lhs.exports | self.rhs.exports
+        result = set()
+        for conditional in self.conditionals:
+            result |= conditional.exports
+        return result
 
     @property
     def references(self):
-        return self.lhs.references | self.rhs.references
+        result = set()
+        for conditional in self.conditionals:
+            result |= conditional.references
+        return result

@@ -14,6 +14,6 @@ def load_config_file(filename = None, search_path = None):
         if os.path.exists(filepath):
             with open(filepath) as file:
                 logging.debug('Using config file {0}'.format(filepath))
-                return yaml.load(file, Loader=cls.SafeLoader)
+                return yaml.load(file, Loader=SafeLoader)
         logging.debug('No config file found')
     return {}

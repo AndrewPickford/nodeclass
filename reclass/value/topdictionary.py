@@ -1,13 +1,45 @@
-from reclass.utils.path import Path
+from ..item.parser import parse as parse_item
+from ..item.scalar import Scalar
+from ..utils.path import Path
 from .dictionary import Dictionary
-from .exceptions import MergeTypeError
+from .exceptions import FrozenError, MergeTypeError
+from .list import List
+from .plain import Plain
 from .value import Value
+
 
 class TopDictionary:
     ''' The top level interface to nested group of dictionaries
     '''
 
+    __slots__ = ('_dictionary', 'frozen', 'url')
+
     type = Value.TOP_DICTIONARY
+
+    @staticmethod
+    def from_dict(dictionary, url):
+        def process_dictionary(input, url):
+            return Dictionary({ k: process(v, url) for k, v in input.items() }, url)
+
+        def process_list(input, url):
+            return List([ process(v, url) for v in input ], url)
+
+        def process_plain(input, url):
+            if isinstance(input, str):
+                item = parse_item(input)
+            else:
+                item = Scalar(input)
+            return Plain(item, url)
+
+        def process(input, url):
+            if isinstance(input, dict):
+                return process_dictionary(input, url)
+            elif isinstance(input, list):
+                return process_list(input, url)
+            else:
+                return process_plain(input, url)
+
+        return TopDictionary({ k: process(v, url) for k, v in dictionary.items() }, url)
 
     def __init__(self, input, url, frozen=True):
         self._dictionary = Dictionary(input, url)
@@ -33,7 +65,7 @@ class TopDictionary:
 
     def __setitem__(self, path, value):
         if self.frozen:
-            raise RuntimeError('Trying to change frozen {0}'.format(self.__class__.__name__))
+            raise FrozenError(self.url)
         if self._dictionary._getsubitem(path, 0).copy_on_change:
             self._dictionary = self._dictionary._setsubitem_copy_on_change(path, 0, value)
         else:
@@ -55,7 +87,7 @@ class TopDictionary:
 
     def merge(self, other):
         if self.frozen:
-            raise RuntimeError('Trying to change frozen {0}'.format(self.__class__.__name__))
+            raise FrozenError(self.url)
         if other.type == Value.TOP_DICTIONARY:
             self._dictionary = self._dictionary.merge(other._dictionary)
         else:

@@ -17,6 +17,8 @@ class Composite(Item):
     forcing it into a string representation.
     '''
 
+    __slots__ = ('_references')
+
     def __init__(self, items):
         super().__init__(items)
         self._references = set()
@@ -53,7 +55,7 @@ class Composite(Item):
 
     def resolve_to_value(self, context, inventory, environment):
         '''
-        Composite items cannot resolve directly to a Value, so just return None to
+        Composite items cannot resolve directly to a Value, so return None to
         indicate to use resolve_to_item.
         '''
         return None

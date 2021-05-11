@@ -14,9 +14,9 @@ def tag(name):
     return inner
 
 
-def full_parser(settings):
+def make_full_tokenizer(settings):
     '''
-    Return the full, but slow parser.
+    Return the full, but slow tokenizer.
 
     Only used if more than reference/inv query sentinels are present
     or if the simple single reference parser fails
@@ -83,8 +83,8 @@ def full_parser(settings):
     return line.leaveWhitespace()
 
 
-def simple_parser(settings):
-    ''' Return the simple parser which can parse a string with a single reference
+def make_simple_tokenizer(settings):
+    ''' Return the simple tokenizer which can parse a string with a single reference
 
         ${foo}
         foo_${bar}_foo

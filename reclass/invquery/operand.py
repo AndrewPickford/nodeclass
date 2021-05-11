@@ -1,19 +1,14 @@
 from reclass.utils.path import Path
 from .exceptions import InventoryQueryParseError
-from .parser_functions import Tags
+from .tokenizer import Tags
 
 
 class Operand:
     def __init__(self, token):
         if token.type not in [ Tags.STRING.value, Tags.INT.value, Tags.FLOAT.value, Tags.EXPORT.value, Tags.PARAMETER.value ]:
-            raise InventoryQueryParseError(token, 'unknown operand {0}'.format(token.data))
+            raise InventoryQueryParseError(token, 'expected operand found: {0}'.format(token))
         self.type = token.type
-        if self.type in [ Tags.EXPORT.value, Tags.PARAMETER.value ]:
-            self.data = token.data[1].data
-        elif token.type in [ Tags.STRING.value, Tags.INT.value, Tags.FLOAT.value ]:
-            self.data = token.data
-        else:
-            InventoryQueryParseError(token, 'unknown operand {0}'.format(token.data))
+        self.data = token.data
         if self.type in [ Tags.EXPORT.value, Tags.PARAMETER.value ]:
             self.path = Path.fromstring(self.data)
         else:

@@ -3,6 +3,7 @@
 #
 # This file is part of reclass
 #
+from ..context import CONTEXT
 from ..utils.path import Path
 from .exceptions import ItemResolveError
 from .item import Item
@@ -16,6 +17,8 @@ class Reference(Item):
     representing the path to the referenced entry.
     '''
 
+    __slots__ = ('_references')
+
     def __init__(self, item):
         super().__init__(item)
         self.unresolved = True
@@ -25,7 +28,7 @@ class Reference(Item):
             self._references = { Path.fromstring(self.contents.render()) }
 
     def __str__(self):
-        rs = self.settings.reference_sentinels
+        rs = CONTEXT.settings.reference_sentinels
         return '{0}{1}{2}'.format(rs[0], self.contents, rs[1])
 
     @property

@@ -2,18 +2,16 @@
 
 import yaml
 from pprint import pprint
-from reclass.controller import Controller
+from reclass.storage.factory import Factory as StorageFactory
+from reclass.interpolator.interpolator import Interpolator
 from reclass.node.node import Node
-from reclass.settings import defaults
 
-controller = Controller(defaults)
-node_loader = controller.storage_factory.node_loader('yaml_fs:nodes')
-klass_loader = controller.storage_factory.klass_loader('yaml_fs:classes')
+node_loader = StorageFactory.node_loader('yaml_fs:nodes')
+klass_loader = StorageFactory.klass_loader('yaml_fs:classes')
 
-nodename = 'wn-taai-001.farm.nikhef.nl'
-proto_node = node_loader[nodename]
+proto_node = node_loader['wn-taai-001.farm.nikhef.nl']
 node = Node(proto_node, klass_loader)
 
-interpolator = controller.interpolator
+interpolator = Interpolator()
 result = interpolator.interpolate(node, node_loader, klass_loader)
 print(yaml.dump(result.as_dict(), default_flow_style=False, Dumper=yaml.CSafeDumper))

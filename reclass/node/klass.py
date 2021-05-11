@@ -1,22 +1,39 @@
-from ..value.make import make_value_dictionary
-from .protoklass import ProtoKlass
+from ..value.topdictionary import TopDictionary
+
 
 class Klass:
     ''' A reclass class.
     '''
 
-    def __init__(self, proto, parameters, exports):
+    @staticmethod
+    def from_class_dict(name, class_dict, url):
+        # It is possible for classes, applications, exports and parameters in the yaml
+        # to be None. Change these to an empty list or dict as appropriate.
+        applications = class_dict.get('applications', None) or []
+        classes = class_dict.get('classes', None) or []
+        exports = class_dict.get('exports', None) or {}
+        parameters = class_dict.get('parameters', None) or {}
+        exports = TopDictionary.from_dict(exports, url)
+        parameters = TopDictionary.from_dict(parameters, url)
+        exports.freeze()
+        parameters.freeze()
+        return Klass(name, applications, classes, exports, parameters, url)
+
+    def __init__(self, name, applications, classes, exports, parameters, url):
         '''
-        proto: a ProtoKlass object
-        parameters: a Value wrapped TopDictionary of parameters
+        name: class name
+        applications: list of applications
+        classes: list of classes
         exports: a Value wrapped TopDictionary of exports
+        parameters: a Value wrapped TopDictionary of parameters
+        url:
         '''
-        self.name = proto.name
-        self.url = proto.url
-        self.classes = proto.classes
-        self.applications = proto.applications
+        self.name = name
+        self.applications = applications
+        self.classes = classes
         self.exports = exports
         self.parameters = parameters
+        self.url = url
 
     def __repr__(self):
         return '{0}(name={1}, url={2}, classes={3}, applications={4}, exports={5}, parameters={6})'.format(
@@ -27,12 +44,3 @@ class Klass:
         return '(name={0}, url={1}, classes={2}, applications={3}, exports={4}, parameters={5})'.format(
                    str(self.name), str(self.url), str(self.classes), str(self.applications),
                    str(self.exports), str(self.parameters))
-
-    @staticmethod
-    def from_class_dict(name, class_dict, url):
-        proto = ProtoKlass(name, class_dict, url)
-        parameters = make_value_dictionary(proto.parameters, proto.url)
-        exports = make_value_dictionary(proto.exports, proto.url)
-        parameters.freeze()
-        exports.freeze()
-        return Klass(proto, parameters, exports), proto.environment

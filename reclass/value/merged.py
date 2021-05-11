@@ -11,6 +11,9 @@ class Merged(Value):
     Use the merge method to add additional Value objects to an existing
     Merged object.
     '''
+
+    __slots__ = ('_values')
+
     type = Value.MERGED
 
     def __init__(self, first, second, copy_on_change=False):

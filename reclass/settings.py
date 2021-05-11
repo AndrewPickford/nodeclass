@@ -3,7 +3,6 @@
 #
 # This file is part of reclass
 #
-import re
 from .exceptions import UnknownSettingError
 
 class Settings:

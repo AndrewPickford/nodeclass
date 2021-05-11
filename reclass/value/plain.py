@@ -7,6 +7,9 @@ from .value import Value
 class Plain(Value):
     '''
     '''
+
+    __slots__ = ('item')
+
     type = Value.PLAIN
 
     def __init__(self, item, url, copy_on_change=True):
@@ -41,7 +44,7 @@ class Plain(Value):
 
     def merge(self, other):
         if other.type == Value.PLAIN:
-            # if both Plain objects have no references just handle the merge
+            # if both Plain objects have no references handle the merge now
             # by returning the other object, otherwise return a Merged object
             # for later interpolation
             if self.unresolved or other.unresolved:
@@ -61,12 +64,14 @@ class Plain(Value):
         '''
         Step through one level of indirection.
 
-        Check if the Item we have is a simple reference, ${foo}, which can be
-        resolved as the Value in the context dictionary the reference is pointing
-        to. If this is the case return the referenced Value.
+        First see if the item we have can resolve to an already existing Value in the
+        context dictionary. For example if the Item we have is a simple reference, ${foo}.
+        If this is the case return the referenced Value.
+
         If not use resolve_to_item to return a new item which has removed a level
-        of indirection. Set self.item to this Item and return self as the resolved
-        Value.
+        of indirection. Then either return a new Plain value containing the new item
+        or set self.item to the new item and return self, depending on if copy_on_change
+        is set.
 
         context: Dictionary of resolved parameter values
         inventory: Dictionary of required inventory query answers

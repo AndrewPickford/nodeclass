@@ -10,6 +10,8 @@ class Value(ABC):
     MERGED = 3
     TOP_DICTIONARY = 4
 
+    __slots__ = ('copy_on_change', 'url')
+
     def __init__(self, url, copy_on_change):
         self.url = url
         self.copy_on_change = copy_on_change

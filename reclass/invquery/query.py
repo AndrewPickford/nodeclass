@@ -5,7 +5,8 @@ from reclass.value.plain import Plain
 from .exceptions import InventoryQueryParseError
 from .iftest import IfTest
 from .operand import Operand
-from .parser_functions import Tags
+from .tokenizer import Tags
+
 
 class QueryOptions:
     def __init__(self):
@@ -49,7 +50,7 @@ class IfQuery(Query):
         if tokens[1].type != Tags.IF.value:
             raise InventoryQueryParseError(tokens, 'if queries begin with start with an export followed by "if"')
         self.returned = Operand(tokens[0])
-        self.test = IfTest(tokens[2], tokens[3], tokens[4])
+        self.test = IfTest(tokens[2:])
 
     def __eq_(self, other):
         if self.__class__ == other.__class__:
@@ -89,7 +90,7 @@ class ListIfQuery(Query):
         super().__init__(options)
         if tokens[0].type != Tags.IF.value:
             raise InventoryQueryParseError(tokens, 'list if queries begin with "if"')
-        self.test = IfTest(tokens[1], tokens[2], tokens[3])
+        self.test = IfTest(tokens[1:])
 
     def __eq_(self, other):
         if self.__class__ == other.__class__:
@@ -126,8 +127,8 @@ class ListIfQuery(Query):
 class ValueQuery(Query):
     def __init__(self, tokens, options):
         super().__init__(options)
-        if tokens[0].type != Tags.EXPORT.value:
-            raise InventoryQueryParseError(tokens, 'value queries begin with an export to return')
+        if tokens[0].type != Tags.EXPORT.value or len(tokens) > 1:
+            raise InventoryQueryParseError(tokens, 'value queries consist of an export to return, found: {0}'.format(tokens))
         self.returned = Operand(tokens[0])
 
     def evaluate(self, context, inventory, environment):
@@ -140,8 +141,8 @@ class ValueQuery(Query):
 
     @property
     def exports(self):
-        return self.test.exports
+        return self.returned.exports
 
     @property
     def references(self):
-        return self.test.references
+        return set()

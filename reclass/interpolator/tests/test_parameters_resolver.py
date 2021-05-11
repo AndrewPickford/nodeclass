@@ -1,23 +1,20 @@
+import copy
 import pytest
 from reclass.context import reclass_context
-from reclass.item.parser import Parser as ItemParser
 from reclass.interpolator.exceptions import InterpolationCircularReferenceError
 from reclass.interpolator.merger import Merger
 from reclass.interpolator.parameters_resolver import ParametersResolver
 from reclass.node.klass import Klass
-from reclass.node.protoklass import ProtoKlass
 from reclass.settings import Settings
 from reclass.value.exceptions import MergeOverImmutableError, MergeTypeError
-from reclass.value.make import make_value_dictionary
 
 merger = Merger()
 parameters_resolver = ParametersResolver()
+settings = Settings()
 
-def kpar(parameters_dict):
-    proto = ProtoKlass(name='', class_dict={}, url ='')
-    parameters = make_value_dictionary(parameters_dict, proto.url)
-    exports = make_value_dictionary({}, proto.url)
-    return Klass(proto, parameters, exports)
+def kpar(parameters):
+    class_dict = { 'exports': {}, 'parameters': parameters }
+    return Klass.from_class_dict(name='', class_dict=class_dict, url='')
 
 def resolve_parameters(*dicts, inventory = None):
     '''
@@ -169,6 +166,48 @@ def test_parameters_resolver_immutable_prefix():
             {'c': [4, 5, 6]})
 
 def test_parameters_resolver_escaping():
-    result = resolve_parameters({'a': '\${b}', 'b': 'bb'})
-    expected = {'a': '${b}', 'b': 'bb'}
+    result = resolve_parameters({
+        'a': settings.escape_character + '${b}',
+        'b': 'unused'})
+    expected = {'a': '${b}', 'b': 'unused'}
+    assert result == expected
+
+def test_parameters_resolver_double_escaping():
+    result = resolve_parameters({
+        'a': settings.escape_character + settings.escape_character + '${b}',
+        'b': 'bb'})
+    expected = {
+        'a': settings.escape_character + 'bb',
+        'b': 'bb'}
+    assert result == expected
+
+def test_parameters_resolver_ignore_escaping():
+    ''' In all following cases, escaping should not happen and the escape character
+        needs to be printed as-is, to ensure backwards compatibility to older reclass
+        versions
+    '''
+    expected = {
+        # Escape character followed by unescapable character
+        'a': '1' + settings.escape_character + '1',
+        # Escape character followed by escape character
+        'b': '2' + settings.escape_character + settings.escape_character,
+        # Escape character followed by interpolation end sentinel
+        'c': '3' + settings.escape_character + '}',
+        # Escape character at the end of the string
+        'd': '4' + settings.escape_character }
+    result = resolve_parameters(copy.copy(expected))
+    assert result == expected
+
+def test_parameters_resolver_escape_end_reference_sentinel_in_reference():
+    result = resolve_parameters({
+        'one}': 1,
+        'two': '${one' + settings.escape_character + '}}' })
+    expected = { 'one}': 1, 'two': 1 }
+    assert result == expected
+
+def test_parameters_resolver_double_escape_in_reference():
+    result = resolve_parameters({
+        'one' + settings.escape_character: 1,
+        'two': '${one' + settings.escape_character + settings.escape_character + '}' })
+    expected = { 'one' + settings.escape_character: 1, 'two': 1 }
     assert result == expected

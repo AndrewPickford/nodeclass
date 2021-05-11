@@ -21,3 +21,9 @@ class MergeOverImmutableError(MergeError):
         super().__init__()
         self.first = first
         self.second = second
+
+
+class FrozenError(Exception):
+    def __init__(self, url):
+        super().__init__()
+        self.url = url

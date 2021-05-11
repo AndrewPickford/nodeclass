@@ -1,4 +1,5 @@
 from copy import copy
+from .klass import Klass
 
 class Node:
     ''' A reclass node
@@ -12,7 +13,7 @@ class Node:
         self.name = proto.name
         self.environment = proto.environment
         self.nodeklass = proto.klass
-        self.baseklass = klass_loader.generated_klass('__base__', [], [], {}, self.base_parameters(), '__base__')
+        self.baseklass = Klass.from_class_dict('__base__', self.base_class_dict(), '__base__')
         self.klasses = []
         self.applications = []
         self.classes = []
@@ -31,17 +32,16 @@ class Node:
         return '(name={0}, applications={1}, classes={2}, klass={3})'.format(str(self.name),
             str(self.applications), str(self.classes), str(self.nodeklass))
 
-    def base_parameters(self):
-        params = {
-            '_reclass_': {
-                'environment': self.environment,
-                'name': {
-                    'full': self.name,
-                    'short': self.name.split('.')[0]
-                },
-            }
-        }
-        return params
+    def base_class_dict(self):
+        return { 'applications': [],
+                 'classes': [],
+                 'exports': {},
+                 'parameters': {
+                     '_reclass_': {
+                         'environment': self.environment,
+                         'name': {
+                             'full': self.name,
+                             'short': self.name.split('.')[0] }}}}
 
     def load_classes(self, klass, classname, klass_loader, classes_found, applications_found, is_node_klass=False):
         '''

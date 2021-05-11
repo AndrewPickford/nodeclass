@@ -10,8 +10,7 @@ class InvQuery(Item):
     '''
 
     def __init__(self, inv_query):
-        super().__init__(None)
-        self.contents = inv_query
+        super().__init__(inv_query)
         self.unresolved = True
 
     @property
