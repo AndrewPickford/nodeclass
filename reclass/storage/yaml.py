@@ -5,6 +5,8 @@ class Yaml:
     SafeLoader = yaml.CSafeLoader if yaml.__with_libyaml__ else yaml.SafeLoader
     extensions = ('yml', 'yaml')
 
+    name = 'yaml'
+
     @classmethod
     def load(cls, path):
         with open(path) as file:

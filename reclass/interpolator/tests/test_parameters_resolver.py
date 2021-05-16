@@ -2,13 +2,12 @@ import copy
 import pytest
 from reclass.context import reclass_context
 from reclass.interpolator.exceptions import InterpolationCircularReferenceError
-from reclass.interpolator.merger import Merger
 from reclass.interpolator.parameters_resolver import ParametersResolver
 from reclass.node.klass import Klass
 from reclass.settings import Settings
 from reclass.value.exceptions import MergeOverImmutableError, MergeTypeError
+from reclass.value.hierarchy import Hierarchy
 
-merger = Merger()
 parameters_resolver = ParametersResolver()
 settings = Settings()
 
@@ -23,7 +22,7 @@ def resolve_parameters(*dicts, inventory = None):
     '''
     klasses = [ kpar(k) for k in dicts ]
     inventory = None
-    merged_parameters = merger.merge_parameters(klasses)
+    merged_parameters = Hierarchy.merge_multiple([ klass.parameters for klass in klasses ])
     resolved_parameters = parameters_resolver.resolve(environment = None, parameters = merged_parameters, inventory = inventory)
     return resolved_parameters.render_all()
 

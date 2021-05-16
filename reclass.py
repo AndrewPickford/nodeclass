@@ -1,4 +1,4 @@
 #!/usr/bin/python3
 
-from reclass.cli import cli
-cli()
+from reclass.cli.main import main
+main()

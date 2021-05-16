@@ -26,19 +26,18 @@ class Dictionary(Value):
         def process_key(key):
             if not check_for_prefix:
                 return key
-            if key[0] == overwrite_prefix:
-                key = key[1:]
-                self._overwrites.add(key)
-            elif key[0] == immutable_prefix:
-                key = key[1:]
-                self._immutables.add(key)
+            if key[0] in CONTEXT.prefixes:
+                if key[0] == CONTEXT.settings.overwrite_prefix:
+                    key = key[1:]
+                    self._overwrites.add(key)
+                elif key[0] == CONTEXT.settings.immutable_prefix:
+                    key = key[1:]
+                    self._immutables.add(key)
             return key
 
         super().__init__(url=url, copy_on_change=copy_on_change)
         self._immutables = set()
         self._overwrites = set()
-        overwrite_prefix = CONTEXT.settings.overwrite_prefix
-        immutable_prefix = CONTEXT.settings.immutable_prefix
         self._dictionary = { process_key(str(k)): v for k, v in input.items() }
 
     def __copy__(self):

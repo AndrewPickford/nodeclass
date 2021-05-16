@@ -8,7 +8,7 @@ class Value(ABC):
     DICTIONARY = 1
     LIST = 2
     MERGED = 3
-    TOP_DICTIONARY = 4
+    HIERARCHY = 4
 
     __slots__ = ('copy_on_change', 'url')
 

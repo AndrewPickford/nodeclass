@@ -1,12 +1,12 @@
 from collections import namedtuple, OrderedDict
-from reclass.node.node import Node
+from ..node.node import Node
+from ..value.hierarchy import Hierarchy
 
 InventoryResult = namedtuple('InventoryResult', [ 'environment', 'exports' ])
 CachedMerge = namedtuple('CachedMerge', [ 'exports', 'parameters' ])
 
 class Inventory:
-    def __init__(self, merger, resolver):
-        self.merger = merger
+    def __init__(self, resolver):
         self.resolver = resolver
         self.merge_cache = {}
 
@@ -34,11 +34,14 @@ class Inventory:
         node = Node(proto, klass_loader)
         classes = '\n'.join(node.classes)
         if classes not in self.merge_cache:
-            self.merge_cache[classes] = CachedMerge(self.merger.merge_exports(node.klasses), self.merger.merge_parameters(node.klasses))
+            self.merge_cache[classes] = CachedMerge(
+                Hierarchy.merge_multiple([ klass.exports for klass in node.klasses ]),
+                Hierarchy.merge_multiple([ klass.parameters for klass in node.klasses ])
+            )
             self.merge_cache[classes].exports.freeze()
             self.merge_cache[classes].parameters.freeze()
-        parameters_merged = self.merger.merge_parameters([ self.merge_cache[classes], node.nodeklass, node.baseklass ])
-        exports_merged = self.merger.merge_exports([ self.merge_cache[classes], node.nodeklass, node.baseklass ])
+        exports_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].exports, node.nodeklass.parameters, node.baseklass.parameters ])
+        parameters_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].parameters, node.nodeklass.parameters, node.baseklass.parameters ])
         exports_resolved = self.resolver.resolve(exports_merged, parameters_merged, proto.exports_required)
         paths_present = { path for path in proto.exports_required if path in exports_resolved }
         exports_pruned = exports_resolved.extract(paths_present)

@@ -1,5 +1,7 @@
-from ..value.topdictionary import TopDictionary
+from collections import namedtuple
+from ..value.hierarchy import Hierarchy
 
+KlassID = namedtuple('KlassID', ['name', 'environment'])
 
 class Klass:
     ''' A reclass class.
@@ -13,8 +15,8 @@ class Klass:
         classes = class_dict.get('classes', None) or []
         exports = class_dict.get('exports', None) or {}
         parameters = class_dict.get('parameters', None) or {}
-        exports = TopDictionary.from_dict(exports, url)
-        parameters = TopDictionary.from_dict(parameters, url)
+        exports = Hierarchy.from_dict(exports, url)
+        parameters = Hierarchy.from_dict(parameters, url)
         exports.freeze()
         parameters.freeze()
         return Klass(name, applications, classes, exports, parameters, url)
@@ -24,8 +26,8 @@ class Klass:
         name: class name
         applications: list of applications
         classes: list of classes
-        exports: a Value wrapped TopDictionary of exports
-        parameters: a Value wrapped TopDictionary of parameters
+        exports: Hierarchy of exports
+        parameters: Hierarchy of parameters
         url:
         '''
         self.name = name

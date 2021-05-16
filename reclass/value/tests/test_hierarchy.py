@@ -3,12 +3,12 @@ import pytest
 from reclass.context import reclass_context
 from reclass.settings import Settings
 from reclass.value.exceptions import FrozenError, MergeOverImmutableError, MergeTypeError
-from reclass.value.topdictionary import TopDictionary
+from reclass.value.hierarchy import Hierarchy
 
 reclass_context(Settings())
 
 def merge_dicts(*dicts):
-    top_dicts = [ TopDictionary.from_dict(d, '') for d in dicts ]
+    top_dicts = [ Hierarchy.from_dict(d, '') for d in dicts ]
     merged = copy.copy(top_dicts[0])
     for d in top_dicts[1:]:
         merged.merge(d)
@@ -133,30 +133,30 @@ def test_merge_immutable_prefix():
 
 def test_merge_freeze():
     with pytest.raises(FrozenError):
-        a = TopDictionary.from_dict({'a': 1}, '')
-        b = TopDictionary.from_dict({'b': 2}, '')
+        a = Hierarchy.from_dict({'a': 1}, '')
+        b = Hierarchy.from_dict({'b': 2}, '')
         a.freeze()
         a.merge(b)
 
 def test_merge_frozen_on_construction():
     with pytest.raises(FrozenError):
-        a = TopDictionary.from_dict({'a': 1}, '')
-        b = TopDictionary.from_dict({'b': 2}, '')
+        a = Hierarchy.from_dict({'a': 1}, '')
+        b = Hierarchy.from_dict({'b': 2}, '')
         a.merge(b)
 
 def test_merge_copy_on_change():
     ''' Test copy on change correctly prevents later merges from over
         writing earlier ones.
     '''
-    one = TopDictionary.from_dict({
+    one = Hierarchy.from_dict({
         'scalar': 1,
         'dict': { 'a': 'a1', 'b': 'b1' },
         'list': [ 1 ] }, '')
-    two = TopDictionary.from_dict({
+    two = Hierarchy.from_dict({
         'scalar': 2,
         'dict': { 'a': 'a2', 'c': 'c2' },
         'list': [ 2 ] }, '')
-    three = TopDictionary.from_dict({
+    three = Hierarchy.from_dict({
         'scalar': 3,
         'dict': { 'a': 'a3', 'd': 'd3' },
         'list': [ 3 ] }, '')

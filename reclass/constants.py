@@ -1,7 +1,7 @@
 import os
 from .version import NAME
 
-CONFIG_FILE_NAME = 'reclass.yml'
+CONFIG_FILE_NAME = 'reclass-ng-config.yml'
 
 CONFIG_FILE_SEARCH_PATH = [
     os.getcwd(),

@@ -1,4 +1,12 @@
-class UnknownSettingError(Exception):
-    def __init__(self, setting_name):
+class ReclassError(Exception):
+    def __init__(self):
         super().__init__()
-        self.setting_name = setting_name
+
+
+class ReclassRuntimeError(ReclassError):
+    def __init__(self, message):
+        super().__init__()
+        if isinstance(message, str):
+            self.message = [ (0, message) ]
+        else:
+            self.message = message

@@ -1,6 +1,6 @@
 import argparse
-from .config_file import load_config_file
-from .version import NAME, DESCRIPTION, VERSION
+from ..exceptions import ReclassRuntimeError
+from ..version import NAME, DESCRIPTION, VERSION
 
 cli_default_opts = {
     'log_level': 'OFF',
@@ -14,11 +14,13 @@ def add_run_mode_options(parser):
         dest = 'nodeinfo',
         type = str,
         metavar = 'NODE',
+        default=None,
         help = 'Output the full reclass data for the given node.')
     run_group.add_argument('--nodeapps',
         dest = 'nodeapps',
         type = str,
         metavar = 'NODE',
+        default=None,
         help = 'Output the application list for the given node.')
     return
 
@@ -32,16 +34,19 @@ def add_data_location_options(parser):
         dest = 'uri',
         type = str,
         metavar = 'URI',
+        default=argparse.SUPPRESS,
         help = 'The URI containing both the nodes and classes data.')
     group.add_argument('--uri-classes',
         dest = 'uri_classes',
         type = str,
         metavar = 'URI',
+        default=argparse.SUPPRESS,
         help = 'The URI for the classes data.')
     group.add_argument('--uri-nodes',
         dest = 'uri_nodes',
         type = str,
         metavar = 'URI',
+        default=argparse.SUPPRESS,
         help = 'The URI for the nodes data.')
     return group
 
@@ -57,14 +62,27 @@ def add_output_options(parser):
     return
 
 def make_argparser():
-    parser = argparse.ArgumentParser(prog=NAME, description=DESCRIPTION) #, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(prog=NAME, description=DESCRIPTION)
     add_run_mode_options(parser)
     add_data_location_options(parser)
     add_output_options(parser)
     parser.add_argument('--version', action='version', version='%(prog)s {0}'.format(VERSION))
     return parser
 
-def cli():
-    parser = make_argparser()
-    args = parser.parse_args()
-    config_file_settings = load_config_file()
+def get_uri(args):
+    if 'uri' in args:
+        if 'uri_classes' in args or 'uri_nodes' in args:
+            raise ReclassRuntimeError('both --uri and (--uri-classes or --uri-nodes) specified')
+        return args.uri
+    if 'uri_classes' in args and 'uri_nodes' not in args:
+        raise ReclassRuntimeError('--uri-classes specified, but not --uri-nodes')
+    if 'uri_classes' not in args and 'uri_nodes' in args:
+        raise ReclassRuntimeError('--uri-nodes specified, but not --uri-classes')
+    if 'uri_classes' in args and 'uri_nodes' in args:
+        return { 'classes': args.uri_classes, 'nodes': args.uri_nodes }
+    return None
+
+def process_args(args):
+    settings = {}
+    uri = get_uri(args)
+    return settings, uri

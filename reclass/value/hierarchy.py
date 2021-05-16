@@ -1,3 +1,4 @@
+import copy
 from ..item.parser import parse as parse_item
 from ..item.scalar import Scalar
 from ..utils.path import Path
@@ -8,13 +9,13 @@ from .plain import Plain
 from .value import Value
 
 
-class TopDictionary:
+class Hierarchy:
     ''' The top level interface to nested group of dictionaries
     '''
 
     __slots__ = ('_dictionary', 'frozen', 'url')
 
-    type = Value.TOP_DICTIONARY
+    type = Value.HIERARCHY
 
     @staticmethod
     def from_dict(dictionary, url):
@@ -39,7 +40,14 @@ class TopDictionary:
             else:
                 return process_plain(input, url)
 
-        return TopDictionary({ k: process(v, url) for k, v in dictionary.items() }, url)
+        return Hierarchy({ k: process(v, url) for k, v in dictionary.items() }, url)
+
+    @staticmethod
+    def merge_multiple(hierarchies):
+        result = copy.copy(hierarchies[0])
+        for h in hierarchies[1:]:
+            result.merge(h)
+        return result
 
     def __init__(self, input, url, frozen=True):
         self._dictionary = Dictionary(input, url)
@@ -88,7 +96,7 @@ class TopDictionary:
     def merge(self, other):
         if self.frozen:
             raise FrozenError(self.url)
-        if other.type == Value.TOP_DICTIONARY:
+        if other.type == Value.HIERARCHY:
             self._dictionary = self._dictionary.merge(other._dictionary)
         else:
             raise MergeTypeError(self, other)

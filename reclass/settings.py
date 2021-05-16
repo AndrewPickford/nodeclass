@@ -3,7 +3,7 @@
 #
 # This file is part of reclass
 #
-from .exceptions import UnknownSettingError
+from .exceptions import ReclassRuntimeError
 
 class Settings:
     default_settings = {
@@ -27,4 +27,4 @@ class Settings:
             if name in self.allowed:
                 setattr(self, name, value)
             else:
-                raise UnknownSettingError(name)
+                raise ReclassRuntimeError('unknown settings {0}'.format(name))
