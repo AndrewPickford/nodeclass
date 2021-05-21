@@ -16,7 +16,7 @@ class KlassLoader:
         try:
             name, environment = klass_id
             if klass_id not in self.cache:
-                class_dict, url = self.storage[name]
+                class_dict, url = self.storage.get(name, environment)
                 self.cache[klass_id] = Klass.from_class_dict(name, class_dict, url)
             return self.cache[klass_id]
         except (ClassNotFoundError, DuplicateClassError) as exc:
@@ -37,7 +37,7 @@ class NodeLoader:
 
     def __getitem__(self, name):
         if name not in self.cache:
-            class_dict, url = self.storage[name]
+            class_dict, url = self.storage.get(name)
             environment = class_dict.get('environment', None)
             klass = Klass.from_class_dict(name, class_dict, url)
             self.cache[name] = ProtoNode(name, environment, klass)

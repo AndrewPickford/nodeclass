@@ -1,3 +1,4 @@
+import os
 import yaml
 
 class Yaml:
@@ -8,9 +9,26 @@ class Yaml:
     name = 'yaml'
 
     @classmethod
-    def load(cls, path):
-        with open(path) as file:
-            return yaml.load(file, Loader=cls.SafeLoader)
+    def mangle_name(cls, file_name):
+        ''' Return class/node name from file name
+
+            If file name extension is in the extensions list then return the file
+            name with the extension stripped. Otherwise return None as file is not
+            a class/node file.
+        '''
+        name, extension = os.path.splitext(file_name)
+        if extension[1:] in cls.extensions:
+            return name
+        return None
+
+    @classmethod
+    def possible_class_paths(cls, base):
+        basepaths = [ '{0}'.format(base), '{0}/init'.format(base) ]
+        return [ '{0}.{1}'.format(path, ext) for ext in cls.extensions for path in basepaths ]
+
+    @classmethod
+    def load(cls, file_pointer):
+        return yaml.load(file_pointer, Loader=cls.SafeLoader)
 
     @classmethod
     def process(cls, string):

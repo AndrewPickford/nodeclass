@@ -1,6 +1,7 @@
 from collections import namedtuple
 from ..exceptions import ReclassRuntimeError
 from .filesystem import FileSystemClasses, FileSystemNodes
+from .gitrepo import GitRepoClasses, GitRepoNodes
 from .loader import KlassLoader, NodeLoader
 from .yaml import Yaml
 
@@ -8,36 +9,44 @@ StorageType = namedtuple('StorageType', ['storage', 'kwargs'])
 
 class Factory:
     storage_classes = {
-        'yaml_fs': StorageType(FileSystemClasses, {'file_format': Yaml})
+        'yaml_fs': StorageType(FileSystemClasses, {'format': Yaml}),
+        'yaml_git': StorageType(GitRepoClasses, {'format': Yaml}),
     }
 
     storage_nodes = {
-        'yaml_fs': StorageType(FileSystemNodes, {'file_format': Yaml})
+        'yaml_fs': StorageType(FileSystemNodes, {'format': Yaml}),
+        'yaml_git': StorageType(GitRepoNodes, {'format': Yaml}),
     }
 
-    @staticmethod
-    def join_path(base_path, sub_path):
-        if base_path[-1] == '/':
-            return '{0}{1}'.format(base_path, sub_path)
-        return '{0}/{1}'.format(base_path, sub_path)
-
     @classmethod
-    def klass_loader(cls, resource, path):
+    def klass_loader(cls, uri, cache=None):
+        if isinstance(uri, str):
+            resource, _ = uri.split(':', 1)
+        elif 'resource' not in uri:
+            raise ReclassRuntimeError('Resource not defined in {0}'.format(uri))
+        else:
+            resource = uri['resource']
         if resource not in cls.storage_classes:
             raise ReclassRuntimeError('Unknown storage type {0}'.format(resource))
-        klasses = cls.storage_classes[resource].storage(path=path, **cls.storage_classes[resource].kwargs)
+        klasses = cls.storage_classes[resource].storage(uri=uri, cache=cache, **cls.storage_classes[resource].kwargs)
         return KlassLoader(klasses)
 
     @classmethod
-    def node_loader(cls, resource, path):
+    def node_loader(cls, uri, cache=None):
+        if isinstance(uri, str):
+            resource, _ = uri.split(':', 1)
+        elif 'resource' not in uri:
+            raise ReclassRuntimeError('Resource not defined in {0}'.format(uri))
+        else:
+            resource = uri['resource']
         if resource not in cls.storage_nodes:
             raise ReclassRuntimeError('Unknown storage type {0}'.format(resource))
-        nodes = cls.storage_nodes[resource].storage(path=path, **cls.storage_classes[resource].kwargs)
+        nodes = cls.storage_nodes[resource].storage(uri=uri, cache=cache, **cls.storage_classes[resource].kwargs)
         return NodeLoader(nodes)
 
     @classmethod
     def loaders(cls, uri):
-        ''' Return a KlassLoader and a NodeLoader objects
+        ''' Make the class and node loader objects
 
             uri: location of classes and nodes data in several formats (see examples)
             returns: tuple of a KlassLoader and a NodeLoader object
@@ -61,31 +70,20 @@ class Factory:
             NodeLoader(yaml_fs:/path/to/nodes)
         '''
 
+        cache = {}
         if isinstance(uri, str):
             try:
-                resource, path = uri.split(':', 1)
+                resource, _ = uri.split(':', 1)
             except ValueError:
                 raise ReclassRuntimeError('Invalid uri: {0}'.format(uri))
-            klass_loader = cls.klass_loader(resource, cls.join_path(path, 'classes'))
-            node_loader = cls.node_loader(resource, cls.join_path(path, 'nodes'))
+            klass_uri = cls.storage_classes[resource].storage.subpath(uri)
+            node_uri = cls.storage_nodes[resource].storage.subpath(uri)
+            klass_loader = cls.klass_loader(klass_uri, cache)
+            node_loader = cls.node_loader(node_uri, cache)
             return klass_loader, node_loader
         elif isinstance(uri, dict):
             if 'classes' in uri and 'nodes' in uri:
-                if isinstance(uri['classes'], str):
-                    try:
-                        resource, path = uri['classes'].split(':', 1)
-                    except ValueError:
-                        raise ReclassRuntimeError('Invalid uri: {0}'.format(uri['classes']))
-                    klass_loader = cls.klass_loader(resource, path)
-                else:
-                    klass_loader = cls.klass_loader(**uri['classes'])
-                if isinstance(uri['nodes'], str):
-                    try:
-                        resource, path = uri['nodes'].split(':', 1)
-                    except ValueError:
-                        raise ReclassRuntimeError('Invalid uri: {0}'.format(uri['classes']))
-                    node_loader = cls.node_loader(resource, path)
-                else:
-                    node_loader = cls.node_loader(**uri['nodes'])
+                klass_loader = cls.klass_loader(uri['classes'], cache)
+                node_loader = cls.node_loader(uri['nodes'], cache)
                 return klass_loader, node_loader
         raise ReclassRuntimeError('unable to make classes and nodes loaders from uri: {0}', uri)
