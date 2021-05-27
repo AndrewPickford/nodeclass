@@ -36,7 +36,7 @@ class FileSystem:
             uri = cls.uri_from_string(uri)
         uri_valid = cls.validate_uri(uri)
         if cache is None:
-            return cls(**uri_valid)
+            return cls(**uri_valid), uri
         name = 'fs {0}'.format(uri['path'])
         if name not in cache:
             cache[name] = cls(**uri_valid)

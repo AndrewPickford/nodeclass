@@ -86,4 +86,4 @@ class Factory:
                 klass_loader = cls.klass_loader(uri['classes'], cache)
                 node_loader = cls.node_loader(uri['nodes'], cache)
                 return klass_loader, node_loader
-        raise ReclassRuntimeError('unable to make classes and nodes loaders from uri: {0}', uri)
+        raise ReclassRuntimeError('unable to make classes and nodes loaders from uri: {0}'.format(uri))

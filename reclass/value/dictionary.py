@@ -50,6 +50,13 @@ class Dictionary(Value):
         new.copy_on_change = False
         return new
 
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        if (self._immutables, self._overwrites, self._dictionary) == (other._immutables, other._overwrites, other._dictionary):
+            return True
+        return False
+
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self._dictionary), repr(self.url))
 

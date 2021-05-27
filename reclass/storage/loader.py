@@ -40,7 +40,7 @@ class NodeLoader:
             class_dict, url = self.storage.get(name)
             environment = class_dict.get('environment', None)
             klass = Klass.from_class_dict(name, class_dict, url)
-            self.cache[name] = ProtoNode(name, environment, klass)
+            self.cache[name] = ProtoNode(name, environment, klass, url)
         return self.cache[name]
 
     def __repr__(self):

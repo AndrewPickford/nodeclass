@@ -28,6 +28,13 @@ class Merged(Value):
         new.copy_on_change = False
         return new
 
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        if self._values == other._values:
+            return True
+        return False
+
     def __repr__(self):
         return '{0}[{1}]'.format(self.__class__.__name__, ','.join(map(repr, self._values)))
 

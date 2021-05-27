@@ -1,0 +1,24 @@
+classes:
+- one
+
+applications:
+- first
+- second
+
+environment: test
+
+exports:
+  one: 12345
+
+parameters:
+  alpha:
+    one: 1
+    two: 2
+    three: 3
+  beta:
+  - a
+  - b
+  - c
+  gamma:
+  delta: '111'
+  epsilon: 222

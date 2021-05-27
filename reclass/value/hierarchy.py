@@ -65,6 +65,15 @@ class Hierarchy:
     def __contains__(self, path):
         return self._dictionary._contains(path, 0)
 
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        # Test if the contents, i.e. self._dictionary and other._dictionary are the same
+        # ignore self.url and self.frozen
+        if self._dictionary == other._dictionary:
+            return True
+        return False
+
     def __getitem__(self, path):
         return self._dictionary._getsubitem(path, 0)
 

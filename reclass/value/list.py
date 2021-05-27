@@ -32,6 +32,13 @@ class List(Value):
         else:
             return n < len(self._list)
 
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        if self._list == other._list:
+            return True
+        return False
+
     def _extract(self, paths, depth):
         extracted = type(self)(input=[]*len(self._list), url=self.url, copy_on_change=False)
         set_keys = set()

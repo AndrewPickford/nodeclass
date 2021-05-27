@@ -22,6 +22,13 @@ class Item(ABC):
         self.contents = contents
         self.unresolved = False
 
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        if self.contents == other.contents:
+            return True
+        return False
+
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__, repr(self.contents))
 

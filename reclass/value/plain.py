@@ -19,6 +19,13 @@ class Plain(Value):
     def __copy__(self):
         return type(self)(self.item, self.url, copy_on_change=False)
 
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        if self.item == other.item:
+            return True
+        return False
+
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self.item), repr(self.url))
 

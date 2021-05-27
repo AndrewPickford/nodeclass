@@ -1,0 +1,24 @@
+classes:
+- two
+- three
+
+applications:
+- B
+- A
+
+exports:
+  two:
+    a: 22
+    b: '33'
+
+parameters:
+  alpha: A
+  beta: 1
+  gamma:
+    - 1
+    - 2
+  delta:
+    a: 1
+    b: 2
+    c: 3
+  epsilon:
