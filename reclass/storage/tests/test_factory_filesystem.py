@@ -1,4 +1,5 @@
 import os
+import pytest
 from reclass.storage.factory import Factory as StorageFactory
 from reclass.value.hierarchy import Hierarchy
 
@@ -10,14 +11,16 @@ uri_2 = { 'classes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data/classes'
           'nodes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data/nodes')) }
 
 uri_3 = { 'classes': {
-            'resource': 'yaml_fs',
-            'path': os.path.join(directory, 'data/classes'),
-        },
-        'nodes': {
-            'resource': 'yaml_fs',
-            'path': os.path.join(directory, 'data/nodes'),
-        },
-      }
+              'resource': 'yaml_fs',
+              'path': os.path.join(directory, 'data/classes'),
+          },
+          'nodes': {
+              'resource': 'yaml_fs',
+              'path': os.path.join(directory, 'data/nodes'),
+          },
+        }
+
+uri_list = [ uri_1, uri_2, uri_3 ]
 
 class_one = {
     'classes': [ 'two', 'three' ],
@@ -53,8 +56,9 @@ node_alpha = {
     },
 }
 
-def test_node_loader_filesystem_single_string_uri():
-    _, node_loader = StorageFactory.loaders(uri_1)
+@pytest.mark.parametrize('uri', uri_list)
+def test_node_loader_filesystem_uri(uri):
+    _, node_loader = StorageFactory.loaders(uri)
     proto = node_loader['alpha']
     exports = Hierarchy.from_dict(node_alpha['exports'], proto.url)
     parameters = Hierarchy.from_dict(node_alpha['parameters'], proto.url)
@@ -66,8 +70,9 @@ def test_node_loader_filesystem_single_string_uri():
     assert(proto.klass.exports == exports)
     assert(proto.klass.parameters == parameters)
 
-def test_klass_loader_filesystem_single_string_uri():
-    klass_loader, _ = StorageFactory.loaders(uri_1)
+@pytest.mark.parametrize('uri', uri_list)
+def test_klass_loader_filesystem_uri(uri):
+    klass_loader, _ = StorageFactory.loaders(uri)
     klass = klass_loader[('one', None)]
     url = 'yaml_fs:{0}'.format(os.path.join(directory, 'data/classes/one.yml'))
     exports = Hierarchy.from_dict(class_one['exports'], url)
