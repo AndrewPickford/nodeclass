@@ -8,6 +8,7 @@ from .exceptions import ReclassRuntimeError
 class Settings:
     default_settings = {
         'allow_none_overwrite': False,
+        'automatic_parameters': True,
         'delimiter': ':',
         'escape_character': '\\',
         'immutable_prefix': '=',

@@ -1,4 +1,5 @@
-from copy import copy
+import copy
+from ..context import CONTEXT
 from .klass import Klass, KlassID
 
 class Node:
@@ -12,15 +13,15 @@ class Node:
         '''
         self.name = proto.name
         self.environment = proto.environment
+        self.autoklass = self._make_auto_class_dict()
         self.nodeklass = proto.klass
-        self.baseklass = Klass.from_class_dict('__base__', self.base_class_dict(), '__base__')
         self.klasses = []
         self.applications = []
         self.classes = []
         self.load_classes(self.nodeklass, self.name, klass_loader, classes_found=set(), applications_found=set(), is_node_klass=True)
-        self.all_klasses = copy(self.klasses)
-        self.all_klasses.extend([self.nodeklass, self.baseklass])
-        self.all_classes = copy(self.classes)
+        self.all_klasses = copy.copy(self.klasses)
+        self.all_klasses.extend([self.nodeklass, self.autoklass])
+        self.all_classes = copy.copy(self.classes)
         self.all_classes.append(self.name)
         return
 
@@ -32,16 +33,24 @@ class Node:
         return '(name={0}, applications={1}, classes={2}, klass={3})'.format(str(self.name),
             str(self.applications), str(self.classes), str(self.nodeklass))
 
-    def base_class_dict(self):
-        return { 'applications': [],
-                 'classes': [],
-                 'exports': {},
-                 'parameters': {
-                     '_reclass_': {
-                         'environment': self.environment,
-                         'name': {
-                             'full': self.name,
-                             'short': self.name.split('.')[0] }}}}
+    def _make_auto_class_dict(self):
+        if not CONTEXT.settings.automatic_parameters:
+            return Klass.from_class_dict('__auto__', {}, '__auto__')
+        auto_klass_dict = {
+            'applications': [],
+            'classes': [],
+            'exports': {},
+            'parameters': {
+                '_reclass_': {
+                    'environment': self.environment,
+                    'name': {
+                    'full': self.name,
+                    'short': self.name.split('.')[0]
+                    }
+                }
+            }
+        }
+        return Klass.from_class_dict('__auto__', auto_klass_dict, '__auto__')
 
     def load_classes(self, klass, classname, klass_loader, classes_found, applications_found, is_node_klass=False):
         '''
@@ -64,7 +73,5 @@ class Node:
             'applications': self.applications,
             'classes': self.classes,
             'environment': self.environment,
-            'exports': self.exports,
-            'parameters': self.parameters
         }
         return dictionary

@@ -40,8 +40,8 @@ class Inventory:
             )
             self.merge_cache[classes].exports.freeze()
             self.merge_cache[classes].parameters.freeze()
-        exports_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].exports, node.nodeklass.parameters, node.baseklass.parameters ])
-        parameters_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].parameters, node.nodeklass.parameters, node.baseklass.parameters ])
+        exports_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].exports, node.nodeklass.parameters, node.autoklass.parameters ])
+        parameters_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].parameters, node.nodeklass.parameters, node.autoklass.parameters ])
         exports_resolved = self.resolver.resolve(exports_merged, parameters_merged, proto.exports_required)
         paths_present = { path for path in proto.exports_required if path in exports_resolved }
         exports_pruned = exports_resolved.extract(paths_present)
