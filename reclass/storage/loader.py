@@ -50,5 +50,5 @@ class NodeLoader:
         return '{0}'.format(self.storage)
 
     def nodes(self):
-        for nodename in self.storage.nodes:
+        for nodename in self.storage.node_map:
             yield self[nodename]
