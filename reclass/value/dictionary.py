@@ -1,7 +1,7 @@
 import copy
 from collections import defaultdict
 from ..context import CONTEXT
-from .exceptions import MergeOverImmutableError, MergeTypeError
+from .exceptions import MergeError, MergeOverImmutableError, MergeTypeError
 from .merged import Merged
 from .value import Value
 
@@ -65,7 +65,11 @@ class Dictionary(Value):
 
     def _contains(self, path, depth):
         if depth < path.last:
-            return self._dictionary[path[depth]]._contains(path, depth + 1)
+            next = self._dictionary.get(path[depth], None)
+            if next is None:
+                return False
+            else:
+                return next._contains(path, depth + 1)
         else:
             return path[depth] in self._dictionary
 
@@ -130,7 +134,11 @@ class Dictionary(Value):
                         # replace the value instead of merging
                         merged._dictionary[k] = v
                     else:
-                        merged._dictionary[k] = merged._dictionary[k].merge(v)
+                        try:
+                            merged._dictionary[k] = merged._dictionary[k].merge(v)
+                        except MergeError as exception:
+                            exception.reverse_path.append(k)
+                            raise
                 else:
                     merged._dictionary[k] = v
                 merged._immutables.update(other._immutables)

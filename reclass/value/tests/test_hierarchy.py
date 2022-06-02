@@ -2,6 +2,7 @@ import copy
 import pytest
 from reclass.context import reclass_context
 from reclass.settings import Settings
+from reclass.utils.path import Path
 from reclass.value.exceptions import FrozenError, MergeOverImmutableError, MergeTypeError
 from reclass.value.hierarchy import Hierarchy
 
@@ -19,7 +20,6 @@ def merge_top_dicts(*top_dicts):
     for d in top_dicts[1:]:
         merged.merge(d)
     return merged
-
 
 def test_merge_scalars():
     result = merge_dicts(
@@ -188,3 +188,22 @@ def test_merge_copy_on_change():
     assert beta_result == beta_expected
     assert gamma_result == gamma_expected
     assert delta_result == delta_expected
+
+def test_contains():
+    hierarchy = Hierarchy.from_dict({
+        'alpha': {
+             'beta': {
+                 'one': 1,
+                 'two': 2,
+             },
+             'gamma': [ 'zero', 'one', 'two' ],
+         },
+    }, '')
+    assert Path.fromstring('alpha') in hierarchy
+    assert Path.fromstring('alpha:beta') in hierarchy
+    assert Path.fromstring('alpha:beta:two') in hierarchy
+    assert Path.fromstring('alpha:gamma:0') in hierarchy
+    assert Path.fromstring('alpha:gamma:2') in hierarchy
+    assert Path.fromstring('alpha:gamma:3') not in hierarchy
+    assert Path.fromstring('zeta') not in hierarchy
+    assert Path.fromstring('zeta:gamma') not in hierarchy
