@@ -50,13 +50,10 @@ class FileSystem:
         return os.path.exists(fullpath)
 
     def __repr__(self):
-        return '{0}({1}_fs{2})'.format(self.__class__.__name__, self.format.name, self.basedir)
+        return '{0}({1})'.format(self.__class__.__name__, self.basedir)
 
     def __str__(self):
-        return '{0}_fs:{1}'.format(self.format.name, self.basedir)
-
-    def file_url(self, path):
-        return '{0}_fs:{1}'.format(self.format.name, os.path.join(self.basedir, path))
+        return '{0}'.format(self.basedir)
 
     def get(self, path):
         fullpath = os.path.join(self.basedir, path)
@@ -131,6 +128,9 @@ class FileSystemNodes:
         self.resource = uri['resource']
         self.path = uri['path']
         self.node_map = self._make_node_map()
+
+    def __str__(self):
+        return '{0}:{1}'.format(self.resource, self.file_system)
 
     def _make_node_map(self):
         node_map = collections.defaultdict(list)

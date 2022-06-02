@@ -68,3 +68,9 @@ def test_filesystem_nodes_uri(uri):
     node_dict, url = nodes.get('alpha')
     assert (node_dict == node_alpha)
 
+def test_filesystem_nodes_no_such_node():
+    nodes = FileSystemNodes(uri=uri_simple['nodes'], format=Yaml)
+    with pytest.raises(NodeNotFoundError) as info:
+        node_dict, url = nodes.get('zeta')
+    assert(info.value.name == 'zeta')
+    assert(info.value.storage == 'yaml_fs:{0}'.format(os.path.join(directory, 'data/nodes')))
