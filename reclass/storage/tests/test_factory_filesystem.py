@@ -5,22 +5,24 @@ from reclass.value.hierarchy import Hierarchy
 
 directory = os.path.dirname(os.path.realpath(__file__))
 
-uri_1 = 'yaml_fs:{0}'.format(os.path.join(directory, 'data'))
+uri_single = 'yaml_fs:{0}'.format(os.path.join(directory, 'data'))
 
-uri_2 = { 'classes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data/classes')),
-          'nodes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data/nodes')) }
+uri_simple = { 'classes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data/classes')),
+               'nodes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data/nodes')) }
 
-uri_3 = { 'classes': {
-              'resource': 'yaml_fs',
-              'path': os.path.join(directory, 'data/classes'),
-          },
-          'nodes': {
-              'resource': 'yaml_fs',
-              'path': os.path.join(directory, 'data/nodes'),
-          },
-        }
+uri_full = { 'classes': {
+               'resource': 'yaml_fs',
+               'path': os.path.join(directory, 'data/classes'),
+             },
+             'nodes': {
+               'resource': 'yaml_fs',
+               'path': os.path.join(directory, 'data/nodes'),
+             },
+           }
 
-uri_list = [ uri_1, uri_2, uri_3 ]
+uri_list = [ pytest.param(uri_single, id='single'),
+             pytest.param(uri_simple, id='simple'),
+             pytest.param(uri_full, id='full') ]
 
 class_one = {
     'classes': [ 'two', 'three' ],
