@@ -1,21 +1,26 @@
 import os
+import pytest
+from reclass.storage.exceptions import NodeNotFoundError
 from reclass.storage.filesystem import FileSystemClasses, FileSystemNodes
 from reclass.storage.yaml import Yaml
 
 directory = os.path.dirname(os.path.realpath(__file__))
 
-uri_1 = { 'classes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data/classes')),
-          'nodes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data/nodes')) }
+uri_simple = { 'classes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data/classes')),
+               'nodes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data/nodes')) }
 
-uri_2 = { 'classes': {
-              'resource': 'yaml_fs',
-              'path': os.path.join(directory, 'data/classes'),
-          },
-          'nodes': {
-              'resource': 'yaml_fs',
-              'path': os.path.join(directory, 'data/nodes'),
-          },
-        }
+uri_full = { 'classes': {
+               'resource': 'yaml_fs',
+               'path': os.path.join(directory, 'data/classes'),
+             },
+             'nodes': {
+               'resource': 'yaml_fs',
+               'path': os.path.join(directory, 'data/nodes'),
+             },
+           }
+
+uri_list = [ pytest.param(uri_simple, id='simple'),
+             pytest.param(uri_full, id='full') ]
 
 class_one = {
     'classes': [ 'two', 'three' ],
@@ -51,22 +56,15 @@ node_alpha = {
     },
 }
 
-def test_filesystem_classes_string_uri():
-    classes = FileSystemClasses(uri=uri_1['classes'], format=Yaml)
+@pytest.mark.parametrize('uri', uri_list)
+def test_filesystem_classes_uri(uri):
+    classes = FileSystemClasses(uri=uri['classes'], format=Yaml)
     class_dict, url = classes.get('one', None)
     assert (class_dict == class_one)
 
-def test_filesystem_classes_dict_uri():
-    classes = FileSystemClasses(uri=uri_2['classes'], format=Yaml)
-    class_dict, url = classes.get('one', None)
-    assert (class_dict == class_one)
-
-def test_filesystem_nodes_string_uri():
-    nodes = FileSystemNodes(uri=uri_1['nodes'], format=Yaml)
+@pytest.mark.parametrize('uri', uri_list)
+def test_filesystem_nodes_uri(uri):
+    nodes = FileSystemNodes(uri=uri['nodes'], format=Yaml)
     node_dict, url = nodes.get('alpha')
     assert (node_dict == node_alpha)
 
-def test_filesystem_nodes_dict_uri():
-    nodes = FileSystemNodes(uri=uri_2['nodes'], format=Yaml)
-    node_dict, url = nodes.get('alpha')
-    assert (node_dict == node_alpha)
