@@ -1,10 +1,9 @@
 import collections
 import distutils.version
 import os
-from ..exceptions import ReclassRuntimeError
 from ..utils.holdlock import HoldLock
 from ..utils.misc import ensure_directory_present
-from .exceptions import ClassNotFoundError, DuplicateClassError, DuplicateNodeError, NodeNotFoundError
+from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, InvalidUri, NodeNotFound, PygitConfigError
 
 try:
     # NOTE: in some distros pygit2 could require special effort to acquire.
@@ -30,13 +29,13 @@ class GitRepo:
     def validate_uri(cls, uri):
         def validate_option(option):
             if option not in cls.valid_options:
-                raise ReclassRuntimeError('Invalid git option {0}'.format(option))
+                raise InvalidUri(uri, 'Invalid uri option {0}'.format(option))
             return option
 
         options = { validate_option(option): value for option, value in uri.items() if option not in cls.ignore_options }
         for required in cls.required_options:
             if required not in options:
-                raise ReclassRuntimeError('Required git option {0} not present'.format(required))
+                raise InvalidUri(uri, 'Required option not present: {0}'.format(required))
         return options
 
     @classmethod
@@ -71,10 +70,10 @@ class GitRepo:
 
     def _check_pygit2(self):
         if pygit2 is None:
-            raise ReclassRuntimeError('No pygit module')
+            raise PygitConfigError('No pygit module')
         pygit2_version = pygit2.__version__
         if distutils.version.LooseVersion(pygit2_version) < distutils.version.LooseVersion('0.23.2'):
-            raise ReclassRuntimeError('Require version 0.23.2 of pygit or higher')
+            raise PygitConfigError('Require version 0.23.2 of pygit or higher')
 
     def _initialise(self):
         if os.path.exists(self.cache_dir):
@@ -98,7 +97,7 @@ class GitRepo:
 
             pygit2_version = pygit2.__version__
             if distutils.version.LooseVersion(pygit2_version) < distutils.version.LooseVersion('0.23.2'):
-                raise ReclassRuntimeError('Require version 0.23.2 of pygit or higher')
+                raise PygitConfigError('Require version 0.23.2 of pygit or higher')
 
             remotecallbacks = pygit2.RemoteCallbacks(credentials=credentials)
             return remotecallbacks
@@ -194,8 +193,8 @@ class GitRepoClasses:
             return index[present[0]]
         elif len(present) > 1:
             duplicates = [ self._path_url(duplicate) for duplicate in present ]
-            raise DuplicateClassError(name, duplicates)
-        raise ClassNotFoundError(name, [ self._path_url(path) for path in paths ])
+            raise DuplicateClass(name, duplicates)
+        raise ClassNotFound(name, [ self._path_url(path) for path in paths ])
 
     def _path_url(self, path):
         return '{0}:{1} {2} {3}'.format(self.resource, self.repo, self.branch, path)
@@ -246,10 +245,10 @@ class GitRepoNodes:
 
     def get(self, name):
         if name not in self.node_map:
-            raise NodeNotFoundError(name, str(self))
+            raise NodeNotFound(name, str(self))
         elif len(self.node_map[name]) != 1:
             duplicates = [ self._path_url(duplicate) for duplicate in self.node_map[name] ]
-            raise DuplicateNodeError(name, str(self), duplicates)
+            raise DuplicateNode(name, str(self), duplicates)
         meta = self.node_map[name][0]
         blob = self.git_repo.get(meta.id)
         return self.format.process(blob.data), self._path_url(meta.path)

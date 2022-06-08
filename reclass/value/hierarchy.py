@@ -1,9 +1,10 @@
 import copy
+from ..exceptions import ProcessError
 from ..item.parser import parse as parse_item
 from ..item.scalar import Scalar
 from ..utils.path import Path
 from .dictionary import Dictionary
-from .exceptions import FrozenError, MergeTypeError
+from .exceptions import FrozenHierarchy, NotHierarchy
 from .list import List
 from .plain import Plain
 from .value import Value
@@ -13,17 +14,17 @@ class Hierarchy:
     ''' The top level interface to nested group of dictionaries
     '''
 
-    __slots__ = ('_dictionary', 'frozen', 'url')
+    __slots__ = ('_dictionary', 'frozen', 'hierarchy_type', 'url')
 
     type = Value.HIERARCHY
 
     @staticmethod
-    def from_dict(dictionary, url):
+    def from_dict(dictionary, url, hierarchy_type):
         def process_dictionary(input, url):
-            return Dictionary({ k: process(v, url) for k, v in input.items() }, url)
+            return Dictionary({ k: process(k, v, url) for k, v in input.items() }, url)
 
         def process_list(input, url):
-            return List([ process(v, url) for v in input ], url)
+            return List([ process(i, v, url) for i, v in enumerate(input) ], url)
 
         def process_plain(input, url):
             if isinstance(input, str):
@@ -32,33 +33,47 @@ class Hierarchy:
                 item = Scalar(input)
             return Plain(item, url)
 
-        def process(input, url):
-            if isinstance(input, dict):
-                return process_dictionary(input, url)
-            elif isinstance(input, list):
-                return process_list(input, url)
-            else:
-                return process_plain(input, url)
-
-        return Hierarchy({ k: process(v, url) for k, v in dictionary.items() }, url)
+        def process(k, input, url):
+            try:
+                if isinstance(input, dict):
+                    return process_dictionary(input, url)
+                elif isinstance(input, list):
+                    return process_list(input, url)
+                else:
+                    return process_plain(input, url)
+            except ProcessError as exception:
+                exception.reverse_path.append(k)
+                raise
+        try:
+            return Hierarchy({ k: process(k, v, url) for k, v in dictionary.items() }, url, hierarchy_type)
+        except ProcessError as exception:
+            exception.hierarchy_type = hierarchy_type
+            exception.url = url
+            raise
 
     @staticmethod
-    def merge_multiple(hierarchies):
+    def merge_multiple(hierarchies, hierarchy_type):
         result = copy.copy(hierarchies[0])
-        for h in hierarchies[1:]:
-            result.merge(h)
+        try:
+            for h in hierarchies[1:]:
+                result.merge(h)
+        except ProcessError as exception:
+            exception.hierarchy_type = hierarchy_type
+            raise
         return result
 
-    def __init__(self, input, url, frozen=True):
+    def __init__(self, input, url, hierarchy_type, frozen=True):
         self._dictionary = Dictionary(input, url)
         self.url = url
         self.frozen = frozen
+        self.hierarchy_type = hierarchy_type
 
     def __copy__(self):
         cls = self.__class__
         new = cls.__new__(cls)
         new._dictionary = self._dictionary
         new.url = self.url
+        new.hierarchy_type = self.hierarchy_type
         new.frozen = False
         return new
 
@@ -75,14 +90,18 @@ class Hierarchy:
         return False
 
     def __getitem__(self, path):
-        return self._dictionary._getsubitem(path, 0)
+        try:
+            return self._dictionary._getsubitem(path, 0)
+        except ProcessError as exception:
+            exception.hierarchy_type = self.hierarchy_type
+            raise
 
     def __repr__(self):
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self._dictionary), repr(self.url))
 
     def __setitem__(self, path, value):
         if self.frozen:
-            raise FrozenError(self.url)
+            raise FrozenHierarchy(self.url, self.hierarchy_type)
         if self._dictionary._getsubitem(path, 0).copy_on_change:
             self._dictionary = self._dictionary._setsubitem_copy_on_change(path, 0, value)
         else:
@@ -93,7 +112,7 @@ class Hierarchy:
 
     def extract(self, paths):
         extracted = self._dictionary._extract(paths, 0)
-        return type(self)(extracted._dictionary, self.url)
+        return type(self)(extracted._dictionary, self.url, self.hierarchy_type)
 
     def freeze(self):
         self.frozen = True
@@ -104,11 +123,15 @@ class Hierarchy:
 
     def merge(self, other):
         if self.frozen:
-            raise FrozenError(self.url)
+            raise FrozenHierarchy(self.url, self.hierarchy_type)
         if other.type == Value.HIERARCHY:
-            self._dictionary = self._dictionary.merge(other._dictionary)
+            try:
+                self._dictionary = self._dictionary.merge(other._dictionary)
+            except ProcessError as exception:
+                exception.hierarchy_type = self.hierarchy_type
+                raise
         else:
-            raise MergeTypeError(self, other)
+            raise NotHierarchy(self.url, self.hierarchy_type, other)
 
     def render_all(self):
         return self._dictionary.render_all()

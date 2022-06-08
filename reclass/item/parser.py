@@ -7,7 +7,7 @@ import pyparsing
 from ..context import CONTEXT
 from ..invquery.parser import parse as parse_inventory_expression
 from .composite import Composite
-from .exceptions import ParseError
+from .exceptions import BadParseToken, ParseError
 from .invquery import InvQuery
 from .reference import Reference
 from .scalar import Scalar
@@ -42,7 +42,7 @@ def parse(input):
         elif tag == Tags.INV.value:
             return process_inventory_query(value)
         else:
-            raise ParseError('', 0)
+            raise BadParseToken(tag, value)
 
     def use_full_parser(input):
         try:

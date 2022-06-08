@@ -1,7 +1,7 @@
 import copy
 from collections import defaultdict
 from ..context import CONTEXT
-from .exceptions import MergeError, MergeOverImmutableError, MergeTypeError
+from .exceptions import MergeError, MergeOverImmutable, MergeIncompatibleTypes, NoSuchPath
 from .merged import Merged
 from .value import Value
 
@@ -90,9 +90,12 @@ class Dictionary(Value):
         return extracted
 
     def _getsubitem(self, path, depth):
-        if depth < path.last:
-            return self._dictionary[path[depth]]._getsubitem(path, depth + 1)
-        return self._dictionary[path[depth]]
+        try:
+            if depth < path.last:
+                return self._dictionary[path[depth]]._getsubitem(path, depth + 1)
+            return self._dictionary[path[depth]]
+        except KeyError:
+            raise NoSuchPath(path)
 
     def _setsubitem(self, path, depth, value):
         if depth < path.last:
@@ -128,7 +131,7 @@ class Dictionary(Value):
                     if k in merged._immutables:
                         # raise an error if a key is present in both dictionaries and is
                         # marked as immutable in this dictionary
-                        raise MergeOverImmutableError(self, other)
+                        raise MergeOverImmutable(self, other, path=k)
                     elif k in other._overwrites:
                         # if the key in the other dictionary is marked as an overwrite just
                         # replace the value instead of merging
@@ -149,9 +152,9 @@ class Dictionary(Value):
             if other.unresolved:
                 return Merged(self, other)
             else:
-                raise MergeTypeError(self, other)
+                raise MergeIncompatibleTypes(self, other)
         else:
-            raise MergeTypeError(self, other)
+            raise MergeIncompatibleTypes(self, other)
 
     def render_all(self):
         '''

@@ -1,6 +1,6 @@
 from ..node.klass import Klass
 from ..node.protonode import ProtoNode
-from .exceptions import ClassNotFoundError, DuplicateClassError
+from .exceptions import FileError
 
 
 class KlassLoader:
@@ -19,8 +19,9 @@ class KlassLoader:
                 class_dict, url = self.storage.get(name, environment)
                 self.cache[klass_id] = Klass.from_class_dict(name, class_dict, url)
             return self.cache[klass_id]
-        except (ClassNotFoundError, DuplicateClassError) as exc:
-            exc.environment = environment
+        except FileError as exception:
+            exception.environment = environment
+            exception.storage = self.storage
             raise
 
     def __repr__(self):

@@ -2,7 +2,7 @@ import logging
 import os
 import yaml
 from .constants import CONFIG_FILE_NAME, CONFIG_FILE_SEARCH_PATH
-from .exceptions import ReclassRuntimeError
+from .exceptions import NoConfigFile
 
 SafeLoader = yaml.CSafeLoader if yaml.__with_libyaml__ else yaml.SafeLoader
 
@@ -23,4 +23,4 @@ def load_config_file(filename = None, search_path = None):
                 config = yaml.load(file, Loader=SafeLoader)
                 settings, uri = split_settings_location(config)
                 return settings, uri
-    raise ReclassRuntimeError('No config file ({0}) found in search path: {1}'.format(filename, search_path))
+    raise NoConfigFile(filename, search_path)

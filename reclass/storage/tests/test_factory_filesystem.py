@@ -62,8 +62,8 @@ node_alpha = {
 def test_node_loader_filesystem_uri(uri):
     _, node_loader = StorageFactory.loaders(uri)
     proto = node_loader['alpha']
-    exports = Hierarchy.from_dict(node_alpha['exports'], proto.url)
-    parameters = Hierarchy.from_dict(node_alpha['parameters'], proto.url)
+    exports = Hierarchy.from_dict(node_alpha['exports'], proto.url, 'exports')
+    parameters = Hierarchy.from_dict(node_alpha['parameters'], proto.url, 'parameters')
     assert(proto.name == 'alpha')
     assert(proto.environment == node_alpha['environment'])
     assert(proto.url == 'yaml_fs:{0}'.format(os.path.join(directory, 'data/nodes/alpha.yml')))
@@ -77,8 +77,8 @@ def test_klass_loader_filesystem_uri(uri):
     klass_loader, _ = StorageFactory.loaders(uri)
     klass = klass_loader[('one', None)]
     url = 'yaml_fs:{0}'.format(os.path.join(directory, 'data/classes/one.yml'))
-    exports = Hierarchy.from_dict(class_one['exports'], url)
-    parameters = Hierarchy.from_dict(class_one['parameters'], url)
+    exports = Hierarchy.from_dict(class_one['exports'], url, 'exports')
+    parameters = Hierarchy.from_dict(class_one['parameters'], url, 'parameters')
     assert(klass.name == 'one')
     assert(klass.url == url)
     assert(klass.classes == ['two', 'three'])

@@ -1,5 +1,5 @@
 from ..context import CONTEXT
-from .exceptions import MergeTypeError
+from .exceptions import MergeIncompatibleTypes
 from .merged import Merged
 from .value import Value
 
@@ -65,7 +65,7 @@ class Plain(Value):
                 return Merged(self, other)
             elif self.item.contents is None and CONTEXT.settings.allow_none_overwrite:
                 return other
-        raise MergeTypeError(self, other)
+        raise MergeIncompatibleTypes(self, other)
 
     def resolve(self, context, inventory, environment):
         '''

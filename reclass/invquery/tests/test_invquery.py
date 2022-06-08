@@ -1,9 +1,9 @@
 import pyparsing
 import pytest
 import reclass.invquery.tokenizer as tokenizer
-from reclass.utils.path import Path
 from reclass.invquery.exceptions import InventoryQueryParseError
 from reclass.invquery.parser import parse as parse_expression
+from reclass.utils.path import Path
 
 expression_tokenizer = tokenizer.make_expression_tokenizer()
 
@@ -106,7 +106,7 @@ invalid_parser_expressions += [
 ]
 
 tokenizer_test_data = [ (expression, tokens) for expression, tokens, exports, parameters in invquery_test_data ]
-query_test_data = [ (expression, exports, parameters) for expression, tokens, exports, parameters in invquery_test_data ]
+parser_test_data = [ (expression, exports, parameters) for expression, tokens, exports, parameters in invquery_test_data ]
 
 @pytest.mark.parametrize('expression, expected', tokenizer_test_data)
 def test_expression_tokenizer(expression, expected):
@@ -118,13 +118,14 @@ def test_expression_tokenizer_exceptions(expression):
     with pytest.raises(pyparsing.ParseException):
         expression_tokenizer.parseString(expression)
 
-@pytest.mark.parametrize('expression', invalid_parser_expressions)
-def test_expression_parser_exceptions(expression):
-    with pytest.raises(InventoryQueryParseError):
-        parse_expression(expression)
-
-@pytest.mark.parametrize('expression, exports, parameters', query_test_data)
+@pytest.mark.parametrize('expression, exports, parameters', parser_test_data)
 def test_query(expression, exports, parameters):
     query = parse_expression(expression)
     assert query.exports == exports
     assert query.references == parameters
+
+@pytest.mark.parametrize('expression', invalid_parser_expressions)
+def test_expression_parser_exceptions(expression):
+    with pytest.raises(InventoryQueryParseError) as info:
+        parse_expression(expression)
+    assert info.value.expression == expression

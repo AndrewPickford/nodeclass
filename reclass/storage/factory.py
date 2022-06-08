@@ -1,5 +1,5 @@
 from collections import namedtuple
-from ..exceptions import ReclassRuntimeError
+from .exceptions import InvalidUri
 from .filesystem import FileSystemClasses, FileSystemNodes
 from .gitrepo import GitRepoClasses, GitRepoNodes
 from .loader import KlassLoader, NodeLoader
@@ -23,11 +23,11 @@ class Factory:
         if isinstance(uri, str):
             resource, _ = uri.split(':', 1)
         elif 'resource' not in uri:
-            raise ReclassRuntimeError('Resource not defined in {0}'.format(uri))
+            raise InvalidUri(uri, 'Resource not defined')
         else:
             resource = uri['resource']
         if resource not in cls.storage_classes:
-            raise ReclassRuntimeError('Unknown storage type {0}'.format(resource))
+            raise InvalidUri(uri, 'Unknown storage type')
         klasses = cls.storage_classes[resource].storage(uri=uri, cache=cache, **cls.storage_classes[resource].kwargs)
         return KlassLoader(klasses)
 
@@ -36,11 +36,11 @@ class Factory:
         if isinstance(uri, str):
             resource, _ = uri.split(':', 1)
         elif 'resource' not in uri:
-            raise ReclassRuntimeError('Resource not defined in {0}'.format(uri))
+            raise InvalidUri(uri, 'Resource not defined')
         else:
             resource = uri['resource']
         if resource not in cls.storage_nodes:
-            raise ReclassRuntimeError('Unknown storage type {0}'.format(resource))
+            raise InvalidUri(uri, 'Unknown storage type')
         nodes = cls.storage_nodes[resource].storage(uri=uri, cache=cache, **cls.storage_classes[resource].kwargs)
         return NodeLoader(nodes)
 
@@ -75,7 +75,7 @@ class Factory:
             try:
                 resource, _ = uri.split(':', 1)
             except ValueError:
-                raise ReclassRuntimeError('Invalid uri: {0}'.format(uri))
+                raise InvalidUri(uri, 'Invalid Uri')
             klass_uri = cls.storage_classes[resource].storage.subpath(uri)
             node_uri = cls.storage_nodes[resource].storage.subpath(uri)
             klass_loader = cls.klass_loader(klass_uri, cache)
@@ -86,4 +86,4 @@ class Factory:
                 klass_loader = cls.klass_loader(uri['classes'], cache)
                 node_loader = cls.node_loader(uri['nodes'], cache)
                 return klass_loader, node_loader
-        raise ReclassRuntimeError('unable to make classes and nodes loaders from uri: {0}'.format(uri))
+        raise InvalidUri(uri, 'unable to make class and nodes loaders from uri')

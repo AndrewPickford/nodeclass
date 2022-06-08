@@ -1,6 +1,6 @@
 import os
 import pytest
-from reclass.storage.exceptions import NodeNotFoundError
+from reclass.storage.exceptions import NodeNotFound
 from reclass.storage.filesystem import FileSystemClasses, FileSystemNodes
 from reclass.storage.yaml import Yaml
 
@@ -70,7 +70,7 @@ def test_filesystem_nodes_uri(uri):
 
 def test_filesystem_nodes_no_such_node():
     nodes = FileSystemNodes(uri=uri_simple['nodes'], format=Yaml)
-    with pytest.raises(NodeNotFoundError) as info:
+    with pytest.raises(NodeNotFound) as info:
         node_dict, url = nodes.get('zeta')
-    assert(info.value.name == 'zeta')
+    assert(info.value.node == 'zeta')
     assert(info.value.storage == 'yaml_fs:{0}'.format(os.path.join(directory, 'data/nodes')))

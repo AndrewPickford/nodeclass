@@ -3,11 +3,11 @@
 #
 # This file is part of reclass
 #
-from .exceptions import ReclassRuntimeError
+from .exceptions import UnknownConfigSetting
 
 class Settings:
     default_settings = {
-        'allow_none_overwrite': False,
+        'allow_none_overwrite': True,
         'automatic_parameters': True,
         'delimiter': ':',
         'escape_character': '\\',
@@ -23,9 +23,12 @@ class Settings:
         self.update(self.default_settings)
         self.update(settings)
 
+    def __str__(self):
+        return str({ name: getattr(self, name) for name in self.default_settings })
+
     def update(self, settings):
         for name, value in settings.items():
             if name in self.allowed:
                 setattr(self, name, value)
             else:
-                raise ReclassRuntimeError('unknown settings {0}'.format(name))
+                raise UnknownConfigSetting(name)

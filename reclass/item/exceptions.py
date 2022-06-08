@@ -3,35 +3,69 @@
 #
 # This file is part of reclass
 #
+from ..exceptions import ProcessError
 
 
-class ItemError(Exception):
+class ItemError(ProcessError):
     def __init__(self, item):
         super().__init__()
         self.item = item
-        self.message = []
 
-    def __str__(self):
-        message = '\n'.join(self.message)
-        return message
+    def message(self):
+        return super().message() + \
+               [ 'Item: {0}'.format(self.item) ]
+
+
+class InvQueryResolveToItem(ItemError):
+    def __init__(self, item):
+        super().__init__(item)
+
+    def message(self):
+        return super().message() + \
+               [ 'Internal error: InvQuery reached resolve to item' ] + \
+               self.traceback()
 
 
 class ItemRenderUndefinedError(ItemError):
     def __init__(self, item):
         super().__init__(item)
 
+    def message(self):
+        return super().message() + \
+               [ 'Item render undefined error' ]
+
 
 class ItemResolveError(ItemError):
     def __init__(self, item):
         super().__init__(item)
-        self.message.append('Unable to resolve item {0}'.format(item))
+
+    def message(self):
+        return super().message() + \
+               [ 'Item resolve error' ]
 
 
-class ParseError(Exception):
+class ParseError(ProcessError):
     def __init__(self, input, location):
         super().__init__()
         self.input = input
         self.location = location
 
-    def __str__(self):
-        return 'Parse error at position {0} with input: {1}'.format(self.location, self.input)
+    def message(self):
+        return super().message() + \
+               [ 'Parse error',
+                 'Position: {0}'.format(self.location),
+                 'Input: {0}'.format(self.input) ]
+
+
+class BadParseToken(ProcessError):
+    def __init__(self, tag, value):
+        super().__init__()
+        self.tag = tag
+        self.value = value
+
+    def message(self):
+        return super().message() + \
+               [ 'Bad parse token',
+                 'Tag: {0}'.format(self.tag),
+                 'Value: {0}'.format(self.value) ] + \
+               self.traceback()

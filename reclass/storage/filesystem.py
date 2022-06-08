@@ -1,8 +1,7 @@
 import collections
 import contextlib
 import os
-from ..exceptions import ReclassRuntimeError
-from .exceptions import ClassNotFoundError, DuplicateClassError, DuplicateNodeError, NodeNotFoundError
+from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, InvalidUri, NodeNotFound
 
 class FileSystem:
     '''
@@ -16,13 +15,13 @@ class FileSystem:
     def validate_uri(cls, uri):
         def validate_option(option):
             if option not in cls.valid_options:
-                raise ReclassRuntimeError('Invalid filesystem option {0}'.format(option))
+                raise InvalidUri(uri, 'Invalid uri option {0}'.format(option))
             return option
 
         options = { validate_option(option): value for option, value in uri.items() if option not in cls.ignore_options }
         for required in cls.required_options:
             if required not in options:
-                raise ReclassRuntimeError('Required filesystem option {0} not present'.format(required))
+                raise InvalidUri(uri, 'Required option not present: {0}'.format(required))
         return options
 
     @classmethod
@@ -84,6 +83,9 @@ class FileSystemClasses:
         self.resource = uri['resource']
         self.path = uri['path']
 
+    def __str__(self):
+        return '{0}:{1}'.format(self.resource, self.file_system)
+
     def _path_url(self, path):
         return '{0}:{1}'.format(self.resource, os.path.join(self.path, path))
 
@@ -96,8 +98,8 @@ class FileSystemClasses:
             return present[0]
         elif len(present) > 1:
             duplicates = [ self._path_url(duplicate) for duplicate in present ]
-            raise DuplicateClassError(name, duplicates)
-        raise ClassNotFoundError(name, [ self._path_url(path) for path in paths ])
+            raise DuplicateClass(name, duplicates)
+        raise ClassNotFound(name, [ self._path_url(path) for path in paths ])
 
     def get(self, name, environment):
         path = self.name_to_path(name)
@@ -107,8 +109,8 @@ class FileSystemClasses:
                     return self.format.load(file), self._path_url(path)
             else:
                 return self.format.process(self.file_system.get(path)), self._path_url(path)
-        except FileNotFoundError as exc:
-            raise ClassNotFoundError(name, [ self._path_url(path) ])
+        except FileNotFoundError:
+            raise ClassNotFound(name, [ self._path_url(path) ])
 
 
 class FileSystemNodes:
@@ -147,10 +149,10 @@ class FileSystemNodes:
 
     def get(self, name):
         if name not in self.node_map:
-            raise NodeNotFoundError(name, str(self))
+            raise NodeNotFound(name, str(self))
         elif len(self.node_map[name]) != 1:
             duplicates = [ self._path_url(duplicate) for duplicate in self.node_map[name] ]
-            raise DuplicateNodeError(name, str(self), duplicates)
+            raise DuplicateNode(name, str(self), duplicates)
         try:
             path = self.node_map[name][0]
             if self.format.load:
@@ -158,5 +160,5 @@ class FileSystemNodes:
                     return self.format.load(file), self._path_url(path)
             else:
                 return self.format.process(self.file_system.get(path)), self._path_url(path)
-        except FileNotFoundError as exc:
-            raise NodeNotFoundError(name, str(self))
+        except FileNotFoundError:
+            raise NodeNotFound(name, str(self))

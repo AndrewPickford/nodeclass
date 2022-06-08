@@ -3,13 +3,13 @@ import pytest
 from reclass.context import reclass_context
 from reclass.settings import Settings
 from reclass.utils.path import Path
-from reclass.value.exceptions import FrozenError, MergeOverImmutableError, MergeTypeError
+from reclass.value.exceptions import FrozenHierarchy, MergeOverImmutable, MergeIncompatibleTypes
 from reclass.value.hierarchy import Hierarchy
 
 reclass_context(Settings())
 
 def merge_dicts(*dicts):
-    top_dicts = [ Hierarchy.from_dict(d, '') for d in dicts ]
+    top_dicts = [ Hierarchy.from_dict(d, '', '') for d in dicts ]
     merged = copy.copy(top_dicts[0])
     for d in top_dicts[1:]:
         merged.merge(d)
@@ -46,13 +46,13 @@ def test_merge_lists():
     assert result == expected
 
 def test_merge_list_scalar():
-    with pytest.raises(MergeTypeError):
+    with pytest.raises(MergeIncompatibleTypes):
         merge_dicts(
             {'a': [1, 2, 3]},
             {'a': 1})
 
 def test_merge_scalar_list():
-    with pytest.raises(MergeTypeError):
+    with pytest.raises(MergeIncompatibleTypes):
         merge_dicts(
             {'a': 1},
             {'a': [1, 2, 3]})
@@ -74,36 +74,36 @@ def test_merge_dicts_common_keys():
     assert result == expected
 
 def test_merge_dict_scalar():
-    with pytest.raises(MergeTypeError):
+    with pytest.raises(MergeIncompatibleTypes):
         merge_dicts(
             {'a': { 'one': 1, 'two': 2, 'three': 3}},
             {'a': 1})
 
 def test_merge_scalar_dict():
-    with pytest.raises(MergeTypeError):
+    with pytest.raises(MergeIncompatibleTypes):
         merge_dicts(
             {'a': 1},
             {'a': { 'one': 1, 'two': 2, 'three': 3}})
 
 def test_merge_dict_list():
-    with pytest.raises(MergeTypeError):
+    with pytest.raises(MergeIncompatibleTypes):
         merge_dicts(
             {'a': { 'one': 1, 'two': 2, 'three': 3}},
             {'a': [1, 2, 3]})
 
 def test_merge_list_dict():
-    with pytest.raises(MergeTypeError):
+    with pytest.raises(MergeIncompatibleTypes):
         merge_dicts(
             {'a': [1, 2, 3]},
             {'a': { 'one': 1, 'two': 2, 'three': 3}})
 
 def test_merge_allow_none_overwrite_false():
     with reclass_context(Settings({'allow_none_overwrite': False})):
-        with pytest.raises(MergeTypeError):
+        with pytest.raises(MergeIncompatibleTypes):
             merge_dicts(
                 {'a': None},
                 {'a': [1, 2, 3]})
-        with pytest.raises(MergeTypeError):
+        with pytest.raises(MergeIncompatibleTypes):
             merge_dicts(
                 {'a': None},
                 {'a': { 'x': 'x', 'y': 'y'}})
@@ -126,22 +126,22 @@ def test_merge_overwrite_prefix():
     assert result == expected
 
 def test_merge_immutable_prefix():
-    with pytest.raises(MergeOverImmutableError):
+    with pytest.raises(MergeOverImmutable):
         merge_dicts(
             {'=one': 1},
             {'one': 2})
 
 def test_merge_freeze():
-    with pytest.raises(FrozenError):
-        a = Hierarchy.from_dict({'a': 1}, '')
-        b = Hierarchy.from_dict({'b': 2}, '')
+    with pytest.raises(FrozenHierarchy):
+        a = Hierarchy.from_dict({'a': 1}, '', '')
+        b = Hierarchy.from_dict({'b': 2}, '', '')
         a.freeze()
         a.merge(b)
 
 def test_merge_frozen_on_construction():
-    with pytest.raises(FrozenError):
-        a = Hierarchy.from_dict({'a': 1}, '')
-        b = Hierarchy.from_dict({'b': 2}, '')
+    with pytest.raises(FrozenHierarchy):
+        a = Hierarchy.from_dict({'a': 1}, '', '')
+        b = Hierarchy.from_dict({'b': 2}, '', '')
         a.merge(b)
 
 def test_merge_copy_on_change():
@@ -151,15 +151,15 @@ def test_merge_copy_on_change():
     one = Hierarchy.from_dict({
         'scalar': 1,
         'dict': { 'a': 'a1', 'b': 'b1' },
-        'list': [ 1 ] }, '')
+        'list': [ 1 ] }, '', '')
     two = Hierarchy.from_dict({
         'scalar': 2,
         'dict': { 'a': 'a2', 'c': 'c2' },
-        'list': [ 2 ] }, '')
+        'list': [ 2 ] }, '', '')
     three = Hierarchy.from_dict({
         'scalar': 3,
         'dict': { 'a': 'a3', 'd': 'd3' },
-        'list': [ 3 ] }, '')
+        'list': [ 3 ] }, '', '')
     alpha_expected = {
         'scalar': 3,
         'dict': { 'a': 'a3', 'b': 'b1', 'c': 'c2', 'd': 'd3' },
@@ -198,7 +198,7 @@ def test_contains():
              },
              'gamma': [ 'zero', 'one', 'two' ],
          },
-    }, '')
+    }, '', '')
     assert Path.fromstring('alpha') in hierarchy
     assert Path.fromstring('alpha:beta') in hierarchy
     assert Path.fromstring('alpha:beta:two') in hierarchy

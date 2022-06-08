@@ -1,6 +1,6 @@
 import copy
 from collections import defaultdict
-from .exceptions import MergeTypeError
+from .exceptions import MergeIncompatibleTypes
 from .merged import Merged
 from .value import Value
 
@@ -101,9 +101,9 @@ class List(Value):
             if other.unresolved:
                 return Merged(self, other)
             else:
-                raise MergeTypeError(self, other)
+                raise MergeIncompatibleTypes(self, other)
         else:
-            raise MergeTypeError(self, other)
+            raise MergeIncompatibleTypes(self, other)
 
     def render_all(self):
         '''

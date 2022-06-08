@@ -1,6 +1,7 @@
 import copy
 from collections import defaultdict
-from .exceptions import InterpolationExcessiveRevisitsError
+from ..exceptions import ProcessError
+from .exceptions import ExcessivePathRevisits
 
 class ExportsResolver:
     '''
@@ -16,7 +17,11 @@ class ExportsResolver:
         self.exports = copy.copy(exports)
         self.visit_count = defaultdict(int)
         self.unresolved = dict.fromkeys(self.exports.unresolved_paths(), False)
-        self.resolve_unresolved_paths()
+        try:
+            self.resolve_unresolved_paths()
+        except ProcessError as exception:
+            exception.hierarchy_type = 'exports'
+            raise
         return self.exports
 
     def resolve_unresolved_paths(self):
@@ -36,7 +41,7 @@ class ExportsResolver:
             if visit_count > 255:
                 # this path has been revisited an excessive number of times there is probably
                 # an error somewhere
-                raise InterpolationExcessiveRevisitsError(path)
+                raise ExcessivePathRevisits(value.url, path)
             visit_count += 1
         del self.unresolved[path]
         return

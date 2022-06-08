@@ -17,7 +17,7 @@ QUERY_TYPE_LOOKUP = {
 def parse(expression):
     try:
         tokens = CONTEXT.expression_tokenizer.parseString(expression.strip())
-    except pyparsing.ParseException as exc:
+    except pyparsing.ParseException:
         raise InventoryQueryParseError('tokenizer error', expression, None)
     try:
         options = QueryOptions()
@@ -29,9 +29,9 @@ def parse(expression):
         if query.type in QUERY_TYPE_LOOKUP:
             return QUERY_TYPE_LOOKUP[query.type](query.data, options)
         raise InventoryQueryParseError('unknown query type', expression, tokens)
-    except InventoryQueryParseError as exc:
-        exc.expression = expression
-        exc.tokens = tokens
+    except InventoryQueryParseError as exception:
+        exception.expression = expression
+        exception.tokens = tokens
         raise
     except:
         raise InventoryQueryParseError('unknown error', expression, tokens)

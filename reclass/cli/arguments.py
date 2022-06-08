@@ -1,6 +1,6 @@
 import argparse
-from ..exceptions import ReclassRuntimeError
 from ..version import NAME, DESCRIPTION, VERSION
+from .exceptions import BadArguments
 
 cli_default_opts = {
     'log_level': 'OFF',
@@ -71,13 +71,15 @@ def make_argparser():
 
 def get_uri(args):
     if 'uri' in args:
-        if 'uri_classes' in args or 'uri_nodes' in args:
-            raise ReclassRuntimeError('both --uri and (--uri-classes or --uri-nodes) specified')
+        if 'uri_classes' in args:
+            raise BadArguments('both --uri and --uri-classes specified')
+        if 'uri_nodes' in args:
+            raise BadArguments('both --uri and --uri-nodes specified')
         return args.uri
     if 'uri_classes' in args and 'uri_nodes' not in args:
-        raise ReclassRuntimeError('--uri-classes specified, but not --uri-nodes')
+        raise BadArguments('--uri-classes specified, but not --uri-nodes')
     if 'uri_classes' not in args and 'uri_nodes' in args:
-        raise ReclassRuntimeError('--uri-nodes specified, but not --uri-classes')
+        raise BadArguments('--uri-nodes specified, but not --uri-classes')
     if 'uri_classes' in args and 'uri_nodes' in args:
         return { 'classes': args.uri_classes, 'nodes': args.uri_nodes }
     return None

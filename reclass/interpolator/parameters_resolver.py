@@ -1,6 +1,8 @@
 import copy
 from collections import defaultdict
-from .exceptions import InterpolationExcessiveRevisitsError, InterpolationCircularReferenceError
+from ..exceptions import ProcessError
+from ..value.exceptions import NoSuchPath
+from .exceptions import ExcessivePathRevisits, CircularReference, NoSuchReference
 
 class ParametersResolver:
     '''
@@ -18,7 +20,11 @@ class ParametersResolver:
         self.inventory = inventory
         self.visit_count = defaultdict(int)
         self.unresolved = dict.fromkeys(self.parameters.unresolved_paths(), False)
-        self.resolve_unresolved_paths()
+        try:
+            self.resolve_unresolved_paths()
+        except ProcessError as exception:
+            exception.hierarchy_type = 'parameters'
+            raise
         return self.parameters
 
     def resolve_unresolved_paths(self):
@@ -61,13 +67,16 @@ class ParametersResolver:
                 if self.unresolved[reference] is True:
                     # The referenced path has already been visited and is still unresolved
                     # so we have a circular reference
-                    raise InterpolationCircularReferenceError(path, reference)
-            self.resolve_path(reference)
+                    raise CircularReference(value.url, path, reference)
+            try:
+                self.resolve_path(reference)
+            except NoSuchPath:
+                raise NoSuchReference(value.url, path, reference)
         value = value.resolve(self.parameters, self.inventory, self.environment)
         if value.unresolved:
             self.visit_count[path] += 1
             if self.visit_count[path] > 255:
                 # this path has been revisited an excessive number of times there is probably
                 # an error somewhere
-                raise InterpolationExcessiveRevisitsError(path)
+                raise ExcessivePathRevisits(value.url, path)
         return value

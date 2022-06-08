@@ -1,5 +1,5 @@
 import copy
-from .exceptions import MergeTypeError
+from .exceptions import MergeIncompatibleTypes
 from .value import Value
 
 
@@ -72,7 +72,7 @@ class Merged(Value):
         Merging two Merged objects should never happen.
         '''
         if other.type == Value.MERGED:
-            raise MergeTypeError(self, other)
+            raise MergeIncompatibleTypes(self, other)
         merged = copy.copy(self) if self.copy_on_change else self
         merged._values.append(other)
         return merged

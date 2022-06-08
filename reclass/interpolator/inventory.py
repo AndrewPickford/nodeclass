@@ -10,7 +10,14 @@ class Inventory:
         self.resolver = resolver
         self.merge_cache = {}
 
-    def resolve(self, queries, environment, node_loader, klass_loader):
+    def _cached_merge(self, node):
+        exports_merged = Hierarchy.merge_multiple([ klass.exports for klass in node.klasses ], 'exports')
+        exports_merged.freeze()
+        parameters_merged = Hierarchy.merge_multiple([ klass.parameters for klass in node.klasses ], 'parameters')
+        parameters_merged.freeze()
+        return CachedMerge(exports_merged, parameters_merged)
+
+    def result(self, queries, environment, node_loader, klass_loader):
         if not queries:
             return {}
         self.merge_cache = {}
@@ -34,14 +41,9 @@ class Inventory:
         node = Node(proto, klass_loader)
         classes = '\n'.join(node.classes)
         if classes not in self.merge_cache:
-            self.merge_cache[classes] = CachedMerge(
-                Hierarchy.merge_multiple([ klass.exports for klass in node.klasses ]),
-                Hierarchy.merge_multiple([ klass.parameters for klass in node.klasses ])
-            )
-            self.merge_cache[classes].exports.freeze()
-            self.merge_cache[classes].parameters.freeze()
-        exports_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].exports, node.nodeklass.parameters, node.autoklass.parameters ])
-        parameters_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].parameters, node.nodeklass.parameters, node.autoklass.parameters ])
+            self.merge_cache[classes] = self._cached_merge(node)
+        exports_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].exports, node.nodeklass.parameters, node.autoklass.parameters ], 'exports')
+        parameters_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].parameters, node.nodeklass.parameters, node.autoklass.parameters ], 'parameters')
         exports_resolved = self.resolver.resolve(exports_merged, parameters_merged, proto.exports_required)
         paths_present = { path for path in proto.exports_required if path in exports_resolved }
         exports_pruned = exports_resolved.extract(paths_present)

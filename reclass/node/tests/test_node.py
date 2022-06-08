@@ -40,8 +40,8 @@ def test_node_automatic_parameters_true():
     assert(autoklass.url == '__auto__')
     assert(autoklass.classes == [])
     assert(autoklass.applications == [])
-    assert(autoklass.exports == Hierarchy.from_dict({}, None))
-    assert(autoklass.parameters == Hierarchy.from_dict(auto_klass_parameters, None))
+    assert(autoklass.exports == Hierarchy.from_dict({}, None, None))
+    assert(autoklass.parameters == Hierarchy.from_dict(auto_klass_parameters, None, None))
 
 
 def test_node_automatic_parameters_false():
@@ -56,5 +56,5 @@ def test_node_automatic_parameters_false():
     assert(autoklass.url == '__auto__')
     assert(autoklass.classes == [])
     assert(autoklass.applications == [])
-    assert(autoklass.exports == Hierarchy.from_dict({}, None))
-    assert(autoklass.parameters == Hierarchy.from_dict({}, None))
+    assert(autoklass.exports == Hierarchy.from_dict({}, None, None))
+    assert(autoklass.parameters == Hierarchy.from_dict({}, None, None))

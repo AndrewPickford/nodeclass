@@ -1,28 +1,29 @@
 import copy
 import pytest
 from reclass.context import reclass_context
-from reclass.interpolator.exceptions import InterpolationCircularReferenceError
+from reclass.interpolator.exceptions import CircularReference, NoSuchReference
 from reclass.interpolator.parameters_resolver import ParametersResolver
 from reclass.node.klass import Klass
 from reclass.settings import Settings
-from reclass.value.exceptions import MergeOverImmutableError, MergeTypeError
+from reclass.utils.path import Path
+from reclass.value.exceptions import MergeOverImmutable, MergeIncompatibleTypes
 from reclass.value.hierarchy import Hierarchy
 
 parameters_resolver = ParametersResolver()
 settings = Settings()
 
-def kpar(parameters):
+def kpar(parameters, index):
     class_dict = { 'exports': {}, 'parameters': parameters }
-    return Klass.from_class_dict(name='', class_dict=class_dict, url='')
+    return Klass.from_class_dict(name='', class_dict=class_dict, url='test_url_{0}'.format(index))
 
 def resolve_parameters(*dicts, inventory = None):
     '''
     dicts: one or more dicts to merge and resolve
     inventory: inventory to use during the resolve step
     '''
-    klasses = [ kpar(k) for k in dicts ]
+    klasses = [ kpar(k, i) for i, k in enumerate(dicts) ]
     inventory = None
-    merged_parameters = Hierarchy.merge_multiple([ klass.parameters for klass in klasses ])
+    merged_parameters = Hierarchy.merge_multiple([ klass.parameters for klass in klasses ], 'parameters')
     resolved_parameters = parameters_resolver.resolve(environment = None, parameters = merged_parameters, inventory = inventory)
     return resolved_parameters.render_all()
 
@@ -53,11 +54,21 @@ def test_parameters_resolver_ref_list():
     assert result == expected
 
 def test_parameters_resolver_circular_references():
-    with pytest.raises(InterpolationCircularReferenceError) as exc_info:
+    with pytest.raises(CircularReference) as info:
         resolve_parameters({'a': '${b}', 'b': '${a}'})
-    # interpolation can start with foo or bar
-    assert (str(exc_info.value.path), str(exc_info.value.reference)) in \
-           [('a', 'b'), ('b', 'a')]
+    assert info.value.url == 'test_url_0'
+    assert info.value.hierarchy_type == 'parameters'
+    # interpolation can start with parameter a or b
+    assert (info.value.path == Path.fromstring('a') and info.value.reference == Path.fromstring('b')) or \
+           (info.value.path == Path.fromstring('b') and info.value.reference == Path.fromstring('a'))
+
+def test_parameters_resolver_missing_reference():
+    with pytest.raises(NoSuchReference) as info:
+        resolve_parameters({'a': '${b}'})
+    assert info.value.url == 'test_url_0'
+    assert info.value.hierarchy_type == 'parameters'
+    assert info.value.path == Path.fromstring('a')
+    assert info.value.reference == Path.fromstring('b')
 
 def test_parameters_resolver_nested_references():
     result = resolve_parameters({'a': '${${c}}', 'b': 42, 'c': 'b'})
@@ -122,19 +133,19 @@ def test_parameters_resolver_deep_refs_in_referenced_dicts():
 
 def test_parameters_resolver_allow_none_overwrite_false():
     with reclass_context(Settings({'allow_none_overwrite': False})):
-        with pytest.raises(MergeTypeError):
+        with pytest.raises(MergeIncompatibleTypes):
             resolve_parameters(
                 {'a': None},
                 {'a': [1, 2, 3]})
-        with pytest.raises(MergeTypeError):
+        with pytest.raises(MergeIncompatibleTypes):
             resolve_parameters(
                 {'a': None},
                 {'a': { 'x': 'x', 'y': 'y'}})
-        with pytest.raises(MergeTypeError):
+        with pytest.raises(MergeIncompatibleTypes):
             resolve_parameters(
                 {'a': None},
                 {'a': '${b}', 'b': [1, 2, 3]})
-        with pytest.raises(MergeTypeError):
+        with pytest.raises(MergeIncompatibleTypes):
             resolve_parameters(
                 {'a': None},
                 {'a': '${b}', 'b': { 'x': 'x', 'y': 'y'}})
@@ -155,11 +166,11 @@ def test_parameters_resolver_overwrite_prefix():
     assert result == expected
 
 def test_parameters_resolver_immutable_prefix():
-    with pytest.raises(MergeOverImmutableError):
+    with pytest.raises(MergeOverImmutable):
         resolve_parameters(
             {'=a': '${b}', 'b': {'x': 'x', 'y': 'y'}},
             {'a': {'z': 'z'}})
-    with pytest.raises(MergeOverImmutableError):
+    with pytest.raises(MergeOverImmutable):
         resolve_parameters(
             {'=c': '${d}', 'd': [1, 2, 3]},
             {'c': [4, 5, 6]})

@@ -17,10 +17,10 @@ class Interpolator:
         self.inventory = Inventory(self.inventory_resolver)
 
     def interpolate(self, node, node_loader, klass_loader):
-        exports_merged = Hierarchy.merge_multiple([ klass.exports for klass in node.all_klasses ])
-        parameters_merged = Hierarchy.merge_multiple([ klass.parameters for klass in node.all_klasses ])
+        exports_merged = Hierarchy.merge_multiple([ klass.exports for klass in node.all_klasses ], 'exports')
+        parameters_merged = Hierarchy.merge_multiple([ klass.parameters for klass in node.all_klasses ], 'parameters')
         inventory_queries = parameters_merged.inventory_queries()
-        inventory_resolved = self.inventory.resolve(inventory_queries, node.environment, node_loader, klass_loader)
-        parameters_resolved = self.parameters_resolver.resolve(node.environment, parameters_merged, inventory_resolved)
+        inventory_result = self.inventory.result(inventory_queries, node.environment, node_loader, klass_loader)
+        parameters_resolved = self.parameters_resolver.resolve(node.environment, parameters_merged, inventory_result)
         exports_resolved = self.exports_resolver.resolve(exports_merged, parameters_resolved)
         return InterpolatedNode(node.applications, node.classes, node.environment, exports_resolved.render_all(), parameters_resolved.render_all())

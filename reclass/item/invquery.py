@@ -3,6 +3,7 @@
 #
 # This file is part of reclass
 #
+from .exceptions import InvQueryResolveToItem
 from .item import Item
 
 class InvQuery(Item):
@@ -22,7 +23,7 @@ class InvQuery(Item):
         return self.contents.references
 
     def resolve_to_item(self, context, inventory, environment):
-        raise RuntimeError('InvQuery reached resolve to item, which should never happen. [{0}]'.format(repr(self)))
+        raise InvQueryResolveToItem(self)
 
     def resolve_to_value(self, context, inventory, environment):
         return self.contents.evaluate(context, inventory, environment)

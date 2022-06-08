@@ -1,54 +1,76 @@
-from ..exceptions import ReclassError
+from ..exceptions import ConfigError, FileError
 
-class ClassNotFoundError(ReclassError):
+class ClassNotFound(FileError):
     def __init__(self, classname, urls):
         super().__init__()
-        self.name = classname
+        self.classname = classname
         self.urls = urls
         self.environment = None
 
-    @property
     def message(self):
-        message = [ (0, 'No such class {0} in environment {1}, urls tried:'.format(self.name, self.environment)) ]
-        message.extend([ (1, url) for url in self.urls ])
-        return message
+        return super().message() + \
+               [ 'Class not found',
+                 'Class: {0}'.format(self.classname),
+                 'Environment: {0}'.format(self.environment) ]
 
 
-class DuplicateClassError(ReclassError):
+class DuplicateClass(FileError):
     def __init__(self, classname, duplicates):
         super().__init__()
-        self.name = classname
+        self.classname = classname
         self.duplicates = duplicates
         self.environment = None
 
-    @property
     def message(self):
-        message = [ (0, 'Duplicate definitions for class {0} in environment {1}:'.format(self.name, self.environment)) ]
-        message.extend([ (1, url) for url in self.duplicates ])
-        return message
+        return super().message() + \
+               [ 'Duplicate class definitions',
+                 'Class: {0}'.format(self.classname),
+                 'Environment: {0}'.format(self.environment),
+                 'Duplicates:' ] + \
+               [ url for url in self.duplicates ]
 
 
-class DuplicateNodeError(ReclassError):
-    def __init__(self, classname, storage, duplicates):
+class DuplicateNode(FileError):
+    def __init__(self, node, storage, duplicates):
         super().__init__()
-        self.name = classname
+        self.node = node
         self.storage = storage
         self.duplicates = duplicates
 
-    @property
     def message(self):
-        message = [ (0, 'Duplicate node definitions for {0}:'.format(self.name, self.storage)) ]
-        message.extend([ (1, url) for url in self.duplicates ])
-        return message
+        return super().message() + \
+               [ 'Duplicate node definitions',
+                 'Duplicates:' ] + \
+               [ url for url in self.duplicates ]
 
 
-class NodeNotFoundError(ReclassError):
+class InvalidUri(ConfigError):
+    def __init__(self, uri, details):
+        super().__init__()
+        self.uri = uri
+        self.details = details
+
+    def message(self):
+        return super().message() + \
+               [ 'Invalid uri: {0}'.format(self.uri),
+                 self.details ]
+
+
+class NodeNotFound(FileError):
     def __init__(self, nodename, storage):
         super().__init__()
-        self.name = nodename
+        self.node = nodename
         self.storage = storage
 
-    @property
     def message(self):
-        message = [ (0, 'No such node {0} in storage {1}'.format(self.name, self.storage)) ]
-        return message
+        return super().message() + [ 'No such node' ]
+
+
+class PygitConfigError(ConfigError):
+    def __init__(self, details):
+        super().__init__()
+        self.details = details
+
+    def message(self):
+        return super().message() + \
+               [ 'Pygit config error', self.details ]

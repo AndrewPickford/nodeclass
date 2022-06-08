@@ -1,6 +1,7 @@
 import copy
 from collections import defaultdict
-from .exceptions import InterpolationExcessiveRevisitsError
+from ..exceptions import ProcessError
+from .exceptions import ExcessivePathRevisits
 
 class InventoryResolver:
     '''
@@ -25,7 +26,11 @@ class InventoryResolver:
         self.parameter_resolver.unresolved = None
         self.unresolved = dict.fromkeys(paths, False)
         self.visit_count = defaultdict(int)
-        self.resolve_unresolved_paths()
+        try:
+            self.resolve_unresolved_paths()
+        except ProcessError as exception:
+            exception.hierarchy_type = 'inventory'
+            raise
         return self.exports
 
     def resolve_unresolved_paths(self):
@@ -52,9 +57,11 @@ class InventoryResolver:
         if value.references:
             self.parameter_resolver.unresolved = dict.fromkeys(value.references, False)
             self.parameter_resolver.resolve_unresolved_paths()
-        return value.resolve(self.parameters, None, None)
-        self.visit_count[path] += 1
-        if self.visit_count[path] > 255:
-            # this path has been revisited an excessive number of times there is probably
-            # an error somewhere
-            raise InterpolationExcessiveRevisitsError(path)
+        value = value.resolve(self.parameters, None, None)
+        if value.unresolved:
+            self.visit_count[path] += 1
+            if self.visit_count[path] > 255:
+                # this path has been revisited an excessive number of times there is probably
+                # an error somewhere
+                raise ExcessivePathRevisits(value.url, path)
+        return value

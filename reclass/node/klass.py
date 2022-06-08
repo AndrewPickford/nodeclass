@@ -15,8 +15,8 @@ class Klass:
         classes = class_dict.get('classes', None) or []
         exports = class_dict.get('exports', None) or {}
         parameters = class_dict.get('parameters', None) or {}
-        exports = Hierarchy.from_dict(exports, url)
-        parameters = Hierarchy.from_dict(parameters, url)
+        exports = Hierarchy.from_dict(exports, url, 'exports')
+        parameters = Hierarchy.from_dict(parameters, url, 'parameters')
         exports.freeze()
         parameters.freeze()
         return Klass(name, applications, classes, exports, parameters, url)

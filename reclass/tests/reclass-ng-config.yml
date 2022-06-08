@@ -1,0 +1,7 @@
+uri:
+  classes:
+    resource: yaml_fs
+    path: data/classes
+  nodes:
+    resource: yaml_fs
+    path: data/nodes
