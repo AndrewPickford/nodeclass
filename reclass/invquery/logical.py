@@ -31,7 +31,4 @@ class Logical:
         return '{0}({1})'.format(self.__class__.__name__, str(self))
 
     def combine(self, lhs, rhs):
-        if self._or:
-            return self.op(lhs, rhs)
-        else:
-            return self.op(lhs, rhs)
+        return self.op(lhs, rhs)

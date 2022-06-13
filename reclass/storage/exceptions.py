@@ -74,3 +74,22 @@ class PygitConfigError(ConfigError):
     def message(self):
         return super().message() + \
                [ 'Pygit config error', self.details ]
+
+
+class FileUnhandledError(FileError):
+    def __init__(self, exception, node=None, storage=None, url=None, environment=None):
+        super().__init__()
+        self.exception = exception
+        self.node = node
+        self.storage = storage
+        self.url = url
+        self.environment = environment
+
+    def message(self):
+        return super().message() + \
+               [ 'Unhandled error during interpolation',
+                 'Url: {0}'.format(self.url),
+                 'Envronment: {0}'.format(self.environment),
+                 str(self.exception) ] + \
+               self.traceback() +\
+               self.traceback_other(self.exception)

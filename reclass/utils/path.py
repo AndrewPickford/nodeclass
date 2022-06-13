@@ -41,6 +41,9 @@ class Path:
         self.keys = keys
         self.last = len(self.keys) - 1
 
+    def __add__(self, other):
+        return type(self)(self.keys + other.keys)
+
     def __eq__(self, other):
         if self.__class__ == other.__class__:
             return self.keys == other.keys

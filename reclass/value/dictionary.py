@@ -148,13 +148,14 @@ class Dictionary(Value):
             return merged
         elif other.type == Value.PLAIN:
             # if the Plain value is unresolved return a Merged object for later
-            # interpolation, otherwise raise an error
+            # interpolation
             if other.unresolved:
                 return Merged(self, other)
             else:
                 raise MergeIncompatibleTypes(self, other)
-        else:
-            raise MergeIncompatibleTypes(self, other)
+        elif other.type == Value.MERGED:
+            return other.prepend(self)
+        raise MergeIncompatibleTypes(self, other)
 
     def render_all(self):
         '''

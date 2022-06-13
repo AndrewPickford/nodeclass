@@ -77,6 +77,11 @@ class Merged(Value):
         merged._values.append(other)
         return merged
 
+    def prepend(self, other):
+        merged = copy.copy(self) if self.copy_on_change else self
+        merged._values.insert(0, other)
+        return merged
+
     def repr_all(self):
         return repr(self)
 

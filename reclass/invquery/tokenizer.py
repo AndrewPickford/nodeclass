@@ -9,7 +9,7 @@ from collections import namedtuple
 
 
 Tags = enum.Enum('Tags', ['VALUE_QUERY', 'IF_QUERY', 'LIST_IF_QUERY', 'OPTION', 'IF',
-    'COMPARISION', 'LOGICAL', 'STRING', 'INT', 'FLOAT', 'EXPORT', 'PARAMETER'])
+    'COMPARISION', 'LOGICAL', 'STRING', 'BOOL', 'INT', 'FLOAT', 'EXPORT', 'PARAMETER'])
 
 Token = namedtuple('Token', ['type', 'data'])
 
@@ -36,6 +36,8 @@ def make_expression_tokenizer():
     _OR = 'OR'
     _EXPORT = 'exports:'
     _PARAMETER = ('self:', 'parameters:')
+    _TRUE = 'true'
+    _FALSE = 'false'
 
     ignore_errors = pp.CaselessLiteral(_IGNORE_ERRORS)
     all_envs = pp.CaselessLiteral(_ALL_ENVS)
@@ -58,6 +60,7 @@ def make_expression_tokenizer():
     export = pp.CaselessLiteral(_EXPORT).suppress() + (quoted_string | string).setParseAction(tag(Tags.EXPORT.value))
     parameter = (pp.CaselessLiteral(_PARAMETER[0]) | pp.CaselessLiteral(_PARAMETER[1])).suppress() + (quoted_string | string).setParseAction(tag(Tags.PARAMETER.value))
 
+    bool = (pp.CaselessLiteral(_TRUE) | pp.CaselessLiteral(_FALSE)).setParseAction(tag(Tags.BOOL.value))
     sign = pp.Optional(pp.Literal('-'))
     number = pp.Word(pp.nums)
     dpoint = pp.Literal('.')
@@ -65,7 +68,7 @@ def make_expression_tokenizer():
     real = pp.Combine(sign + real_abs).setParseAction(tag(Tags.FLOAT.value))
     integer = pp.Combine(sign + number + pp.WordEnd()).setParseAction(tag(Tags.INT.value))
 
-    expritem = integer | real | quoted_string_tagged | export | parameter | string_tagged
+    expritem = bool | integer | real | quoted_string_tagged | export | parameter | string_tagged
     single_test = expritem + operator_test + expritem
     additional_test = operator_logical + single_test
     if_test = begin_if + single_test + pp.ZeroOrMore(additional_test)

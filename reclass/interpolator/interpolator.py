@@ -23,4 +23,4 @@ class Interpolator:
         inventory_result = self.inventory.result(inventory_queries, node.environment, node_loader, klass_loader)
         parameters_resolved = self.parameters_resolver.resolve(node.environment, parameters_merged, inventory_result)
         exports_resolved = self.exports_resolver.resolve(exports_merged, parameters_resolved)
-        return InterpolatedNode(node.applications, node.classes, node.environment, exports_resolved.render_all(), parameters_resolved.render_all())
+        return InterpolatedNode(node.name, node.applications, node.classes, node.environment, exports_resolved.render_all(), parameters_resolved.render_all())

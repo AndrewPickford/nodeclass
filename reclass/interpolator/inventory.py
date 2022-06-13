@@ -20,12 +20,10 @@ class Inventory:
     def result(self, queries, environment, node_loader, klass_loader):
         if not queries:
             return {}
-        self.merge_cache = {}
         proto_nodes = self.proto_nodes(queries, environment, node_loader)
         inventory = { proto.name: self.node_inventory(proto, klass_loader)
                       for proto in proto_nodes.values() if proto.exports_required }
         inventory = OrderedDict(sorted(inventory.items()))
-        self.merge_cache = {}
         return inventory
 
     def proto_nodes(self, queries, environment, node_loader):
@@ -40,10 +38,11 @@ class Inventory:
     def node_inventory(self, proto, klass_loader):
         node = Node(proto, klass_loader)
         classes = '\n'.join(node.classes)
-        if classes not in self.merge_cache:
-            self.merge_cache[classes] = self._cached_merge(node)
-        exports_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].exports, node.nodeklass.parameters, node.autoklass.parameters ], 'exports')
-        parameters_merged = Hierarchy.merge_multiple([ self.merge_cache[classes].parameters, node.nodeklass.parameters, node.autoklass.parameters ], 'parameters')
+        klass_id = (node.environment, classes)
+        if klass_id not in self.merge_cache:
+            self.merge_cache[klass_id] = self._cached_merge(node)
+        exports_merged = Hierarchy.merge_multiple([ self.merge_cache[klass_id].exports, node.nodeklass.exports, node.autoklass.exports ], 'exports')
+        parameters_merged = Hierarchy.merge_multiple([ self.merge_cache[klass_id].parameters, node.nodeklass.parameters, node.autoklass.parameters ], 'parameters')
         exports_resolved = self.resolver.resolve(exports_merged, parameters_merged, proto.exports_required)
         paths_present = { path for path in proto.exports_required if path in exports_resolved }
         exports_pruned = exports_resolved.extract(paths_present)

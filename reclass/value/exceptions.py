@@ -3,10 +3,10 @@
 #
 # This file is part of reclass
 #
-from ..exceptions import ProcessError
+from ..exceptions import InterpolationError
 
 
-class MergeError(ProcessError):
+class MergeError(InterpolationError):
     def __init__(self, first, second):
         super().__init__()
         self.url = first.url
@@ -23,9 +23,9 @@ class MergeIncompatibleTypes(MergeError):
 
     def message(self):
         return super().message() + \
-               [ 'Incompatible merge types in: ',
-                 self.first.url,
-                 self.second.url ]
+               [ 'Incompatible merge types: ',
+                 str(self.first),
+                 str(self.second) ]
 
 
 class MergeOverImmutable(MergeError):
@@ -40,7 +40,7 @@ class MergeOverImmutable(MergeError):
                  self.second.url ]
 
 
-class FrozenHierarchy(ProcessError):
+class FrozenHierarchy(InterpolationError):
     def __init__(self, url, hierarchy_type):
         super().__init__()
         self.url = url
@@ -53,7 +53,7 @@ class FrozenHierarchy(ProcessError):
                self.traceback()
 
 
-class NotHierarchy(ProcessError):
+class NotHierarchy(InterpolationError):
     def __init__(self, url, hierarchy_type, other):
         super().__init__()
         self.url = url

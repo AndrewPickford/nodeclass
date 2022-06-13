@@ -3,10 +3,10 @@
 #
 # This file is part of reclass
 #
-from ..exceptions import ProcessError
+from ..exceptions import InterpolationError
 
 
-class NoSuchReference(ProcessError):
+class NoSuchReference(InterpolationError):
     def __init__(self, url, path, reference):
         super().__init__()
         self.url = url
@@ -18,7 +18,7 @@ class NoSuchReference(ProcessError):
                [ 'No such reference: {0}'.format(self.reference) ]
 
 
-class ExcessivePathRevisits(ProcessError):
+class ExcessivePathRevisits(InterpolationError):
     def __init__(self, url, path):
         super().__init__()
         self.url = url
@@ -30,7 +30,7 @@ class ExcessivePathRevisits(ProcessError):
                self.traceback()
 
 
-class CircularReference(ProcessError):
+class CircularReference(InterpolationError):
     def __init__(self, url, path, reference):
         super().__init__()
         self.url = url
@@ -40,3 +40,22 @@ class CircularReference(ProcessError):
     def message(self):
         return super().message() + \
                [ 'Circular reference: {0}'.format(self.reference) ]
+
+
+class InterpolateUnhandledError(InterpolationError):
+    def __init__(self, exception, node=None, url=None, hierarchy_type=None, path=None, value=None):
+        super().__init__()
+        self.exception = exception
+        self.node = node
+        self.url = url
+        self.hierarchy_type = hierarchy_type
+        self.path = path
+        self.value = value
+
+    def message(self):
+        return super().message() + \
+               [ 'Unhandled error during interpolation',
+                 'Value: {0}'.format(self.value),
+                 str(repr(self.exception)) ] + \
+               self.traceback() +\
+               self.traceback_other(self.exception)

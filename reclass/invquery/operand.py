@@ -5,7 +5,7 @@ from .tokenizer import Tags
 
 class Operand:
     def __init__(self, token):
-        if token.type not in [ Tags.STRING.value, Tags.INT.value, Tags.FLOAT.value, Tags.EXPORT.value, Tags.PARAMETER.value ]:
+        if token.type not in [ Tags.STRING.value, Tags.BOOL.value, Tags.INT.value, Tags.FLOAT.value, Tags.EXPORT.value, Tags.PARAMETER.value ]:
             raise InventoryQueryParseError(token, 'expected operand found: {0}'.format(token))
         self.type = token.type
         self.data = token.data

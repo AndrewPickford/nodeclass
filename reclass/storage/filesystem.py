@@ -7,7 +7,7 @@ class FileSystem:
     '''
     '''
 
-    ignore_options = [ 'resource' ]
+    ignored_options = [ 'resource' ]
     required_options = [ 'path' ]
     valid_options = required_options
 
@@ -18,7 +18,7 @@ class FileSystem:
                 raise InvalidUri(uri, 'Invalid uri option {0}'.format(option))
             return option
 
-        options = { validate_option(option): value for option, value in uri.items() if option not in cls.ignore_options }
+        options = { validate_option(option): value for option, value in uri.items() if option not in cls.ignored_options }
         for required in cls.required_options:
             if required not in options:
                 raise InvalidUri(uri, 'Required option not present: {0}'.format(required))
@@ -69,6 +69,12 @@ class FileSystem:
 class FileSystemClasses:
     '''
     '''
+
+    valid_options = FileSystem.ignored_options + FileSystem.valid_options
+
+    @classmethod
+    def clean_uri(cls, uri):
+        return { k: v for k, v in uri.items() if k in cls.valid_options }
 
     @classmethod
     def subpath(cls, uri):

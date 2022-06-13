@@ -1,5 +1,6 @@
 import copy
-from ..exceptions import ProcessError
+import yaml
+from ..exceptions import InterpolationError, InputError
 from ..item.parser import parse as parse_item
 from ..item.scalar import Scalar
 from ..utils.path import Path
@@ -41,12 +42,12 @@ class Hierarchy:
                     return process_list(input, url)
                 else:
                     return process_plain(input, url)
-            except ProcessError as exception:
+            except InputError as exception:
                 exception.reverse_path.append(k)
                 raise
         try:
             return Hierarchy({ k: process(k, v, url) for k, v in dictionary.items() }, url, hierarchy_type)
-        except ProcessError as exception:
+        except InputError as exception:
             exception.hierarchy_type = hierarchy_type
             exception.url = url
             raise
@@ -57,7 +58,7 @@ class Hierarchy:
         try:
             for h in hierarchies[1:]:
                 result.merge(h)
-        except ProcessError as exception:
+        except InterpolationError as exception:
             exception.hierarchy_type = hierarchy_type
             raise
         return result
@@ -92,7 +93,7 @@ class Hierarchy:
     def __getitem__(self, path):
         try:
             return self._dictionary._getsubitem(path, 0)
-        except ProcessError as exception:
+        except InterpolationError as exception:
             exception.hierarchy_type = self.hierarchy_type
             raise
 
@@ -118,6 +119,11 @@ class Hierarchy:
         self.frozen = True
         self._dictionary.set_copy_on_change()
 
+    def get(self, path, default):
+        if path in self:
+            return self[path]
+        return default
+
     def inventory_queries(self):
         return self._dictionary.inventory_queries()
 
@@ -127,11 +133,15 @@ class Hierarchy:
         if other.type == Value.HIERARCHY:
             try:
                 self._dictionary = self._dictionary.merge(other._dictionary)
-            except ProcessError as exception:
+            except InterpolationError as exception:
                 exception.hierarchy_type = self.hierarchy_type
                 raise
         else:
             raise NotHierarchy(self.url, self.hierarchy_type, other)
+
+    def pprint(self):
+        print('Hierarchy, type={0}, url={1}'.format(self.hierarchy_type, self.url))
+        print(yaml.dump(self._dictionary.repr_all(), default_flow_style=False, Dumper=yaml.CSafeDumper))
 
     def render_all(self):
         return self._dictionary.render_all()

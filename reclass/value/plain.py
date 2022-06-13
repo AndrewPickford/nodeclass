@@ -60,11 +60,14 @@ class Plain(Value):
                 return other
         elif other.type == Value.DICTIONARY or other.type == Value.LIST:
             # if the current object is unresolved return a Merged object for later
-            # interpolation, otherwise raise an error
+            # interpolation
             if self.unresolved:
                 return Merged(self, other)
             elif self.item.contents is None and CONTEXT.settings.allow_none_overwrite:
                 return other
+                raise MergeIncompatibleTypes(self, other)
+        elif other.type == Value.MERGED:
+            return other.prepend(self)
         raise MergeIncompatibleTypes(self, other)
 
     def resolve(self, context, inventory, environment):

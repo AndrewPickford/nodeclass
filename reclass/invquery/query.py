@@ -34,9 +34,12 @@ class Query:
         return hash(str(self))
 
     def options_str(self):
-        all_envs = '+AllEnvs' if self.all_envs else ''
-        ignore_errors = '+IgnoreErrors' if self.ignore_errors else ''
-        string = ''.join([all_envs, ignore_errors])
+        opts = []
+        if self.all_envs:
+            opts.append('+AllEnvs')
+        if self.ignore_errors:
+            opts.append('+IgnoreErrors')
+        string = ' '.join(opts)
         if len(string) > 0:
             string += ' '
         return string

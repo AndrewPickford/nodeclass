@@ -22,6 +22,12 @@ def add_run_mode_options(parser):
         metavar = 'NODE',
         default=None,
         help = 'Output the application list for the given node.')
+    run_group.add_argument('--write-all',
+        dest = 'writeall',
+        type = str,
+        metavar = 'NODE',
+        default=None,
+        help = 'Write out salt top and pillar data for all nodes in the given directory')
     return
 
 def add_data_location_options(parser):

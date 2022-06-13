@@ -24,7 +24,13 @@ class IfTest:
         return not self.__eq__(other)
 
     def __str__(self):
-        return ' '.join([str(c) for c in self.conditionals])
+        if len(self.conditionals) == 1:
+            return str(self.conditionals[0])
+        result = [ str(self.conditionals[0]) ]
+        for i, logical in enumerate(self.logicals):
+            result.append(str(logical))
+            result.append(str(self.conditionals[i+1]))
+        return ' '.join(result)
 
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__, repr(self.conditionals))
@@ -32,10 +38,9 @@ class IfTest:
     def evaluate(self, node_exports, context):
         if len(self.conditionals) == 1:
             return self.conditionals[0].evaluate(node_exports, context)
-        else:
-            result = self.conditionals[0].evaluate(node_exports, context)
-            for i, logical in enumerate(self.logicals):
-                result = logical.combine(result, self.conditionals[i+1].evaluate(node_exports, context))
+        result = self.conditionals[0].evaluate(node_exports, context)
+        for i, logical in enumerate(self.logicals):
+            result = logical.combine(result, self.conditionals[i+1].evaluate(node_exports, context))
         return result
 
     @property

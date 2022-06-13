@@ -4,9 +4,8 @@ import reclass.core as core
 from collections import ChainMap
 from ..config_file import load_config_file
 from ..context import reclass_set_context
-from ..exceptions import ReclassError
+from ..exceptions import MultipleReclassErrors, ReclassError
 from ..settings import Settings
-from ..storage.factory import Factory as StorageFactory
 from .arguments import make_argparser, process_args
 from .exceptions import NoInventoryUri
 
@@ -24,16 +23,31 @@ def process_config_file_and_args(args):
     return settings, uri
 
 
+def single_nodeinfo(nodename, uri):
+    nodeinfo = core.nodeinfo(nodename, uri)
+    yaml.dump(nodeinfo.as_dict(), sys.stdout, default_flow_style=False, Dumper=yaml.CSafeDumper)
+
+
+def write_all_nodeinfos(uri, directory):
+    nodeinfos, exceptions = core.nodeinfo_all(uri)
+    for nodeinfo in nodeinfos:
+        filename = '{0}/{1}.yml'.format(directory, nodeinfo.name)
+        with open(filename, 'w') as file:
+            yaml.dump(nodeinfo.as_dict(), file, default_flow_style=False, Dumper=yaml.CSafeDumper)
+    if len(exceptions) > 0:
+        raise MultipleReclassErrors(exceptions)
+
+
 def main():
     parser = make_argparser()
     args = parser.parse_args()
     try:
         settings, uri = process_config_file_and_args(args)
         reclass_set_context(settings)
-        klass_loader, node_loader = StorageFactory.loaders(uri)
         if args.nodeinfo:
-            nodeinfo = core.nodeinfo(args.nodeinfo, klass_loader, node_loader)
-            print(yaml.dump(nodeinfo.as_dict(), default_flow_style=False, Dumper=yaml.CSafeDumper))
+            single_nodeinfo(args.nodeinfo, uri)
+        elif args.writeall:
+            write_all_nodeinfos(uri, args.writeall)
     except ReclassError as exception:
         print(exception)
         sys.exit(1)

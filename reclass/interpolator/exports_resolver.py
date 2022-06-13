@@ -1,6 +1,6 @@
 import copy
 from collections import defaultdict
-from ..exceptions import ProcessError
+from ..exceptions import InterpolationError
 from .exceptions import ExcessivePathRevisits
 
 class ExportsResolver:
@@ -19,7 +19,7 @@ class ExportsResolver:
         self.unresolved = dict.fromkeys(self.exports.unresolved_paths(), False)
         try:
             self.resolve_unresolved_paths()
-        except ProcessError as exception:
+        except InterpolationError as exception:
             exception.hierarchy_type = 'exports'
             raise
         return self.exports

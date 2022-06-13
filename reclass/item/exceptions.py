@@ -3,10 +3,10 @@
 #
 # This file is part of reclass
 #
-from ..exceptions import ProcessError
+from ..exceptions import InputError, InterpolationError
 
 
-class ItemError(ProcessError):
+class ItemError(InterpolationError):
     def __init__(self, item):
         super().__init__()
         self.item = item
@@ -44,7 +44,7 @@ class ItemResolveError(ItemError):
                [ 'Item resolve error' ]
 
 
-class ParseError(ProcessError):
+class ParseError(InputError):
     def __init__(self, input, location):
         super().__init__()
         self.input = input
@@ -57,7 +57,7 @@ class ParseError(ProcessError):
                  'Input: {0}'.format(self.input) ]
 
 
-class BadParseToken(ProcessError):
+class BadParseToken(InputError):
     def __init__(self, tag, value):
         super().__init__()
         self.tag = tag

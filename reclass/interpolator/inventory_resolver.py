@@ -1,7 +1,7 @@
 import copy
 from collections import defaultdict
-from ..exceptions import ProcessError
-from .exceptions import ExcessivePathRevisits
+from ..exceptions import InterpolationError
+from .exceptions import ExcessivePathRevisits, InterpolateUnhandledError
 
 class InventoryResolver:
     '''
@@ -28,7 +28,7 @@ class InventoryResolver:
         self.visit_count = defaultdict(int)
         try:
             self.resolve_unresolved_paths()
-        except ProcessError as exception:
+        except InterpolationError as exception:
             exception.hierarchy_type = 'inventory'
             raise
         return self.exports
@@ -40,18 +40,29 @@ class InventoryResolver:
         return
 
     def resolve_path(self, path):
-        if self.exports.unresolved_ancestor(path):
-            self.resolve_path(path.parent())
-        if path in self.exports:
-            value = self.exports[path]
-            while value.unresolved:
-                value = self.resolve_value(path, value)
-            new_paths = value.unresolved_paths(path)
-            if new_paths:
-                self.unresolved.update(dict.fromkeys(new_paths, False))
-            self.exports[path] = value
-        del self.unresolved[path]
-        return
+        try:
+            if self.exports.unresolved_ancestor(path):
+                self.unresolved[path.parent()] = False
+                self.resolve_path(path.parent())
+            if path in self.exports:
+                value = self.exports[path]
+                while value.unresolved:
+                    value = self.resolve_value(path, value)
+                new_paths = value.unresolved_paths(path)
+                if new_paths:
+                    self.unresolved.update(dict.fromkeys(new_paths, False))
+                self.exports[path] = value
+            del self.unresolved[path]
+        except InterpolationError:
+            raise
+        except Exception as exception:
+            try:
+                value = self.exports.get(path, None)
+                url = value.url
+            except Exception:
+                value = None
+                url = None
+            raise InterpolateUnhandledError(exception, url=url, path=path, value=value)
 
     def resolve_value(self, path, value):
         if value.references:

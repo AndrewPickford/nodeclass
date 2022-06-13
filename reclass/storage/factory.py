@@ -20,16 +20,35 @@ class Factory:
 
     @classmethod
     def klass_loader(cls, uri, cache=None):
+        def get_resource(uri):
+            if isinstance(uri, str):
+                resource, _ = uri.split(':', 1)
+            elif 'resource' not in uri:
+                raise InvalidUri(uri, 'Resource not defined')
+            else:
+                resource = uri['resource']
+            if resource not in cls.storage_classes:
+                raise InvalidUri(uri, 'Unknown storage type')
+            return resource
+
+        storages = []
         if isinstance(uri, str):
-            resource, _ = uri.split(':', 1)
-        elif 'resource' not in uri:
-            raise InvalidUri(uri, 'Resource not defined')
+            default_uri = uri
         else:
-            resource = uri['resource']
-        if resource not in cls.storage_classes:
-            raise InvalidUri(uri, 'Unknown storage type')
-        klasses = cls.storage_classes[resource].storage(uri=uri, cache=cache, **cls.storage_classes[resource].kwargs)
-        return KlassLoader(klasses)
+            default_uri = { k: v for k, v in uri.items() if k != 'env_overrides' }
+            if 'env_overrides' in uri:
+                for env in uri['env_overrides']:
+                    for env_name, env_uri in env.items():
+                        mangled_uri = { k: v for k, v in default_uri.items() }
+                        mangled_uri.update(env_uri)
+                        resource = get_resource(mangled_uri)
+                        mangled_uri = cls.storage_classes[resource].storage.clean_uri(mangled_uri)
+                        storage = cls.storage_classes[resource].storage(uri=mangled_uri, cache=cache, **cls.storage_classes[resource].kwargs)
+                        storages.append( (env_name, storage) )
+        default_resource = get_resource(default_uri)
+        default_storage = cls.storage_classes[default_resource].storage(uri=default_uri, cache=cache, **cls.storage_classes[default_resource].kwargs)
+        storages.append( ('*', default_storage) )
+        return KlassLoader(storages)
 
     @classmethod
     def node_loader(cls, uri, cache=None):

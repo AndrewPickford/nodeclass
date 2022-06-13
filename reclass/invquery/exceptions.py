@@ -1,7 +1,7 @@
-from ..exceptions import ProcessError
+from ..exceptions import InputError
 from ..utils.path import Path
 
-class InventoryQueryParseError(ProcessError):
+class InventoryQueryParseError(InputError):
     def __init__(self, description, expression=None, tokens=None):
         super().__init__()
         self.expression = expression

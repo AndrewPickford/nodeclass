@@ -21,7 +21,7 @@ class GitRepo:
     '''
     '''
 
-    ignore_options = [ 'resource', 'branch', 'path' ]
+    ignored_options = [ 'resource', 'branch', 'path' ]
     required_options = [ 'repo' ]
     valid_options = [ 'cache_dir', 'lock_file', 'pubkey', 'privkey', 'password' ] + required_options
 
@@ -32,7 +32,7 @@ class GitRepo:
                 raise InvalidUri(uri, 'Invalid uri option {0}'.format(option))
             return option
 
-        options = { validate_option(option): value for option, value in uri.items() if option not in cls.ignore_options }
+        options = { validate_option(option): value for option, value in uri.items() if option not in cls.ignored_options }
         for required in cls.required_options:
             if required not in options:
                 raise InvalidUri(uri, 'Required option not present: {0}'.format(required))

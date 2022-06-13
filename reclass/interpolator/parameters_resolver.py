@@ -1,8 +1,9 @@
 import copy
 from collections import defaultdict
-from ..exceptions import ProcessError
+from ..exceptions import InterpolationError
+from ..utils.path import Path
 from ..value.exceptions import NoSuchPath
-from .exceptions import ExcessivePathRevisits, CircularReference, NoSuchReference
+from .exceptions import ExcessivePathRevisits, CircularReference, InterpolateUnhandledError, NoSuchReference
 
 class ParametersResolver:
     '''
@@ -22,7 +23,7 @@ class ParametersResolver:
         self.unresolved = dict.fromkeys(self.parameters.unresolved_paths(), False)
         try:
             self.resolve_unresolved_paths()
-        except ProcessError as exception:
+        except InterpolationError as exception:
             exception.hierarchy_type = 'parameters'
             raise
         return self.parameters
@@ -72,7 +73,13 @@ class ParametersResolver:
                 self.resolve_path(reference)
             except NoSuchPath:
                 raise NoSuchReference(value.url, path, reference)
-        value = value.resolve(self.parameters, self.inventory, self.environment)
+        try:
+            value = value.resolve(self.parameters, self.inventory, self.environment)
+        except InterpolationError as exception:
+            exception.path = path + Path.fromlist(exception.reverse_path[::-1])
+            raise
+        except Exception as exception:
+            raise InterpolateUnhandledError(exception, url=value.url, path=path, value=value)
         if value.unresolved:
             self.visit_count[path] += 1
             if self.visit_count[path] > 255:

@@ -1,5 +1,6 @@
 class InterpolatedNode:
-    def __init__(self, applications, classes, environment, exports, parameters):
+    def __init__(self, name, applications, classes, environment, exports, parameters):
+        self.name = name
         self.applications = applications
         self.classes = classes
         self.environment = environment

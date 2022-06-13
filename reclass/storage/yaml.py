@@ -28,7 +28,15 @@ class Yaml:
 
     @classmethod
     def load(cls, file_pointer):
-        return yaml.load(file_pointer, Loader=cls.SafeLoader)
+        ''' Return the yaml data in the file pointer
+
+            In the case of an empty file the yaml.load method returns None, so
+            as a special case return an empty dictionary
+        '''
+        data = yaml.load(file_pointer, Loader=cls.SafeLoader)
+        if data == None:
+            return {}
+        return data
 
     @classmethod
     def process(cls, string):

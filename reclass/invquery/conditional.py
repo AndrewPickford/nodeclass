@@ -39,9 +39,9 @@ class Conditional:
     def evaluate(self, node_exports, context):
         if self.export.path not in node_exports:
             return False
-        export = node_exports[self.export.path].render()
+        export = node_exports[self.export.path].render_all()
         if self.other.type == Tags.PARAMETER.value:
-            other = context[self.other.path].render()
+            other = context[self.other.path].render_all()
         else:
             other = self.other.data
         return self.comparision.compare(export, other)
