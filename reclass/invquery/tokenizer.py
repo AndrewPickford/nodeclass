@@ -13,9 +13,29 @@ Tags = enum.Enum('Tags', ['VALUE_QUERY', 'IF_QUERY', 'LIST_IF_QUERY', 'OPTION', 
 
 Token = namedtuple('Token', ['type', 'data'])
 
+_TRUE = 'true'
+_FALSE = 'false'
+
 def tag(name):
     def inner(string, location, tokens):
         return Token(name, tokens[0])
+    return inner
+
+def tag_to_bool(name):
+    def inner(string, location, tokens):
+        if tokens[0].lower() == _TRUE:
+            return Token(name, True)
+        return Token(name, False)
+    return inner
+
+def tag_to_int(name):
+    def inner(string, location, tokens):
+        return Token(name, int(tokens[0]))
+    return inner
+
+def tag_to_float(name):
+    def inner(string, location, tokens):
+        return Token(name, float(tokens[0]))
     return inner
 
 def tag_to_lower(name):
@@ -36,8 +56,6 @@ def make_expression_tokenizer():
     _OR = 'OR'
     _EXPORT = 'exports:'
     _PARAMETER = ('self:', 'parameters:')
-    _TRUE = 'true'
-    _FALSE = 'false'
 
     ignore_errors = pp.CaselessLiteral(_IGNORE_ERRORS)
     all_envs = pp.CaselessLiteral(_ALL_ENVS)
@@ -60,13 +78,13 @@ def make_expression_tokenizer():
     export = pp.CaselessLiteral(_EXPORT).suppress() + (quoted_string | string).setParseAction(tag(Tags.EXPORT.value))
     parameter = (pp.CaselessLiteral(_PARAMETER[0]) | pp.CaselessLiteral(_PARAMETER[1])).suppress() + (quoted_string | string).setParseAction(tag(Tags.PARAMETER.value))
 
-    bool = (pp.CaselessLiteral(_TRUE) | pp.CaselessLiteral(_FALSE)).setParseAction(tag(Tags.BOOL.value))
+    bool = (pp.CaselessLiteral(_TRUE) | pp.CaselessLiteral(_FALSE)).setParseAction(tag_to_bool(Tags.BOOL.value))
     sign = pp.Optional(pp.Literal('-'))
     number = pp.Word(pp.nums)
     dpoint = pp.Literal('.')
     real_abs = ((number + dpoint + number) | (dpoint + number) | (number + dpoint))
-    real = pp.Combine(sign + real_abs).setParseAction(tag(Tags.FLOAT.value))
-    integer = pp.Combine(sign + number + pp.WordEnd()).setParseAction(tag(Tags.INT.value))
+    real = pp.Combine(sign + real_abs).setParseAction(tag_to_float(Tags.FLOAT.value))
+    integer = pp.Combine(sign + number + pp.WordEnd()).setParseAction(tag_to_int(Tags.INT.value))
 
     expritem = bool | integer | real | quoted_string_tagged | export | parameter | string_tagged
     single_test = expritem + operator_test + expritem
