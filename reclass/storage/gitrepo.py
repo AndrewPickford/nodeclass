@@ -157,6 +157,12 @@ class GitRepoClasses:
     '''
     '''
 
+    valid_options = GitRepo.ignored_options + GitRepo.valid_options
+
+    @classmethod
+    def clean_uri(cls, uri):
+        return { k: v for k, v in uri.items() if k in cls.valid_options }
+
     @classmethod
     def subpath(cls, uri):
         if isinstance(uri, str):
