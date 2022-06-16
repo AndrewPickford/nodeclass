@@ -1,8 +1,3 @@
 NAME = 'nodeclass'
-DESCRIPTION = 'Merge data by recursive descent down an ancestry hierarchy '\
-              '(refactored and extended version).'
+DESCRIPTION = 'An external node classifier for use with configuration management tools such as salt.'
 VERSION = '0.0.1'
-AUTHOR = 'Andrew Pickford'
-AUTHOR_EMAIL = 'anpickford@googlemail.com'
-COPYRIGHT = 'Copyright © 2021 Andrew Pickford'
-LICENCE = 'Artistic Licence 2.0'
