@@ -23,7 +23,7 @@ class GitRepo:
 
     ignored_options = [ 'resource', 'branch', 'path' ]
     required_options = [ 'repo' ]
-    valid_options = [ 'cache_dir', 'lock_file', 'pubkey', 'privkey', 'password' ] + required_options
+    valid_options = [ 'cache_dir', 'lock_dir', 'pubkey', 'privkey', 'password' ] + required_options
 
     @classmethod
     def validate_uri(cls, uri):
@@ -55,12 +55,18 @@ class GitRepo:
             cache[name] = cls(**uri_valid)
         return cache[name], uri
 
-    def __init__(self, repo, cache_dir=None, lock_file=None, pubkey=None, privkey=None, password=None):
+    def __init__(self, repo, cache_dir=None, lock_dir=None, pubkey=None, privkey=None, password=None):
         self._check_pygit2()
         self.transport, self.url = repo.split('://', 1)
         self.id = self.url.replace('/', '_')
-        self.cache_dir = cache_dir or '{0}/{1}/{2}'.format(os.path.expanduser("~"), '.nodeclass/cache/git', self.id)
-        self.lock_file = lock_file or '{0}/{1}/{2}'.format(os.path.expanduser("~"), '.nodeclass/cache/lock', self.id)
+        if cache_dir:
+            self.cache_dir = '{0}/{1}'.format(cache_dir, self.id)
+        else:
+            self.cache_dir = '{0}/{1}/{2}'.format(os.path.expanduser("~"), '.nodeclass/cache/git', self.id)
+        if lock_dir:
+            self.lock_file = '{0}/{1}'.format(lock_dir, self.id)
+        else:
+            self.lock_file = '{0}/{1}/{2}'.format(os.path.expanduser("~"), '.nodeclass/cache/lock', self.id)
         ensure_directory_present(os.path.dirname(self.lock_file))
         self.remotecallbacks = self._setup_remotecallbacks(pubkey, privkey, password)
         with HoldLock(self.lock_file):

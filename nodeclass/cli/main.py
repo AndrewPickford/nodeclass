@@ -27,6 +27,10 @@ def single_nodeinfo(nodename, uri):
     nodeinfo = core.nodeinfo(nodename, uri)
     yaml.dump(nodeinfo.as_dict(), sys.stdout, default_flow_style=False, Dumper=yaml.CSafeDumper)
 
+def single_nodeapps(nodename, uri):
+    node = core.node(nodename, uri)
+    print('applications:')
+    yaml.dump(node.applications, sys.stdout, default_flow_style=False, Dumper=yaml.CSafeDumper)
 
 def write_all_nodeinfos(uri, directory):
     nodeinfos, exceptions = core.nodeinfo_all(uri)
@@ -46,6 +50,8 @@ def main():
         nodeclass_set_context(settings)
         if args.nodeinfo:
             single_nodeinfo(args.nodeinfo, uri)
+        elif args.nodeapps:
+            single_nodeapps(args.nodeapps, uri)
         elif args.writeall:
             write_all_nodeinfos(uri, args.writeall)
     except NodeclassError as exception:

@@ -6,7 +6,8 @@ setup(
       description = DESCRIPTION,
       version = VERSION,
       data_files = [
-          ('/usr/share/nodeclass', ['external/salt/modules/pillar/nodeclass.py']),
-          ('/usr/share/nodeclass', ['external/salt/modules/tops/nodeclass.py']),
+          ('/etc/nodeclass', []),
+          ('/usr/share/nodeclass/salt/modules/pillar', ['external/salt/modules/pillar/nodeclass.py']),
+          ('/usr/share/nodeclass/salt/modules/tops', ['external/salt/modules/tops/nodeclass.py']),
       ]
      )

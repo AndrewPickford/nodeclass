@@ -31,3 +31,14 @@ def nodeinfo_all(uri):
         except ProcessError as exception:
             exceptions.append(exception)
     return nodeinfos, exceptions
+
+
+def node(nodename, uri):
+    klass_loader, node_loader = StorageFactory.loaders(uri)
+    try:
+        proto_node = node_loader[nodename]
+        node = Node(proto_node, klass_loader)
+        return node
+    except ProcessError as exception:
+        exception.node = nodename
+        raise

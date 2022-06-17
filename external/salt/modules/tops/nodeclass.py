@@ -14,7 +14,7 @@ __virtualname__ = "nodeclass"
 
 HAS_NODECLASS = False
 try:
-    import nodeclass.adapter.salt as nodeclass_adapter
+    import nodeclass.adapters.salt as nodeclass_adapter
     HAS_NODECLASS = True
 except ImportError:
     pass
@@ -31,15 +31,9 @@ def top(**kwargs):
         log.warning("Minion id not found - Returning empty dict")
         return {}
     minion_id = kwargs["opts"]["id"]
-    salt_data = {
-        'settings': __opts__["master_tops"]["nodeclass"]
-    }
-    return nodeclass_adapter.top(minion_id, salt_data)
-
-
-def ext_pillar(minion_id, pillar, **kwargs):
-    salt_data = {
-        'opts': __opts__,
-        'settings': kwargs
-    }
-    return nodeclass_adapter.ext_pillar(minion_id, pillar, salt_data)
+    options = {}
+    if __opts__.get('saltenv', None):
+        options['env_override'] = kwargs['opts']['saltenv']
+    if __opts__.get('pillarenv', None):
+        options['env_override'] = kwargs['opts']['pillarenv']
+    return nodeclass_adapter.top(minion_id, __opts__["master_tops"]["nodeclass"], options)
