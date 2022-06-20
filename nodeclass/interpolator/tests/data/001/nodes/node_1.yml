@@ -1,0 +1,13 @@
+classes:
+- one
+- two
+- three
+
+parameters:
+  alpha: A
+  gamma:
+  - 91
+  - 92
+  delta:
+    one: 0
+    five: 5

@@ -31,7 +31,7 @@ class Inventory:
         for proto in proto_nodes.values():
             proto.exports_required = set()
             for query in queries:
-                if query.all_envs or proto.environment == environment:
+                if query.all_envs or proto.inv_query_env == environment:
                     proto.exports_required.update(query.exports)
         return proto_nodes
 
@@ -46,7 +46,7 @@ class Inventory:
         exports_resolved = self.resolver.resolve(exports_merged, parameters_merged, proto.exports_required)
         paths_present = { path for path in proto.exports_required if path in exports_resolved }
         exports_pruned = exports_resolved.extract(paths_present)
-        return InventoryResult(proto.environment, exports_pruned)
+        return InventoryResult(proto.inv_query_env, exports_pruned)
 
     def parameters_required(self, proto, exports):
         required = set()

@@ -1,0 +1,6 @@
+parameters:
+  beta: BB
+  gamma:
+  - 11
+  delta:
+    one: 1

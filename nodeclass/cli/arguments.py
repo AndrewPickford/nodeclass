@@ -6,6 +6,8 @@ cli_default_opts = {
     'log_level': 'OFF',
 }
 
+arg_settings_keys = [ 'env_override' ]
+
 def add_run_mode_options(parser):
     group = parser.add_argument_group('Run mode',
         'Configure which data {0} outputs. Options are multually exclusive.'.format(parser.prog))
@@ -56,6 +58,17 @@ def add_data_location_options(parser):
         help = 'The URI for the nodes data.')
     return group
 
+def add_processing_options(parser):
+    group = parser.add_argument_group('Processing options',
+        'Configure the way {0} processes input.'.format(parser.prog))
+    group.add_argument('--environment',
+        dest = 'env_override',
+        type = str,
+        metavar = 'ENV',
+        default=argparse.SUPPRESS,
+        help = 'Override the environment of the node during processing')
+    return
+
 def add_output_options(parser):
     group = parser.add_argument_group('Output options',
         'Configure the way {0} prints data.'.format(parser.prog))
@@ -71,6 +84,7 @@ def make_argparser():
     parser = argparse.ArgumentParser(prog=NAME, description=DESCRIPTION)
     add_run_mode_options(parser)
     add_data_location_options(parser)
+    add_processing_options(parser)
     add_output_options(parser)
     parser.add_argument('--version', action='version', version='%(prog)s {0}'.format(VERSION))
     return parser
@@ -91,6 +105,7 @@ def get_uri(args):
     return None
 
 def process_args(args):
-    settings = {}
+    vargs = vars(args)
+    settings = { k: vargs[k] for k in arg_settings_keys if k in vargs }
     uri = get_uri(args)
     return settings, uri

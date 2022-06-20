@@ -8,6 +8,7 @@ class ProtoNode:
     def __init__(self, name, environment, klass, url):
         self.name = name
         self.environment = environment
+        self.inv_query_env = environment
         self.klass = klass
         self.url = url
 

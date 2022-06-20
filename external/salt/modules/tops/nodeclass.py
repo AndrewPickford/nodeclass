@@ -31,9 +31,13 @@ def top(**kwargs):
         log.warning("Minion id not found - Returning empty dict")
         return {}
     minion_id = kwargs["opts"]["id"]
+    settings = __opts__["master_tops"]["nodeclass"]
     options = {}
     if __opts__.get('saltenv', None):
         options['env_override'] = kwargs['opts']['saltenv']
     if __opts__.get('pillarenv', None):
         options['env_override'] = kwargs['opts']['pillarenv']
-    return nodeclass_adapter.top(minion_id, __opts__["master_tops"]["nodeclass"], options)
+    if len(options) > 0:
+        settings = copy.copy(__opts__["master_tops"]["nodeclass"])
+        settings.update(options)
+    return nodeclass_adapter.top(minion_id, settings)

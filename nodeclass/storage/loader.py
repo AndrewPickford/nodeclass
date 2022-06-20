@@ -71,3 +71,9 @@ class NodeLoader:
     def nodenames(self):
         for nodename in self.storage.node_map:
             yield nodename
+
+    def primary(self, name, env_override):
+        node = self.__getitem__(name)
+        if env_override:
+            node.environment = env_override
+        return node

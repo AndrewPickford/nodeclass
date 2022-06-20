@@ -6,6 +6,7 @@ Nodeclass Pillar Module
 
 """
 
+import copy
 import logging
 
 log = logging.getLogger(__name__)
@@ -27,9 +28,13 @@ def __virtual__():
 
 
 def ext_pillar(minion_id, pillar, **kwargs):
+    settings = kwargs
     options = {}
     if __opts__.get('saltenv', None):
         options['env_override'] = __opts__['saltenv']
     if __opts__.get('pillarenv', None):
         options['env_override'] = __opts__['pillarenv']
-    return nodeclass_adapter.ext_pillar(minion_id, pillar, kwargs, options)
+    if len(options) > 0:
+        settings = copy.copy(kwargs)
+        settings.update(options)
+    return nodeclass_adapter.ext_pillar(minion_id, pillar, settings)

@@ -1,3 +1,4 @@
+from .context import CONTEXT
 from .exceptions import ProcessError
 from .interpolator.interpolator import Interpolator
 from .node.node import Node
@@ -6,7 +7,7 @@ from .storage.factory import Factory as StorageFactory
 
 def nodeinfo_inner(nodename, interpolator, klass_loader, node_loader):
     try:
-        proto_node = node_loader[nodename]
+        proto_node = node_loader.primary(nodename, env_override=CONTEXT.settings.env_override)
         node = Node(proto_node, klass_loader)
         return interpolator.interpolate(node, node_loader, klass_loader)
     except ProcessError as exception:
@@ -36,7 +37,7 @@ def nodeinfo_all(uri):
 def node(nodename, uri):
     klass_loader, node_loader = StorageFactory.loaders(uri)
     try:
-        proto_node = node_loader[nodename]
+        proto_node = node_loader.primary(nodename, env_override=CONTEXT.settings.env_override)
         node = Node(proto_node, klass_loader)
         return node
     except ProcessError as exception:

@@ -1,0 +1,7 @@
+classes:
+- one
+
+envrionment: prod
+
+parameters:
+  a: 0

@@ -12,6 +12,7 @@ class Settings:
         'automatic_parameters_name': '_auto_',
         'delimiter': ':',
         'escape_character': '\\',
+        'env_override': None,
         'immutable_prefix': '=',
         'inventory_query_sentinels': ('$[', ']'),
         'overwrite_prefix': '~',

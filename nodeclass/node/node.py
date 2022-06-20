@@ -13,6 +13,7 @@ class Node:
         '''
         self.name = proto.name
         self.environment = proto.environment
+        self.inv_query_env = proto.inv_query_env
         self.autoklass = self._make_auto_class_dict()
         self.nodeklass = proto.klass
         self.klasses = []

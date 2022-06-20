@@ -7,7 +7,7 @@ from ..settings import Settings
 log = logging.getLogger(__name__)
 
 
-def ext_pillar(minion_id, pillar, settings, options):
+def ext_pillar(minion_id, pillar, settings):
     settings, uri = split_settings_location(settings)
     settings_context = Settings(settings)
     nodeclass_set_context(settings_context)
@@ -16,7 +16,7 @@ def ext_pillar(minion_id, pillar, settings, options):
     return parameters
 
 
-def top(minion_id, settings, options):
+def top(minion_id, settings):
     settings, uri = split_settings_location(settings)
     settings_context = Settings(settings)
     nodeclass_set_context(settings_context)
