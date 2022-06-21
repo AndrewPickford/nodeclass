@@ -1,7 +1,7 @@
 import collections
 import contextlib
 import os
-from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, InvalidUri, NodeNotFound
+from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, FileParsingError, InvalidUri, NodeNotFound
 
 class FileSystem:
     '''
@@ -117,6 +117,9 @@ class FileSystemClasses:
                 return self.format.process(self.file_system.get(path)), self._path_url(path)
         except FileNotFoundError:
             raise ClassNotFound(name, [ self._path_url(path) ])
+        except FileParsingError as exception:
+            exception.url = self._path_url(path)
+            raise
 
 
 class FileSystemNodes:
@@ -168,3 +171,6 @@ class FileSystemNodes:
                 return self.format.process(self.file_system.get(path)), self._path_url(path)
         except FileNotFoundError:
             raise NodeNotFound(name, str(self))
+        except FileParsingError as exception:
+            exception.url = self._path_url(path)
+            raise

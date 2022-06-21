@@ -76,6 +76,26 @@ class PygitConfigError(ConfigError):
                [ 'Pygit config error', self.details ]
 
 
+class FileParsingError(FileError):
+    def __init__(self, exception):
+        super().__init__()
+        self.exception = exception
+        self.url = None
+
+    def message(self):
+        return super().message() + \
+               [ 'Url: {0}'.format(self.url) ]
+
+
+class YamlParsingError(FileParsingError):
+    def __init__(self, exception):
+        super().__init__(exception)
+
+    def message(self):
+        return super().message() + \
+               [ 'Yaml parsing error', str(self.exception) ]
+
+
 class FileUnhandledError(FileError):
     def __init__(self, exception, node=None, storage=None, url=None, environment=None):
         super().__init__()

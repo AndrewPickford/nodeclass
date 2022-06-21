@@ -1,5 +1,6 @@
 import os
 import yaml
+from .exceptions import YamlParsingError
 
 class Yaml:
 
@@ -33,11 +34,17 @@ class Yaml:
             In the case of an empty file the yaml.load method returns None, so
             as a special case return an empty dictionary
         '''
-        data = yaml.load(file_pointer, Loader=cls.SafeLoader)
+        try:
+            data = yaml.load(file_pointer, Loader=cls.SafeLoader)
+        except Exception as exception:
+            raise YamlParsingError(exception)
         if data == None:
             return {}
         return data
 
     @classmethod
     def process(cls, string):
-        return yaml.load(string, Loader=cls.SafeLoader)
+        try:
+            return yaml.load(string, Loader=cls.SafeLoader)
+        except Exception as exception:
+            raise YamlParsingError(exception)

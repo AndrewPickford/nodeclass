@@ -90,6 +90,7 @@ class FileError(ProcessError):
     def __init__(self):
         super().__init__()
         self.storage = None
+        self.url = None
 
     def message(self):
         return super().message() + \

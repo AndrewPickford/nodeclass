@@ -16,8 +16,8 @@ class KlassLoader:
         '''
         name, environment = klass_id
         if klass_id not in self.cache:
+            storage = self._match_storage(environment)
             try:
-                storage = self._match_storage(environment)
                 class_dict, url = storage.get(name, environment)
                 self.cache[klass_id] = Klass.from_class_dict(name, class_dict, url)
             except FileError as exception:
@@ -27,7 +27,7 @@ class KlassLoader:
             except InputError as exception:
                 raise
             except Exception as exception:
-                raise FileUnhandledError(exception, environment=environment, storage=storage, url=url)
+                raise FileUnhandledError(exception, environment=environment, storage=storage)
         return self.cache[klass_id]
 
     def __repr__(self):

@@ -3,7 +3,7 @@ import distutils.version
 import os
 from ..utils.holdlock import HoldLock
 from ..utils.misc import ensure_directory_present
-from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, InvalidUri, NodeNotFound, PygitConfigError
+from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, FileParsingError, InvalidUri, NodeNotFound, PygitConfigError
 
 try:
     # NOTE: in some distros pygit2 could require special effort to acquire.
@@ -220,8 +220,10 @@ class GitRepoClasses:
             index = self.index_map[self.branch]
         meta = self._name_to_meta(name, index)
         blob = self.git_repo.get(meta.id)
-        return self.format.process(blob.data), self._path_url(meta.path)
-
+        try:
+           return self.format.process(blob.data), self._path_url(meta.path)
+        except FileParsingError as exception:
+            exception.url = self._path_url(meta.path)
 
 class GitRepoNodes:
     '''
@@ -263,4 +265,7 @@ class GitRepoNodes:
             raise DuplicateNode(name, str(self), duplicates)
         meta = self.node_map[name][0]
         blob = self.git_repo.get(meta.id)
-        return self.format.process(blob.data), self._path_url(meta.path)
+        try:
+            return self.format.process(blob.data), self._path_url(meta.path)
+        except FileParsingError as exception:
+            exception.url = self._path_url(meta.path)
