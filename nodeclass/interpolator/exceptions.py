@@ -3,7 +3,7 @@
 #
 # This file is part of nodeclass
 #
-from ..exceptions import InterpolationError
+from ..exceptions import InterpolationError, ProcessError
 from ..utils.path import Path
 
 class MergableInterpolationError(InterpolationError):
@@ -80,6 +80,17 @@ class InterpolateUnhandledError(InterpolationError):
                  str(repr(self.exception)) ] + \
                self.traceback() +\
                self.traceback_other(self.exception)
+
+
+class InventoryError(ProcessError):
+    def __init__(self, exception):
+        super().__init__()
+        self.exception = exception
+
+    def message(self):
+        return super().message() + \
+               [ 'Error during processing inventory:' ] +\
+               self.exception.message()
 
 
 class InventoryQueryError(InterpolationError):

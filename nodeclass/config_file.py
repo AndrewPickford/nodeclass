@@ -2,7 +2,7 @@ import logging
 import os
 import yaml
 from .constants import CONFIG_FILE_NAME, CONFIG_FILE_SEARCH_PATH
-from .exceptions import NoConfigFile
+from .exceptions import ConfigFileParseError, NoConfigFile
 
 SafeLoader = yaml.CSafeLoader if yaml.__with_libyaml__ else yaml.SafeLoader
 
@@ -18,9 +18,12 @@ def load_config_file(filename = None, search_path = None):
     for dir in search_path:
         filepath = os.path.join(dir, filename)
         if os.path.exists(filepath):
-            with open(filepath) as file:
-                logging.debug('Using config file {0}'.format(filepath))
-                config = yaml.load(file, Loader=SafeLoader)
-                settings, uri = split_settings_location(config)
-                return settings, uri
+            logging.debug('Using config file {0}'.format(filepath))
+            try:
+                with open(filepath) as file:
+                    config = yaml.load(file, Loader=SafeLoader)
+            except Exception as exception:
+                raise ConfigFileParseError(filepath, exception)
+            settings, uri = split_settings_location(config)
+            return settings, uri, filepath
     raise NoConfigFile(filename, search_path)

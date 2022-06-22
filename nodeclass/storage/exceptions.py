@@ -9,9 +9,9 @@ class ClassNotFound(FileError):
 
     def message(self):
         return super().message() + \
-               [ 'Class not found',
-                 'Class: {0}'.format(self.classname),
-                 'Environment: {0}'.format(self.environment) ]
+               [ 'Class {0} (env: {1}) not found in {2}'.format(self.classname, self.environment, self.storage),
+                 'Valid urls:', 2 ] +\
+               self.urls
 
 
 class DuplicateClass(FileError):
@@ -23,10 +23,7 @@ class DuplicateClass(FileError):
 
     def message(self):
         return super().message() + \
-               [ 'Duplicate class definitions',
-                 'Class: {0}'.format(self.classname),
-                 'Environment: {0}'.format(self.environment),
-                 'Duplicates:' ] + \
+               [ 'Duplicate class definitions for {0} (env: {1}):'.format(self.classname, self.environment), 2 ] + \
                [ url for url in self.duplicates ]
 
 
@@ -39,21 +36,21 @@ class DuplicateNode(FileError):
 
     def message(self):
         return super().message() + \
-               [ 'Duplicate node definitions',
-                 'Duplicates:' ] + \
+               [ 'Duplicate node definitions:', 2 ] + \
                [ url for url in self.duplicates ]
 
 
 class InvalidUri(ConfigError):
-    def __init__(self, uri, details):
+    def __init__(self, uri, details, location=None):
         super().__init__()
         self.uri = uri
         self.details = details
+        self.location = location
 
     def message(self):
         return super().message() + \
-               [ 'Invalid uri: {0}'.format(self.uri),
-                 self.details ]
+               [ 'Invalid uri: {0}'.format(self.details),
+                 'in {0}'.format(self.location) ]
 
 
 class NodeNotFound(FileError):
@@ -63,7 +60,7 @@ class NodeNotFound(FileError):
         self.storage = storage
 
     def message(self):
-        return super().message() + [ 'No such node' ]
+        return super().message() + [ 'Node not found in {0}'.format(self.storage) ]
 
 
 class PygitConfigError(ConfigError):

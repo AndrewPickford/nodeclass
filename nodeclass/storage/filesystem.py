@@ -15,13 +15,13 @@ class FileSystem:
     def validate_uri(cls, uri):
         def validate_option(option):
             if option not in cls.valid_options:
-                raise InvalidUri(uri, 'Invalid uri option {0}'.format(option))
+                raise InvalidUri(uri, 'invalid option {0}'.format(option))
             return option
 
         options = { validate_option(option): value for option, value in uri.items() if option not in cls.ignored_options }
         for required in cls.required_options:
             if required not in options:
-                raise InvalidUri(uri, 'Required option not present: {0}'.format(required))
+                raise InvalidUri(uri, 'required option not present: {0}'.format(required))
         return options
 
     @classmethod

@@ -31,6 +31,9 @@ class Inventory:
                 except InventoryQueryError as exception:
                     exception.exception.node = proto.name
                     raise
+                except ProcessError as exception:
+                    exception.node = proto.name
+                    raise
         inventory = OrderedDict(sorted(inventory.items()))
         return inventory
 

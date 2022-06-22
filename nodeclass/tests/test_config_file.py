@@ -15,10 +15,12 @@ uri_expected = { 'classes': {
         }
       }
 
+
 def test_load_config_file():
-    settings, uri = load_config_file(search_path = [ directory ])
+    settings, uri, filepath = load_config_file(search_path = [ directory ])
     assert(settings == {})
     assert(uri == uri_expected)
+    assert(filepath == os.path.join(directory, 'nodeclass-config.yml'))
 
 
 def test_load_config_file_no_config_file():

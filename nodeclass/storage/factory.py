@@ -24,11 +24,11 @@ class Factory:
             if isinstance(uri, str):
                 resource, _ = uri.split(':', 1)
             elif 'resource' not in uri:
-                raise InvalidUri(uri, 'Resource not defined')
+                raise InvalidUri(uri, 'resource not defined')
             else:
                 resource = uri['resource']
             if resource not in cls.storage_classes:
-                raise InvalidUri(uri, 'Unknown storage type')
+                raise InvalidUri(uri, 'unknown storage type {0}'.format(resource))
             return resource
 
         storages = []
@@ -55,11 +55,11 @@ class Factory:
         if isinstance(uri, str):
             resource, _ = uri.split(':', 1)
         elif 'resource' not in uri:
-            raise InvalidUri(uri, 'Resource not defined')
+            raise InvalidUri(uri, 'resource not defined')
         else:
             resource = uri['resource']
         if resource not in cls.storage_nodes:
-            raise InvalidUri(uri, 'Unknown storage type')
+            raise InvalidUri(uri, 'unknown storage type {0}'.format(resource))
         nodes = cls.storage_nodes[resource].storage(uri=uri, cache=cache, **cls.storage_classes[resource].kwargs)
         return NodeLoader(nodes)
 
@@ -94,7 +94,7 @@ class Factory:
             try:
                 resource, _ = uri.split(':', 1)
             except ValueError:
-                raise InvalidUri(uri, 'Invalid Uri')
+                raise InvalidUri(uri, '{0}'.format(uri))
             klass_uri = cls.storage_classes[resource].storage.subpath(uri)
             node_uri = cls.storage_nodes[resource].storage.subpath(uri)
             klass_loader = cls.klass_loader(klass_uri, cache)

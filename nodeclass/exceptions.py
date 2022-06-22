@@ -45,7 +45,7 @@ class ConfigError(NodeclassError):
         super().__init__()
 
     def message(self):
-        return [ 'Configuration Error' ]
+        return []
 
 
 class ProcessError(NodeclassError):
@@ -54,7 +54,7 @@ class ProcessError(NodeclassError):
         self.node = None
 
     def message(self):
-        return [ 0, '--> {0}'.format(self.node), 2 ]
+        return [ '--> {0}'.format(self.node), 2 ]
 
 
 class InputError(ProcessError):
@@ -99,8 +99,7 @@ class FileError(ProcessError):
         self.url = None
 
     def message(self):
-        return super().message() + \
-               [ 'storage: {0}'.format(self.storage) ]
+        return super().message()
 
 
 class NoConfigFile(ConfigError):
@@ -111,14 +110,27 @@ class NoConfigFile(ConfigError):
 
     def message(self):
         return super().message() + \
-               [ 'No config file ({0}) found in search path: {1}'.format(self.filename, self.search_path) ]
+               [ 'No config file, {0}, found in search path: {1}'.format(self.filename, ', '.join(self.search_path)) ]
 
 
-class UnknownConfigSetting(ConfigError):
-    def __init__(self, name):
+class ConfigFileParseError(ConfigError):
+    def __init__(self, filename, exception):
         super().__init__()
-        self.name = name
+        self.filename = filename
+        self.exception = exception
 
     def message(self):
         return super().message() + \
-               [ 'Unknown config setting: {0}'.format(self.name) ]
+               [ 'Error parsing config file {0}'.format(self.filename),
+                 str(self.exception) ]
+
+
+class UnknownConfigSetting(ConfigError):
+    def __init__(self, name, location=None):
+        super().__init__()
+        self.name = name
+        self.location = location
+
+    def message(self):
+        return super().message() + \
+               [ 'Unknown config setting: {0}, in {1}'.format(self.name, self.location) ]

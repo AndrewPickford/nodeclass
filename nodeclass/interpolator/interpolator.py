@@ -1,5 +1,6 @@
+from ..exceptions import ProcessError
 from ..value.hierarchy import Hierarchy
-from .exceptions import InventoryQueryError
+from .exceptions import InventoryError, InventoryQueryError
 from .exports_resolver import ExportsResolver
 from .interpolatednode import InterpolatedNode
 from .inventory import Inventory
@@ -31,6 +32,8 @@ class Interpolator:
             except Exception:
                 pass
             raise
+        except ProcessError as exception:
+            raise InventoryError(exception)
         parameters_resolved = self.parameters_resolver.resolve(node.inv_query_env, parameters_merged, inventory_result)
         exports_resolved = self.exports_resolver.resolve(exports_merged, parameters_resolved)
         return InterpolatedNode(node.name, node.applications, node.classes, node.environment, exports_resolved.render_all(), parameters_resolved.render_all())
