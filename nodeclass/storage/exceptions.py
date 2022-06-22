@@ -84,7 +84,7 @@ class FileParsingError(FileError):
 
     def message(self):
         return super().message() + \
-               [ 'Url: {0}'.format(self.url) ]
+               [ 'url: {0}'.format(self.url) ]
 
 
 class YamlParsingError(FileParsingError):
@@ -92,8 +92,9 @@ class YamlParsingError(FileParsingError):
         super().__init__(exception)
 
     def message(self):
+        details = [ 2 ] + [ d.strip() for d in str(self.exception).split('\n') ]
         return super().message() + \
-               [ 'Yaml parsing error', str(self.exception) ]
+               [ 'yaml parsing error:' ] + details
 
 
 class FileUnhandledError(FileError):

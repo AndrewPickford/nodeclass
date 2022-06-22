@@ -59,6 +59,13 @@ class Merged(Value):
         '''
         return True
 
+    def find_matching_contents_path(self, contents):
+        for v in self._values:
+            p = v.find_matching_contents_path(contents)
+            if p is not None:
+                return []
+        return None
+
     def inventory_queries(self):
         queries = set()
         for v in self._values:

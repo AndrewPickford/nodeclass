@@ -3,7 +3,7 @@ from collections import defaultdict
 from ..exceptions import InterpolationError
 from ..utils.path import Path
 from ..value.exceptions import NoSuchPath
-from .exceptions import ExcessivePathRevisits, CircularReference, InterpolateUnhandledError, NoSuchReference
+from .exceptions import ExcessivePathRevisits, CircularReference, InterpolateUnhandledError, MergableInterpolationError, MultipleInterpolationErrors, NoSuchReference
 
 class ParametersResolver:
     '''
@@ -21,17 +21,28 @@ class ParametersResolver:
         self.inventory = inventory
         self.visit_count = defaultdict(int)
         self.unresolved = dict.fromkeys(self.parameters.unresolved_paths(), False)
-        try:
-            self.resolve_unresolved_paths()
-        except InterpolationError as exception:
-            exception.hierarchy_type = 'parameters'
-            raise
+        self.interpolation_exceptions = {}
+        self.resolve_unresolved_paths()
+        if len(self.interpolation_exceptions) > 0:
+            raise MultipleInterpolationErrors(list(self.interpolation_exceptions.values()))
         return self.parameters
 
     def resolve_unresolved_paths(self):
         while len(self.unresolved) > 0:
             path = next(iter(self.unresolved))
-            self.resolve_path(path)
+            try:
+                self.resolve_path(path)
+            except MergableInterpolationError as exception:
+                if exception.path in self.interpolation_exceptions:
+                    raise MultipleInterpolationErrors(list(self.interpolation_exceptions.values()))
+                else:
+                    exception.hierarchy_type = 'parameters'
+                    self.interpolation_exceptions[path] = exception
+                    del self.unresolved[path]
+            except InterpolationError as exception:
+                exception.hierarchy_type = 'parameters'
+                raise
+
         return
 
     def resolve_path(self, path):
@@ -72,6 +83,7 @@ class ParametersResolver:
             try:
                 self.resolve_path(reference)
             except NoSuchPath:
+                del self.unresolved[reference]
                 raise NoSuchReference(value.url, path, reference)
         try:
             value = value.resolve(self.parameters, self.inventory, self.environment)

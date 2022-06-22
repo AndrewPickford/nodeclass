@@ -1,7 +1,7 @@
 import copy
 import pytest
 from nodeclass.context import nodeclass_context
-from nodeclass.interpolator.exceptions import CircularReference, NoSuchReference
+from nodeclass.interpolator.exceptions import CircularReference, MultipleInterpolationErrors, NoSuchReference
 from nodeclass.interpolator.parameters_resolver import ParametersResolver
 from nodeclass.node.klass import Klass
 from nodeclass.settings import Settings
@@ -54,21 +54,26 @@ def test_parameters_resolver_ref_list():
     assert result == expected
 
 def test_parameters_resolver_circular_references():
-    with pytest.raises(CircularReference) as info:
+    with pytest.raises(MultipleInterpolationErrors) as info:
         resolve_parameters({'a': '${b}', 'b': '${a}'})
-    assert info.value.url == 'test_url_0'
-    assert info.value.hierarchy_type == 'parameters'
+    print(info.value)
+    exception = info.value.exceptions[0]
+    assert isinstance(exception, CircularReference)
+    assert exception.url == 'test_url_0'
+    assert exception.hierarchy_type == 'parameters'
     # interpolation can start with parameter a or b
-    assert (info.value.path == Path.fromstring('a') and info.value.reference == Path.fromstring('b')) or \
-           (info.value.path == Path.fromstring('b') and info.value.reference == Path.fromstring('a'))
+    assert (exception.path == Path.fromstring('a') and exception.reference == Path.fromstring('b')) or \
+           (exception.path == Path.fromstring('b') and exception.reference == Path.fromstring('a'))
 
 def test_parameters_resolver_missing_reference():
-    with pytest.raises(NoSuchReference) as info:
+    with pytest.raises(MultipleInterpolationErrors) as info:
         resolve_parameters({'a': '${b}'})
-    assert info.value.url == 'test_url_0'
-    assert info.value.hierarchy_type == 'parameters'
-    assert info.value.path == Path.fromstring('a')
-    assert info.value.reference == Path.fromstring('b')
+    exception = info.value.exceptions[0]
+    assert isinstance(exception, NoSuchReference)
+    assert exception.url == 'test_url_0'
+    assert exception.hierarchy_type == 'parameters'
+    assert exception.path == Path.fromstring('a')
+    assert exception.reference == Path.fromstring('b')
 
 def test_parameters_resolver_nested_references():
     result = resolve_parameters({'a': '${${c}}', 'b': 42, 'c': 'b'})

@@ -1,7 +1,8 @@
 import copy
 from collections import defaultdict
 from ..exceptions import InterpolationError
-from .exceptions import ExcessivePathRevisits
+from ..value.exceptions import NoSuchPath
+from .exceptions import ExcessivePathRevisits, InterpolateUnhandledError, MergableInterpolationError, MultipleInterpolationErrors, NoSuchReference
 
 class ExportsResolver:
     '''
@@ -17,23 +18,36 @@ class ExportsResolver:
         self.exports = copy.copy(exports)
         self.visit_count = defaultdict(int)
         self.unresolved = dict.fromkeys(self.exports.unresolved_paths(), False)
-        try:
-            self.resolve_unresolved_paths()
-        except InterpolationError as exception:
-            exception.hierarchy_type = 'exports'
-            raise
+        self.interpolation_exceptions = {}
+        self.resolve_unresolved_paths()
+        if len(self.interpolation_exceptions) > 0:
+            raise MultipleInterpolationErrors(list(self.interpolation_exceptions.values()))
         return self.exports
 
     def resolve_unresolved_paths(self):
         while len(self.unresolved) > 0:
             path = next(iter(self.unresolved))
-            self.resolve_path(path)
+            try:
+                self.resolve_path(path)
+            except MergableInterpolationError as exception:
+                if exception.path in self.interpolation_exceptions:
+                    raise MultipleInterpolationErrors(list(self.interpolation_exceptions.values()))
+                else:
+                    exception.hierarchy_type = 'exports'
+                    self.interpolation_exceptions[path] = exception
+                    del self.unresolved[path]
+            except InterpolationError as exception:
+                exception.hierarchy_type = 'exports'
+                raise
         return
 
     def resolve_path(self, path):
         visit_count = 0
         while self.exports[path].unresolved:
-            value = self.exports[path].resolve(self.parameters, None, None)
+            try:
+                value = self.exports[path].resolve(self.parameters, None, None)
+            except NoSuchPath as exception:
+                raise NoSuchReference(self.exports[path].url, path, exception.missing_path)
             new_paths = value.unresolved_paths(path)
             if new_paths:
                 self.unresolved.update(dict.fromkeys(new_paths, False))

@@ -115,6 +115,13 @@ class Hierarchy:
         extracted = self._dictionary._extract(paths, 0)
         return type(self)(extracted._dictionary, self.url, self.hierarchy_type)
 
+    def find_matching_contents_path(self, contents):
+        p = self._dictionary.find_matching_contents_path(contents)
+        if p is not None:
+            p.reverse()
+            return Path.fromlist(p)
+        return None
+
     def freeze(self):
         self.frozen = True
         self._dictionary.set_copy_on_change()

@@ -4,7 +4,7 @@ import nodeclass.core as core
 from collections import ChainMap
 from ..config_file import load_config_file
 from ..context import nodeclass_set_context
-from ..exceptions import MultipleNodeclassErrors, NodeclassError
+from ..exceptions import MultipleNodeErrors, NodeclassError
 from ..settings import Settings
 from .arguments import make_argparser, process_args
 from .exceptions import NoInventoryUri
@@ -39,7 +39,7 @@ def write_all_nodeinfos(uri, directory):
         with open(filename, 'w') as file:
             yaml.dump(nodeinfo.as_dict(), file, default_flow_style=False, Dumper=yaml.CSafeDumper)
     if len(exceptions) > 0:
-        raise MultipleNodeclassErrors(exceptions)
+        raise MultipleNodeErrors(exceptions)
 
 
 def main():

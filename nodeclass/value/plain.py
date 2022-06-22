@@ -43,6 +43,11 @@ class Plain(Value):
     def unresolved(self):
         return self.item.unresolved
 
+    def find_matching_contents_path(self, contents):
+        if self.item.contents is contents:
+            return []
+        return None
+
     def inventory_queries(self):
         query = self.item.inventory_query
         if query is None:

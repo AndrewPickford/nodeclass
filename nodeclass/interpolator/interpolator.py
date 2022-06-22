@@ -1,4 +1,5 @@
 from ..value.hierarchy import Hierarchy
+from .exceptions import InventoryQueryError
 from .exports_resolver import ExportsResolver
 from .interpolatednode import InterpolatedNode
 from .inventory import Inventory
@@ -20,7 +21,16 @@ class Interpolator:
         exports_merged = Hierarchy.merge_multiple([ klass.exports for klass in node.all_klasses ], 'exports')
         parameters_merged = Hierarchy.merge_multiple([ klass.parameters for klass in node.all_klasses ], 'parameters')
         inventory_queries = parameters_merged.inventory_queries()
-        inventory_result = self.inventory.result(inventory_queries, node.inv_query_env, node_loader, klass_loader)
+        try:
+            inventory_result = self.inventory.result(inventory_queries, node.inv_query_env, node_loader, klass_loader)
+        except InventoryQueryError as exception:
+            try:
+                exception.path = parameters_merged.find_matching_contents_path(exception.query)
+                exception.hierarchy_type = parameters_merged.hierarchy_type
+                exception.url = parameters_merged[exception.path].url
+            except Exception:
+                pass
+            raise
         parameters_resolved = self.parameters_resolver.resolve(node.inv_query_env, parameters_merged, inventory_result)
         exports_resolved = self.exports_resolver.resolve(exports_merged, parameters_resolved)
         return InterpolatedNode(node.name, node.applications, node.classes, node.environment, exports_resolved.render_all(), parameters_resolved.render_all())

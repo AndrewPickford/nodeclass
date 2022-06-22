@@ -61,6 +61,9 @@ class Path:
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__, str(self))
 
+    def as_ref(self):
+        return str(self).join(CONTEXT.settings.reference_sentinels)
+
     def parent(self):
         return type(self)(self.keys[:-1])
 

@@ -5,7 +5,16 @@ class NodeclassError(Exception):
         super().__init__()
 
     def __str__(self):
-        return '\n'.join(self.message())
+        mess = []
+        indent = 0
+        for m in self.message():
+            if m is None:
+                indent = 0
+            elif isinstance(m, int):
+                indent = indent + m
+            else:
+                mess.append('{0}{1}'.format(' '*indent, m))
+        return '\n'.join(mess)
 
     def message(self):
         return []
@@ -17,7 +26,7 @@ class NodeclassError(Exception):
         return [ '\nTraceback:' ] + [ i.strip() for i in traceback.format_tb(other.__traceback__) ]
 
 
-class MultipleNodeclassErrors(NodeclassError):
+class MultipleNodeErrors(NodeclassError):
     def __init__(self, exceptions = None):
         super().__init__()
         self.exceptions = exceptions or []
@@ -25,6 +34,7 @@ class MultipleNodeclassErrors(NodeclassError):
     def message(self):
         m = []
         for e in self.exceptions:
+            m.append(None)
             m.extend(e.message())
             m.append('')
         return m
@@ -44,7 +54,7 @@ class ProcessError(NodeclassError):
         self.node = None
 
     def message(self):
-        return [ 'Process error' ]
+        return [ 0, '--> {0}'.format(self.node), 2 ]
 
 
 class InputError(ProcessError):
@@ -59,9 +69,7 @@ class InputError(ProcessError):
         from .utils.path import Path
         self.path = Path.fromlist(self.reverse_path[::-1])
         return super().message() + \
-               [ 'Input error',
-                 'Node: {0}'.format(self.node),
-                 'Url: {0}'.format(self.url),
+               [ 'Url: {0}'.format(self.url),
                  'Hierarchy: {0}'.format(self.hierarchy_type),
                  'Path: {0}'.format(self.path) ]
 
@@ -74,16 +82,14 @@ class InterpolationError(ProcessError):
         self.path = None
         self.reverse_path = []
 
+    def msg(self):
+        return []
+
     def message(self):
         from .utils.path import Path
         if self.path == None and len(self.reverse_path) > 0:
             self.path = Path.fromlist(self.reverse_path[::-1])
-        return super().message() + \
-               [ 'Interpolation error',
-                 'Node: {0}'.format(self.node),
-                 'Url: {0}'.format(self.url),
-                 'Hierarchy: {0}'.format(self.hierarchy_type),
-                 'Path: {0}'.format(self.path) ]
+        return super().message() + self.msg()
 
 
 class FileError(ProcessError):
@@ -94,9 +100,7 @@ class FileError(ProcessError):
 
     def message(self):
         return super().message() + \
-               [ 'File error',
-                 'Node: {0}'.format(self.node),
-                 'Storage: {0}'.format(self.storage) ]
+               [ 'storage: {0}'.format(self.storage) ]
 
 
 class NoConfigFile(ConfigError):
