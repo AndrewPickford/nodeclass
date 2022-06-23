@@ -21,29 +21,20 @@ class Hierarchy:
 
     @staticmethod
     def from_dict(dictionary, url, hierarchy_type):
-        def process_dictionary(input, url):
-            return Dictionary({ k: process(k, v, url) for k, v in input.items() }, url)
-
-        def process_list(input, url):
-            return List([ process(i, v, url) for i, v in enumerate(input) ], url)
-
-        def process_plain(input, url):
-            if isinstance(input, str):
-                item = parse_item(input)
-            else:
-                item = Scalar(input)
-            return Plain(item, url)
-
-        def process(k, input, url):
+        def process(key, input, url):
             try:
                 if isinstance(input, dict):
-                    return process_dictionary(input, url)
+                    return Dictionary({ k: process(k, v, url) for k, v in input.items() }, url)
                 elif isinstance(input, list):
-                    return process_list(input, url)
+                    return List([ process(i, v, url) for i, v in enumerate(input) ], url)
                 else:
-                    return process_plain(input, url)
+                    if isinstance(input, str):
+                        item = parse_item(input)
+                    else:
+                        item = Scalar(input)
+                    return Plain(item, url)
             except InputError as exception:
-                exception.reverse_path.append(k)
+                exception.reverse_path.append(key)
                 raise
         try:
             return Hierarchy({ k: process(k, v, url) for k, v in dictionary.items() }, url, hierarchy_type)
