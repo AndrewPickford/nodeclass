@@ -2,7 +2,7 @@ clean:
 	rm -rf build dist nodeclass.egg-info
 
 flakes:
-	pyflakes3 external nodeclass
+	pyflakes3 nodeclass
 
 rpm:
 	python3 setup.py bdist_rpm

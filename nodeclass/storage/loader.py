@@ -24,7 +24,7 @@ class KlassLoader:
                 exception.environment = environment
                 exception.storage = storage
                 raise
-            except InputError as exception:
+            except InputError:
                 raise
             except Exception as exception:
                 raise FileUnhandledError(exception, environment=environment, storage=storage)

@@ -4,7 +4,6 @@ from nodeclass.interpolator.interpolator import Interpolator
 from nodeclass.node.node import Node
 from nodeclass.settings import Settings
 from nodeclass.storage.factory import Factory as StorageFactory
-from nodeclass.value.hierarchy import Hierarchy
 
 nodeclass_context(Settings())
 directory = os.path.dirname(os.path.realpath(__file__))

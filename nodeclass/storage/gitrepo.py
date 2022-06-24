@@ -114,7 +114,7 @@ class GitRepo:
         fetch_kwargs = {}
         if self.remotecallbacks is not None:
             fetch_kwargs['callbacks'] = self.remotecallbacks
-        fetch_results = origin.fetch(**fetch_kwargs)
+        origin.fetch(**fetch_kwargs)
         remote_branches = self.repo.listall_branches(pygit2.GIT_BRANCH_REMOTE)
         local_branches = self.repo.listall_branches()
         for remote_branch_name in remote_branches:

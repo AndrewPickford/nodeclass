@@ -2,7 +2,7 @@ import copy
 from collections import defaultdict
 from ..exceptions import InterpolationError
 from ..value.exceptions import NoSuchPath
-from .exceptions import ExcessivePathRevisits, InterpolateUnhandledError, MergableInterpolationError, MultipleInterpolationErrors, NoSuchReference
+from .exceptions import ExcessivePathRevisits, MergableInterpolationError, MultipleInterpolationErrors, NoSuchReference
 
 class ExportsResolver:
     '''
