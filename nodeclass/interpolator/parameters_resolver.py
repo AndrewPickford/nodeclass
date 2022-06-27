@@ -36,11 +36,11 @@ class ParametersResolver:
                 if exception.path in self.interpolation_exceptions:
                     raise MultipleInterpolationErrors(list(self.interpolation_exceptions.values()))
                 else:
-                    exception.hierarchy_type = 'parameters'
+                    exception.category = 'parameters'
                     self.interpolation_exceptions[path] = exception
                     del self.unresolved[path]
             except InterpolationError as exception:
-                exception.hierarchy_type = 'parameters'
+                exception.category = 'parameters'
                 raise
 
         return

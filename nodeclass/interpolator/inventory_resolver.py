@@ -75,12 +75,12 @@ class InventoryResolver:
             try:
                 self.parameter_resolver.resolve_unresolved_paths()
             except NoSuchPath as exception:
-                raise NoSuchReference(value.url, path, exception.missing_path, hierarchy_type='exports')
+                raise NoSuchReference(value.url, path, exception.missing_path, category='exports')
         value = value.resolve(self.parameters, None, None)
         if value.unresolved:
             self.visit_count[path] += 1
             if self.visit_count[path] > 255:
                 # this path has been revisited an excessive number of times there is probably
                 # an error somewhere
-                raise ExcessivePathRevisits(value.url, path, hierarchy_type='exports')
+                raise ExcessivePathRevisits(value.url, path, category='exports')
         return value

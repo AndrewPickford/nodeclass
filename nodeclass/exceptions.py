@@ -61,7 +61,7 @@ class InputError(ProcessError):
     def __init__(self):
         super().__init__()
         self.url = None
-        self.hierarchy_type = None
+        self.category = None
         self.path = None
         self.reverse_path = []
 
@@ -70,7 +70,7 @@ class InputError(ProcessError):
         self.path = Path.fromlist(self.reverse_path[::-1])
         return super().message() + \
                [ 'Url: {0}'.format(self.url),
-                 'Hierarchy: {0}'.format(self.hierarchy_type),
+                 'Category: {0}'.format(self.category),
                  'Path: {0}'.format(self.path) ]
 
 
@@ -78,7 +78,7 @@ class InterpolationError(ProcessError):
     def __init__(self):
         super().__init__()
         self.url = None
-        self.hierarchy_type = None
+        self.category = None
         self.path = None
         self.reverse_path = []
 

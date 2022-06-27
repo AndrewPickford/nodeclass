@@ -15,12 +15,12 @@ class Hierarchy:
     ''' The top level interface to nested group of dictionaries
     '''
 
-    __slots__ = ('_dictionary', 'frozen', 'hierarchy_type', 'url')
+    __slots__ = ('_dictionary', 'frozen', 'category', 'url')
 
     type = Value.HIERARCHY
 
     @staticmethod
-    def from_dict(dictionary, url, hierarchy_type):
+    def from_dict(dictionary, url, category):
         def process(key, input, url):
             try:
                 if isinstance(input, dict):
@@ -37,35 +37,35 @@ class Hierarchy:
                 exception.reverse_path.append(key)
                 raise
         try:
-            return Hierarchy({ k: process(k, v, url) for k, v in dictionary.items() }, url, hierarchy_type)
+            return Hierarchy({ k: process(k, v, url) for k, v in dictionary.items() }, url, category)
         except InputError as exception:
-            exception.hierarchy_type = hierarchy_type
+            exception.category = category
             exception.url = url
             raise
 
     @staticmethod
-    def merge_multiple(hierarchies, hierarchy_type):
+    def merge_multiple(hierarchies, category):
         result = copy.copy(hierarchies[0])
         try:
             for h in hierarchies[1:]:
                 result.merge(h)
         except InterpolationError as exception:
-            exception.hierarchy_type = hierarchy_type
+            exception.category = category
             raise
         return result
 
-    def __init__(self, input, url, hierarchy_type, frozen=True):
+    def __init__(self, input, url, category, frozen=True):
         self._dictionary = Dictionary(input, url)
         self.url = url
         self.frozen = frozen
-        self.hierarchy_type = hierarchy_type
+        self.category = category
 
     def __copy__(self):
         cls = self.__class__
         new = cls.__new__(cls)
         new._dictionary = self._dictionary
         new.url = self.url
-        new.hierarchy_type = self.hierarchy_type
+        new.category = self.category
         new.frozen = False
         return new
 
@@ -85,7 +85,7 @@ class Hierarchy:
         try:
             return self._dictionary._getsubitem(path, 0)
         except InterpolationError as exception:
-            exception.hierarchy_type = self.hierarchy_type
+            exception.category = self.category
             raise
 
     def __repr__(self):
@@ -93,7 +93,7 @@ class Hierarchy:
 
     def __setitem__(self, path, value):
         if self.frozen:
-            raise FrozenHierarchy(self.url, self.hierarchy_type)
+            raise FrozenHierarchy(self.url, self.category)
         if self._dictionary._getsubitem(path, 0).copy_on_change:
             self._dictionary = self._dictionary._setsubitem_copy_on_change(path, 0, value)
         else:
@@ -104,7 +104,7 @@ class Hierarchy:
 
     def extract(self, paths):
         extracted = self._dictionary._extract(paths, 0)
-        return type(self)(extracted._dictionary, self.url, self.hierarchy_type)
+        return type(self)(extracted._dictionary, self.url, self.category)
 
     def find_matching_contents_path(self, contents):
         p = self._dictionary.find_matching_contents_path(contents)
@@ -127,18 +127,18 @@ class Hierarchy:
 
     def merge(self, other):
         if self.frozen:
-            raise FrozenHierarchy(self.url, self.hierarchy_type)
+            raise FrozenHierarchy(self.url, self.category)
         if other.type == Value.HIERARCHY:
             try:
                 self._dictionary = self._dictionary.merge(other._dictionary)
             except InterpolationError as exception:
-                exception.hierarchy_type = self.hierarchy_type
+                exception.category = self.category
                 raise
         else:
-            raise NotHierarchy(self.url, self.hierarchy_type, other)
+            raise NotHierarchy(self.url, self.category, other)
 
     def pprint(self):
-        print('Hierarchy, type={0}, url={1}'.format(self.hierarchy_type, self.url))
+        print('Hierarchy, category={0}, url={1}'.format(self.category, self.url))
         print(yaml.dump(self._dictionary.repr_all(), default_flow_style=False, Dumper=yaml.CSafeDumper))
 
     def render_all(self):

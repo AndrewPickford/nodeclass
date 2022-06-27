@@ -27,7 +27,7 @@ class Interpolator:
         except InventoryQueryError as exception:
             try:
                 exception.path = parameters_merged.find_matching_contents_path(exception.query)
-                exception.hierarchy_type = parameters_merged.hierarchy_type
+                exception.category = parameters_merged.category
                 exception.url = parameters_merged[exception.path].url
             except Exception:
                 pass

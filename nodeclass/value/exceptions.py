@@ -41,10 +41,10 @@ class MergeOverImmutable(MergeError):
 
 
 class FrozenHierarchy(InterpolationError):
-    def __init__(self, url, hierarchy_type):
+    def __init__(self, url, category):
         super().__init__()
         self.url = url
-        self.hierarchy_type = hierarchy_type
+        self.category = category
 
     def message(self):
         return super().message() + \
@@ -54,10 +54,10 @@ class FrozenHierarchy(InterpolationError):
 
 
 class NotHierarchy(InterpolationError):
-    def __init__(self, url, hierarchy_type, other):
+    def __init__(self, url, category, other):
         super().__init__()
         self.url = url
-        self.hierarchy_type = hierarchy_type
+        self.category = category
         self.other = other
 
     def message(self):

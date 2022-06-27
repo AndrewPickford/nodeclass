@@ -60,7 +60,7 @@ def test_parameters_resolver_circular_references():
     exception = info.value.exceptions[0]
     assert isinstance(exception, CircularReference)
     assert exception.url == 'test_url_0'
-    assert exception.hierarchy_type == 'parameters'
+    assert exception.category == 'parameters'
     # interpolation can start with parameter a or b
     assert (exception.path == Path.fromstring('a') and exception.reference == Path.fromstring('b')) or \
            (exception.path == Path.fromstring('b') and exception.reference == Path.fromstring('a'))
@@ -71,7 +71,7 @@ def test_parameters_resolver_missing_reference():
     exception = info.value.exceptions[0]
     assert isinstance(exception, NoSuchReference)
     assert exception.url == 'test_url_0'
-    assert exception.hierarchy_type == 'parameters'
+    assert exception.category == 'parameters'
     assert exception.path == Path.fromstring('a')
     assert exception.reference == Path.fromstring('b')
 
