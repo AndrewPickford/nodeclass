@@ -1,3 +1,5 @@
+This is a work in progress.
+
 ## Introduction
 
 Nodeclass is a reimplementation of the extended version of Reclass (insert link to extended and original). The extended version
