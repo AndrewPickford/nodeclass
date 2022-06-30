@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from collections import namedtuple, OrderedDict
 from ..exceptions import ProcessError
 from ..node.node import Node
@@ -6,6 +9,10 @@ from .exceptions import InventoryQueryError
 
 InventoryResult = namedtuple('InventoryResult', [ 'environment', 'exports' ])
 CachedMerge = namedtuple('CachedMerge', [ 'exports', 'parameters' ])
+
+if TYPE_CHECKING:
+    InventoryDict = dict[str, InventoryResult]
+
 
 class Inventory:
     def __init__(self, resolver):

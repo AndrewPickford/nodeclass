@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from ..item.scalar import Scalar
 from ..value.dictionary import Dictionary
 from ..value.list import List
@@ -7,33 +10,40 @@ from .iftest import IfTest
 from .operand import Operand
 from .tokenizer import Tags
 
+if TYPE_CHECKING:
+    from typing import Any
+    from ..interpolator.inventory import InventoryDict
+    from ..utils.path import Path
+    from ..value.hierarchy import Hierarchy
+    from .tokenizer import Token
+
 
 class QueryOptions:
     def __init__(self):
         self.all_envs = False
         self.ignore_errors = False
 
-    def set(self, opt):
+    def set(self, opt: str):
         if opt == '+allenvs':
             self.all_envs = True
         elif opt == '+ignoreerrors':
             self.ignore_errors = True
 
 class Query:
-    def __init__(self, options):
+    def __init__(self, options: QueryOptions):
         self.all_envs = options.all_envs
         self.ignore_errors = options.ignore_errors
 
-    def __eq_(self, other):
+    def __eq_(self, other: Any) -> bool:
         if self.__class__ == other.__class__:
             if (self.all_envs, self.ignore_errors) == (other.all_envs, other.ignore_errors):
                 return True
         return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(str(self))
 
-    def options_str(self):
+    def options_str(self) -> str:
         opts = []
         if self.all_envs:
             opts.append('+AllEnvs')
@@ -46,31 +56,31 @@ class Query:
 
 
 class IfQuery(Query):
-    def __init__(self, tokens, options):
+    def __init__(self, tokens: list[Token], options: QueryOptions):
         super().__init__(options)
         if tokens[0].type != Tags.EXPORT.value:
-            raise InventoryQueryParseError(tokens, 'if queries begin with an export to return')
+            raise InventoryQueryParseError('if queries begin with an export to return, found {0}'.format(tokens[0]))
         if tokens[1].type != Tags.IF.value:
-            raise InventoryQueryParseError(tokens, 'if queries begin with start with an export followed by "if"')
+            raise InventoryQueryParseError('if queries begin with an export followed by "if", found {0}'.format(tokens[1]))
         self.returned = Operand(tokens[0])
         self.test = IfTest(tokens[2:])
 
-    def __eq_(self, other):
+    def __eq_(self, other: Any) -> bool:
         if self.__class__ == other.__class__:
             if (self.returned, self.test) == (other.returned, other.test):
-                return super().__eq__(self, other)
+                return super().__eq__(other)
         return False
 
-    def __ne__(self, other):
+    def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '{0}{1} if {2}'.format(self.options_str(), self.returned, self.test)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{0}({1}{2} if {3})'.format(self.__class__.__name__, self.options_str(), repr(self.returned), repr(self.test))
 
-    def evaluate(self, context, inventory, environment):
+    def evaluate(self, context: Hierarchy, inventory: InventoryDict, environment: str) -> Dictionary:
         answer = {}
         for name, node in inventory.items():
             if node.environment == environment or self.all_envs:
@@ -80,37 +90,37 @@ class IfQuery(Query):
         return Dictionary(answer, 'invquery', check_for_prefix=False)
 
     @property
-    def exports(self):
-        return self.returned.exports |self.test.exports
+    def exports(self) -> set[Path]:
+        return self.returned.exports | self.test.exports
 
     @property
-    def references(self):
+    def references(self) -> set[Path]:
         return self.returned.references | self.test.references
 
 
 class ListIfQuery(Query):
-    def __init__(self, tokens, options):
+    def __init__(self, tokens: list[Token], options: QueryOptions):
         super().__init__(options)
         if tokens[0].type != Tags.IF.value:
-            raise InventoryQueryParseError(tokens, 'list if queries begin with "if"')
+            raise InventoryQueryParseError('list if queries begin with "if", found {0}'.format(tokens[0]))
         self.test = IfTest(tokens[1:])
 
-    def __eq_(self, other):
+    def __eq_(self, other: Any) -> bool:
         if self.__class__ == other.__class__:
             if self.test == other.test:
-                return super().__eq__(self, other)
+                return super().__eq__(other)
         return False
 
-    def __ne__(self, other):
+    def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '{0}if {1}'.format(self.options_str(), self.test)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{0}({1}if {2})'.format(self.__class__.__name__, self.options_str(), repr(self.test))
 
-    def evaluate(self, context, inventory, environment):
+    def evaluate(self, context: Hierarchy, inventory: InventoryDict, environment: str) -> List:
         answer = []
         for name, node in inventory.items():
             if node.environment == environment or self.all_envs:
@@ -119,22 +129,22 @@ class ListIfQuery(Query):
         return List(answer, 'invquery')
 
     @property
-    def exports(self):
+    def exports(self) -> set[Path]:
         return self.test.exports
 
     @property
-    def references(self):
+    def references(self) -> set[Path]:
         return self.test.references
 
 
 class ValueQuery(Query):
-    def __init__(self, tokens, options):
+    def __init__(self, tokens: list[Token], options: QueryOptions):
         super().__init__(options)
         if tokens[0].type != Tags.EXPORT.value or len(tokens) > 1:
-            raise InventoryQueryParseError(tokens, 'value queries consist of an export to return, found: {0}'.format(tokens))
+            raise InventoryQueryParseError('value queries consist of an export to return, found: {0}'.format(tokens))
         self.returned = Operand(tokens[0])
 
-    def evaluate(self, context, inventory, environment):
+    def evaluate(self, context: Hierarchy, inventory: InventoryDict, environment: str) -> Dictionary:
         answer = {}
         for name, node in inventory.items():
             if node.environment == environment or self.all_envs:
@@ -143,9 +153,9 @@ class ValueQuery(Query):
         return Dictionary(answer, 'invquery', check_for_prefix=False)
 
     @property
-    def exports(self):
+    def exports(self) -> set[Path]:
         return self.returned.exports
 
     @property
-    def references(self):
+    def references(self) -> set[Path]:
         return set()

@@ -10,4 +10,9 @@ rpm:
 tests:
 	py.test-3 -v
 
-.PHONY: flakes tests
+types:
+	mypy nodeclass
+
+checks: tests flakes types
+
+.PHONY: checks clean flakes tests types

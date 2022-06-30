@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import errno
 import fcntl
 import time
 
 class HoldLock:
-    def __init__(self, file, timeout=120):
+    def __init__(self, file: str, timeout: int = 120):
         self.file = file
         self.timeout = timeout
 
