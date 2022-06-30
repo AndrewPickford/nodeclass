@@ -4,3 +4,4 @@ nodeclass.egg-info
 .cache
 *.py[co]
 *.swp
+.$*.bkp
