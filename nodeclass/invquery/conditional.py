@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from .comparision import Comparision
 from .exceptions import InventoryQueryParseError
 from .operand import Operand
-from .tokenizer import Tags
+from .tokenizer import Tag
 
 if TYPE_CHECKING:
     from typing import Any
@@ -17,11 +17,11 @@ class Conditional:
         self.lhs = Operand(lhs_token)
         self.comparision = Comparision(comp_token)
         self.rhs = Operand(rhs_token)
-        if Tags.EXPORT.value not in [ self.lhs.type, self.rhs.type ]:
+        if Tag.EXPORT.value not in [ self.lhs.type, self.rhs.type ]:
             raise InventoryQueryParseError('no exports defined in comparision: {0}'.format(str(self)))
-        elif self.lhs.type == Tags.EXPORT.value and self.rhs.type == Tags.EXPORT.value:
+        elif self.lhs.type == Tag.EXPORT.value and self.rhs.type == Tag.EXPORT.value:
             raise InventoryQueryParseError('two exports defined in comparision: {0}'.format(str(self)))
-        if self.lhs.type == Tags.EXPORT.value:
+        if self.lhs.type == Tag.EXPORT.value:
             self.export = self.lhs
             self.other = self.rhs
         else:
@@ -47,7 +47,7 @@ class Conditional:
         if self.export.path not in node_exports:
             return False
         export = node_exports[self.export.path].render_all()
-        if self.other.type == Tags.PARAMETER.value:
+        if self.other.type == Tag.PARAMETER.value:
             other = context[self.other.path].render_all()
         else:
             other = self.other.data

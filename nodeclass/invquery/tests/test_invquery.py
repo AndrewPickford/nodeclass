@@ -7,18 +7,18 @@ from nodeclass.utils.path import Path
 
 expression_tokenizer = tokenizer.make_expression_tokenizer()
 
-VAQ = tokenizer.Tags.VALUE_QUERY.value
-IFQ = tokenizer.Tags.IF_QUERY.value
-LIQ = tokenizer.Tags.LIST_IF_QUERY.value
-OPT = tokenizer.Tags.OPTION.value
-IF  = tokenizer.Tags.IF.value
-COM = tokenizer.Tags.COMPARISION.value
-LOG = tokenizer.Tags.LOGICAL.value
-STR = tokenizer.Tags.STRING.value
-INT = tokenizer.Tags.INT.value
-FLT = tokenizer.Tags.FLOAT.value
-EXP = tokenizer.Tags.EXPORT.value
-PAR = tokenizer.Tags.PARAMETER.value
+VAQ = tokenizer.Tag.VALUE_QUERY.value
+IFQ = tokenizer.Tag.IF_QUERY.value
+LIQ = tokenizer.Tag.LIST_IF_QUERY.value
+OPT = tokenizer.Tag.OPTION.value
+IF  = tokenizer.Tag.IF.value
+COM = tokenizer.Tag.COMPARISION.value
+LOG = tokenizer.Tag.LOGICAL.value
+STR = tokenizer.Tag.STRING.value
+INT = tokenizer.Tag.INT.value
+FLT = tokenizer.Tag.FLOAT.value
+EXP = tokenizer.Tag.EXPORT.value
+PAR = tokenizer.Tag.PARAMETER.value
 
 Pstr = Path.fromstring
 

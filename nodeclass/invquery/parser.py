@@ -1,22 +1,20 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import Type, TYPE_CHECKING
 
 import pyparsing
 from ..context import CONTEXT
 from .exceptions import InventoryQueryParseError
-from .query import IfQuery
-from .query import ListIfQuery
-from .query import QueryOptions
-from .query import ValueQuery
-from .tokenizer import Tags
+from .query import QueryOptions, IfQuery, ListIfQuery, ValueQuery
+from .tokenizer import Tag
 
 if TYPE_CHECKING:
+    from typing import Any
     from .query import Query
 
-QUERY_TYPE_LOOKUP = {
-    Tags.IF_QUERY.value: IfQuery,
-    Tags.LIST_IF_QUERY.value: ListIfQuery,
-    Tags.VALUE_QUERY.value: ValueQuery
+QUERY_TYPE_LOOKUP: dict[Any, Type[IfQuery]|Type[ListIfQuery]|Type[ValueQuery]] = {
+    Tag.IF_QUERY.value: IfQuery,
+    Tag.LIST_IF_QUERY.value: ListIfQuery,
+    Tag.VALUE_QUERY.value: ValueQuery
 }
 
 def parse(expression: str) -> Query:
@@ -27,7 +25,7 @@ def parse(expression: str) -> Query:
     try:
         options = QueryOptions()
         pos = 0
-        while tokens[pos].type == Tags.OPTION.value:
+        while tokens[pos].type == Tag.OPTION.value:
             options.set(tokens[pos].data)
             pos += 1
         query = tokens[pos]

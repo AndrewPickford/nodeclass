@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 import operator
 from .exceptions import InventoryQueryParseError
-from .tokenizer import Tags
+from .tokenizer import Tag
 
 if TYPE_CHECKING:
     from typing import Any
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class Logical:
     def __init__(self, token: Token):
-        if token.type != Tags.LOGICAL.value:
+        if token.type != Tag.LOGICAL.value:
             raise InventoryQueryParseError('expected a logical operator, found: {0}'.format(token))
         data = token.data.lower()
         if data == 'or':

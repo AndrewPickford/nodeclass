@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from abc import ABC, abstractmethod, abstractproperty
 from ..item.scalar import Scalar
 from ..value.dictionary import Dictionary
 from ..value.list import List
@@ -8,7 +9,7 @@ from ..value.plain import Plain
 from .exceptions import InventoryQueryParseError
 from .iftest import IfTest
 from .operand import Operand
-from .tokenizer import Tags
+from .tokenizer import Tag
 
 if TYPE_CHECKING:
     from typing import Any
@@ -29,7 +30,7 @@ class QueryOptions:
         elif opt == '+ignoreerrors':
             self.ignore_errors = True
 
-class Query:
+class Query(ABC):
     def __init__(self, options: QueryOptions):
         self.all_envs = options.all_envs
         self.ignore_errors = options.ignore_errors
@@ -54,13 +55,25 @@ class Query:
             string += ' '
         return string
 
+    @abstractproperty
+    def exports(self) -> set[Path]:
+        pass
+
+    @abstractproperty
+    def references(self) -> set[Path]:
+        pass
+
+    @abstractmethod
+    def evaluate(self, context: Hierarchy, inventory: InventoryDict, environment: str) -> Dictionary|List:
+        pass
+
 
 class IfQuery(Query):
     def __init__(self, tokens: list[Token], options: QueryOptions):
         super().__init__(options)
-        if tokens[0].type != Tags.EXPORT.value:
+        if tokens[0].type != Tag.EXPORT.value:
             raise InventoryQueryParseError('if queries begin with an export to return, found {0}'.format(tokens[0]))
-        if tokens[1].type != Tags.IF.value:
+        if tokens[1].type != Tag.IF.value:
             raise InventoryQueryParseError('if queries begin with an export followed by "if", found {0}'.format(tokens[1]))
         self.returned = Operand(tokens[0])
         self.test = IfTest(tokens[2:])
@@ -101,7 +114,7 @@ class IfQuery(Query):
 class ListIfQuery(Query):
     def __init__(self, tokens: list[Token], options: QueryOptions):
         super().__init__(options)
-        if tokens[0].type != Tags.IF.value:
+        if tokens[0].type != Tag.IF.value:
             raise InventoryQueryParseError('list if queries begin with "if", found {0}'.format(tokens[0]))
         self.test = IfTest(tokens[1:])
 
@@ -140,7 +153,7 @@ class ListIfQuery(Query):
 class ValueQuery(Query):
     def __init__(self, tokens: list[Token], options: QueryOptions):
         super().__init__(options)
-        if tokens[0].type != Tags.EXPORT.value or len(tokens) > 1:
+        if tokens[0].type != Tag.EXPORT.value or len(tokens) > 1:
             raise InventoryQueryParseError('value queries consist of an export to return, found: {0}'.format(tokens))
         self.returned = Operand(tokens[0])
 
