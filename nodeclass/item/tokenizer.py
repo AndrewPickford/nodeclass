@@ -3,14 +3,18 @@
 #
 # This file is part of nodeclass
 #
+from __future__ import annotations
+
 import enum
 import pyparsing as pp
+from collections import namedtuple
 
-Tags = enum.Enum('Tags', ['STR', 'REF', 'INV'])
+Tag = enum.Enum('Tag', ['STR', 'REF', 'INV'])
+Token = namedtuple('Token', ['type', 'data'])
 
 def tag(name):
     def inner(string, location, tokens):
-        return (name, tokens[0])
+        return Token(name, tokens[0])
     return inner
 
 
@@ -57,10 +61,10 @@ def make_full_tokenizer(settings):
     ref_escape_close = pp.Literal(_REF_ESCAPE_CLOSE).setParseAction(pp.replaceWith(_REF_CLOSE))
     ref_text = pp.CharsNotIn(_REF_EXCLUDES) | pp.CharsNotIn(_REF_CLOSE_FIRST, exact=1)
     ref_content = pp.Combine(pp.OneOrMore(ref_not_open + ref_not_close + ref_text))
-    ref_string = pp.MatchFirst([double_escape, ref_escape_open, ref_escape_close, ref_content]).setParseAction(tag(Tags.STR.value))
+    ref_string = pp.MatchFirst([double_escape, ref_escape_open, ref_escape_close, ref_content]).setParseAction(tag(Tag.STR.value))
     ref_item = pp.Forward()
     ref_items = pp.OneOrMore(ref_item)
-    reference = (ref_open + pp.Group(ref_items) + ref_close).setParseAction(tag(Tags.REF.value))
+    reference = (ref_open + pp.Group(ref_items) + ref_close).setParseAction(tag(Tag.REF.value))
     ref_item << (reference | ref_string)
 
     inv_open = pp.Literal(_INV_OPEN).suppress()
@@ -71,13 +75,13 @@ def make_full_tokenizer(settings):
     inv_escape_close = pp.Literal(_INV_ESCAPE_CLOSE).setParseAction(pp.replaceWith(_INV_CLOSE))
     inv_text = pp.CharsNotIn(_INV_CLOSE_FIRST)
     inv_content = pp.Combine(pp.OneOrMore(inv_not_close + inv_text))
-    inv_string = pp.MatchFirst([double_escape, inv_escape_open, inv_escape_close, inv_content]).setParseAction(tag(Tags.STR.value))
+    inv_string = pp.MatchFirst([double_escape, inv_escape_open, inv_escape_close, inv_content]).setParseAction(tag(Tag.STR.value))
     inv_items = pp.OneOrMore(inv_string)
-    inv_query = (inv_open + pp.Group(inv_items) + inv_close).setParseAction(tag(Tags.INV.value))
+    inv_query = (inv_open + pp.Group(inv_items) + inv_close).setParseAction(tag(Tag.INV.value))
 
     text = pp.CharsNotIn(_EXCLUDES) | pp.CharsNotIn('', exact=1)
     content = pp.Combine(pp.OneOrMore(ref_not_open + inv_not_open + text))
-    string = pp.MatchFirst([double_escape, ref_escape_open, inv_escape_open, content]).setParseAction(tag(Tags.STR.value))
+    string = pp.MatchFirst([double_escape, ref_escape_open, inv_escape_open, content]).setParseAction(tag(Tag.STR.value))
 
     line = pp.StringStart() + (pp.OneOrMore(reference | string) | inv_query) + pp.StringEnd()
     return line.leaveWhitespace()
@@ -101,9 +105,9 @@ def make_simple_tokenizer(settings):
     INV_OPEN, INV_CLOSE = settings.inventory_query_sentinels
     EXCLUDES = ESCAPE + REF_OPEN + REF_CLOSE + INV_OPEN + INV_CLOSE
 
-    string = pp.CharsNotIn(EXCLUDES).setParseAction(tag(Tags.STR.value))
+    string = pp.CharsNotIn(EXCLUDES).setParseAction(tag(Tag.STR.value))
     ref_open = pp.Literal(REF_OPEN).suppress()
     ref_close = pp.Literal(REF_CLOSE).suppress()
-    reference = (ref_open + pp.Group(string) + ref_close).setParseAction(tag(Tags.REF.value))
+    reference = (ref_open + pp.Group(string) + ref_close).setParseAction(tag(Tag.REF.value))
     line = pp.StringStart() + pp.Optional(string) + reference + pp.Optional(string) + pp.StringEnd()
     return line.leaveWhitespace()

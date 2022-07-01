@@ -11,7 +11,8 @@ from .exceptions import BadParseToken, ParseError
 from .invquery import InvQuery
 from .reference import Reference
 from .scalar import Scalar
-from .tokenizer import Tags
+from .tokenizer import Tag
+
 
 def parse(input):
     '''
@@ -35,11 +36,11 @@ def parse(input):
         return InvQuery(query)
 
     def process_token(tag, value):
-        if tag == Tags.STR.value:
+        if tag == Tag.STR.value:
             return Scalar(value)
-        elif tag == Tags.REF.value:
+        elif tag == Tag.REF.value:
             return process_reference(value)
-        elif tag == Tags.INV.value:
+        elif tag == Tag.INV.value:
             return process_inventory_query(value)
         else:
             raise BadParseToken(tag, value)

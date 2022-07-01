@@ -9,9 +9,9 @@ settings = Settings()
 simple_tokenizer = tokenizer.make_simple_tokenizer(settings)
 full_tokenizer = tokenizer.make_full_tokenizer(settings)
 
-INV = tokenizer.Tags.INV.value
-REF = tokenizer.Tags.REF.value
-STR = tokenizer.Tags.STR.value
+INV = tokenizer.Tag.INV.value
+REF = tokenizer.Tag.REF.value
+STR = tokenizer.Tag.STR.value
 
 Pstr = Path.fromstring
 
@@ -102,7 +102,7 @@ test_data_complex = [
     # This is probably not what would be expected. With \\\\$ the backslash closest to the $ sign
     # is removed and the rest pass through.
     # SHOULD THIS BE CHANGED?
-    #(r'\\\\${foo}', [(pf.tags.STR, r'\\'), (pf.tags.STR, '\\'), (pf.tags.REF, [(pf.tags.STR, 'foo')])]),
+    #(r'\\\\${foo}', [(pf.tag.STR, r'\\'), (pf.tag.STR, '\\'), (pf.tag.REF, [(pf.tag.STR, 'foo')])]),
 
     # Whitespace preservation in various positions.
     ( ' foo ',
