@@ -3,6 +3,14 @@ import contextlib
 import os
 from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, FileParsingError, InvalidUri, NodeNotFound
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Dict, Generator, List, Optional, TextIO, Tuple, Union
+    from ..config_file import ConfigData
+    from .factory import StorageCache
+    from .format import Format
+
+
 class FileSystem:
     '''
     '''
@@ -12,8 +20,8 @@ class FileSystem:
     valid_options = required_options
 
     @classmethod
-    def validate_uri(cls, uri):
-        def validate_option(option):
+    def validate_uri(cls, uri: 'ConfigData') -> 'ConfigData':
+        def validate_option(option: 'str') -> 'str':
             if option not in cls.valid_options:
                 raise InvalidUri(uri, 'invalid option {0}'.format(option))
             return option
@@ -25,12 +33,12 @@ class FileSystem:
         return options
 
     @classmethod
-    def uri_from_string(cls, uri_string):
+    def uri_from_string(cls, uri_string: 'str') -> 'ConfigData':
         resource, path = uri_string.split(':', 1)
         return { 'resource': resource, 'path': path }
 
     @classmethod
-    def from_uri(cls, uri, cache):
+    def from_uri(cls, uri: 'Union[ConfigData, str]', cache: 'Optional[StorageCache]') -> 'Tuple[FileSystem, ConfigData]':
         if isinstance(uri, str):
             uri = cls.uri_from_string(uri)
         uri_valid = cls.validate_uri(uri)
@@ -39,28 +47,30 @@ class FileSystem:
         name = 'fs {0}'.format(uri['path'])
         if name not in cache:
             cache[name] = cls(**uri_valid)
-        return cache[name], uri
+        if isinstance(cache[name], FileSystem):
+            return cache[name], uri
+        raise RuntimeError('error')
 
-    def __init__(self, path):
+    def __init__(self, path: 'str'):
         self.basedir = os.path.abspath(path)
 
-    def __contains__(self, path):
+    def __contains__(self, path: 'str') -> 'bool':
         fullpath = os.path.join(self.basedir, path)
         return os.path.exists(fullpath)
 
-    def __repr__(self):
+    def __repr__(self) -> 'str':
         return '{0}({1})'.format(self.__class__.__name__, self.basedir)
 
-    def __str__(self):
+    def __str__(self) -> 'str':
         return '{0}'.format(self.basedir)
 
-    def get(self, path):
+    def get(self, path: 'str') -> 'str':
         fullpath = os.path.join(self.basedir, path)
         with open(fullpath) as file:
             return file.read()
 
     @contextlib.contextmanager
-    def open(self, path):
+    def open(self, path: 'str') -> 'Generator[TextIO, None, None]':
         fullpath = os.path.join(self.basedir, path)
         with open(fullpath) as file:
             yield file
@@ -73,29 +83,29 @@ class FileSystemClasses:
     valid_options = FileSystem.ignored_options + FileSystem.valid_options
 
     @classmethod
-    def clean_uri(cls, uri):
+    def clean_uri(cls, uri: 'ConfigData') -> 'ConfigData':
         return { k: v for k, v in uri.items() if k in cls.valid_options }
 
     @classmethod
-    def subpath(cls, uri):
+    def subpath(cls, uri: 'Union[ConfigData, str]') -> 'ConfigData':
         if isinstance(uri, str):
             uri = FileSystem.uri_from_string(uri)
         uri['path'] = os.path.join(uri['path'], 'classes')
         return uri
 
-    def __init__(self, uri, format, cache=None):
+    def __init__(self, uri: 'ConfigData', format: 'Format', cache: 'Optional[StorageCache]' = None):
         self.file_system, uri = FileSystem.from_uri(uri, cache)
         self.format = format
         self.resource = uri['resource']
         self.path = uri['path']
 
-    def __str__(self):
+    def __str__(self) -> 'str':
         return '{0}:{1}'.format(self.resource, self.file_system)
 
-    def _path_url(self, path):
+    def _path_url(self, path: 'str') -> 'str':
         return '{0}:{1}'.format(self.resource, os.path.join(self.path, path))
 
-    def name_to_path(self, name):
+    def name_to_path(self, name: 'str') -> 'str':
         base = name.replace('.', '/')
         basepaths = [ '{0}'.format(base), '{0}/init'.format(base) ]
         paths = [ '{0}.{1}'.format(path, ext) for ext in self.format.extensions for path in basepaths ]
@@ -107,7 +117,7 @@ class FileSystemClasses:
             raise DuplicateClass(name, duplicates)
         raise ClassNotFound(name, [ self._path_url(path) for path in paths ])
 
-    def get(self, name, environment):
+    def get(self, name: 'str', environment: 'str') -> 'Tuple[Dict, str]':
         path = self.name_to_path(name)
         try:
             if self.format.load:
@@ -127,23 +137,23 @@ class FileSystemNodes:
     '''
 
     @classmethod
-    def subpath(cls, uri):
+    def subpath(cls, uri: 'Union[ConfigData, str]') -> 'ConfigData':
         if isinstance(uri, str):
             uri = FileSystem.uri_from_string(uri)
         uri['path'] = os.path.join(uri['path'], 'nodes')
         return uri
 
-    def __init__(self, uri, format, cache=None):
+    def __init__(self, uri: 'ConfigData', format: 'Format', cache: 'Optional[StorageCache]' = None):
         self.file_system, uri = FileSystem.from_uri(uri, cache)
         self.format = format
         self.resource = uri['resource']
         self.path = uri['path']
         self.node_map = self._make_node_map()
 
-    def __str__(self):
+    def __str__(self) -> 'str':
         return '{0}:{1}'.format(self.resource, self.file_system)
 
-    def _make_node_map(self):
+    def _make_node_map(self) -> 'Dict[str, List[str]]':
         node_map = collections.defaultdict(list)
         for (dirpath, dirnames, filenames) in os.walk(self.path):
             for file in filenames:
@@ -153,10 +163,10 @@ class FileSystemNodes:
                     node_map[nodename].append(os.path.relpath(path, start=self.path))
         return node_map
 
-    def _path_url(self, path):
+    def _path_url(self, path: 'str') -> 'str':
         return '{0}:{1}'.format(self.resource, os.path.join(self.path, path))
 
-    def get(self, name):
+    def get(self, name: 'str') -> 'Tuple[Dict, str]':
         if name not in self.node_map:
             raise NodeNotFound(name, str(self))
         elif len(self.node_map[name]) != 1:

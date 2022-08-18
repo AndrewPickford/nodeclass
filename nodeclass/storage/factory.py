@@ -5,7 +5,13 @@ from .gitrepo import GitRepoClasses, GitRepoNodes
 from .loader import KlassLoader, NodeLoader
 from .yaml import Yaml
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Any, Dict
+    StorageCache = Dict[str, Any]
+
 StorageType = namedtuple('StorageType', ['storage', 'kwargs'])
+
 
 class Factory:
     storage_classes = {
@@ -89,7 +95,7 @@ class Factory:
             NodeLoader(yaml_fs:/path/to/nodes)
         '''
 
-        cache = {}
+        cache: 'StorageCache' = {}
         if isinstance(uri, str):
             try:
                 resource, _ = uri.split(':', 1)

@@ -13,6 +13,13 @@ try:
 except ImportError:
     pygit2 = None
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Dict, Generator, List, Optional, Tuple, Union
+    from ..config_file import ConfigData
+    from .factory import StorageCache
+    from .format import Format
+
 
 GitFileMetaData = collections.namedtuple('GitFileMetaData', ['name', 'path', 'id'], rename=False)
 
@@ -26,8 +33,8 @@ class GitRepo:
     valid_options = [ 'cache_dir', 'lock_dir', 'pubkey', 'privkey', 'password' ] + required_options
 
     @classmethod
-    def validate_uri(cls, uri):
-        def validate_option(option):
+    def validate_uri(cls, uri: 'ConfigData') -> 'ConfigData':
+        def validate_option(option: 'str') -> 'str':
             if option not in cls.valid_options:
                 raise InvalidUri(uri, 'invalid option {0}'.format(option))
             return option
@@ -39,12 +46,12 @@ class GitRepo:
         return options
 
     @classmethod
-    def uri_from_string(cls, uri_string):
+    def uri_from_string(cls, uri_string: 'str') -> 'ConfigData':
         resource, repo = uri_string.split(':', 1)
         return { 'resource': resource, 'repo': repo }
 
     @classmethod
-    def from_uri(cls, uri, cache):
+    def from_uri(cls, uri: 'Union[ConfigData, str]', cache: 'Optional[StorageCache]') -> 'Tuple[GitRepo, ConfigData]':
         if isinstance(uri, str):
             uri = cls.uri_from_string(uri)
         uri_valid = cls.validate_uri(uri)
@@ -55,7 +62,7 @@ class GitRepo:
             cache[name] = cls(**uri_valid)
         return cache[name], uri
 
-    def __init__(self, repo, cache_dir=None, lock_dir=None, pubkey=None, privkey=None, password=None):
+    def __init__(self, repo: 'str', cache_dir: 'Optional[str]' = None, lock_dir: 'Optional[str]' = None, pubkey: 'Optional[str]' = None, privkey: 'Optional[str]' = None, password: 'Optional[str]' = None):
         self._check_pygit2()
         self.transport, self.url = repo.split('://', 1)
         self.id = self.url.replace('/', '_')
@@ -89,7 +96,7 @@ class GitRepo:
             self.repo = pygit2.init_repository(self.cache_dir, bare=True)
             self.repo.create_remote('origin', self.url)
 
-    def _setup_remotecallbacks(self, pubkey, privkey, password):
+    def _setup_remotecallbacks(self, pubkey: 'Optional[str]', privkey: 'Optional[str]', password: 'Optional[str]') -> 'Union[pygit2.RemoteCallbacks, None]':
         if 'ssh' in self.transport:
             if '@' in self.url:
                 user, _ = self.url.split('@', 1)
@@ -135,7 +142,7 @@ class GitRepo:
                 local_branch = self.repo.lookup_branch(local_branch_name)
                 local_branch.delete()
 
-    def _files_in_tree(self, tree, path):
+    def _files_in_tree(self, tree: 'pygit2.Tree', path: 'str') -> 'Generator[GitFileMetaData, None, None]':
         for entry in tree:
             if entry.filemode == pygit2.GIT_FILEMODE_TREE:
                 subtree = self.repo.get(entry.id)
@@ -151,10 +158,10 @@ class GitRepo:
                    relpath = '/'.join([path, entry.name])
                 yield GitFileMetaData(entry.name, relpath, entry.id)
 
-    def get(self, id):
+    def get(self, id: 'str') -> 'pygit2.Commit':
         return self.repo.get(id)
 
-    def files_in_branch(self, branch):
+    def files_in_branch(self, branch: 'str') -> 'Generator[GitFileMetaData, None, None]':
         tree = self.repo.revparse_single(branch).tree
         return self._files_in_tree(tree, '')
 
@@ -166,36 +173,36 @@ class GitRepoClasses:
     valid_options = GitRepo.ignored_options + GitRepo.valid_options
 
     @classmethod
-    def clean_uri(cls, uri):
+    def clean_uri(cls, uri: 'ConfigData') -> 'ConfigData':
         return { k: v for k, v in uri.items() if k in cls.valid_options }
 
     @classmethod
-    def subpath(cls, uri):
+    def subpath(cls, uri: 'Union[ConfigData, str]') -> 'ConfigData':
         if isinstance(uri, str):
             uri = GitRepo.uri_from_string(uri)
         uri['path'] = 'classes'
         return uri
 
-    def __init__(self, uri, format, cache=None):
+    def __init__(self, uri: 'ConfigData', format: 'Format', cache: 'Optional[StorageCache]' = None):
         self.git_repo, uri = GitRepo.from_uri(uri, cache)
         self.repo = uri['repo']
         self.resource = uri['resource']
         self.branch = uri.get('branch', None) or 'master'
         self.path = uri.get('path', None)
         self.format = format
-        self.index_map = {}
+        self.index_map: Dict[str, Dict[str, GitFileMetaData]] = {}
         if self.branch != '__env__':
             self.index_map[self.branch] = self._make_index(self.branch)
 
-    def _make_index(self, branch):
-        index = {}
+    def _make_index(self, branch: 'str') -> 'Dict[str, GitFileMetaData]':
+        index: 'Dict[str, GitFileMetaData]' = {}
         for file in self.git_repo.files_in_branch(branch):
             name = self.format.mangle_name(file.name)
             if name:
                 index[file.path] = file
         return index
 
-    def _name_to_meta(self, name, index):
+    def _name_to_meta(self, name: 'str', index: 'Dict[str, GitFileMetaData]') -> 'GitFileMetaData':
         base = name.replace('.', '/')
         if self.path:
             base = os.path.join(self.path, base)
@@ -208,10 +215,10 @@ class GitRepoClasses:
             raise DuplicateClass(name, duplicates)
         raise ClassNotFound(name, [ self._path_url(path) for path in paths ])
 
-    def _path_url(self, path):
+    def _path_url(self, path: 'str') -> 'str':
         return '{0}:{1} {2} {3}'.format(self.resource, self.repo, self.branch, path)
 
-    def get(self, name, environment):
+    def get(self, name: 'str', environment: 'str') -> 'Tuple[Dict, str]':
         if self.branch == '__env__':
             if environment not in self.index_map:
                 self.index_map[environment] = self._make_index(environment)
@@ -221,22 +228,24 @@ class GitRepoClasses:
         meta = self._name_to_meta(name, index)
         blob = self.git_repo.get(meta.id)
         try:
-           return self.format.process(blob.data), self._path_url(meta.path)
+           blob_data = self.format.process(blob.data)
+           path_url = self._path_url(meta.path)
         except FileParsingError as exception:
             exception.url = self._path_url(meta.path)
+        return blob_data, path_url
 
 class GitRepoNodes:
     '''
     '''
 
     @classmethod
-    def subpath(cls, uri):
+    def subpath(cls, uri: 'Union[ConfigData, str]') -> 'ConfigData':
         if isinstance(uri, str):
             uri = GitRepo.uri_from_string(uri)
         uri['path'] = 'nodes'
         return uri
 
-    def __init__(self, uri, format, cache=None):
+    def __init__(self, uri: 'Union[ConfigData, str]', format: 'Format', cache: 'Optional[StorageCache]'=None):
         self.git_repo, uri = GitRepo.from_uri(uri, cache)
         self.repo = uri['repo']
         self.resource = uri['resource']
@@ -245,7 +254,7 @@ class GitRepoNodes:
         self.format = format
         self.node_map = self._make_node_map()
 
-    def _make_node_map(self):
+    def _make_node_map(self) -> 'Dict[str, List[GitFileMetaData]]':
         node_map = collections.defaultdict(list)
         for file in self.git_repo.files_in_branch(self.branch):
             if self.path is None or file.path.startswith(self.path):
@@ -254,10 +263,10 @@ class GitRepoNodes:
                     node_map[name].append(file)
         return node_map
 
-    def _path_url(self, path):
+    def _path_url(self, path: 'GitFileMetaData') -> 'str':
         return '{0}:{1} {2} {3}'.format(self.resource, self.repo, self.branch, path)
 
-    def get(self, name):
+    def get(self, name: 'str') -> 'Tuple[Dict, str]':
         if name not in self.node_map:
             raise NodeNotFound(name, str(self))
         elif len(self.node_map[name]) != 1:
@@ -266,6 +275,8 @@ class GitRepoNodes:
         meta = self.node_map[name][0]
         blob = self.git_repo.get(meta.id)
         try:
-            return self.format.process(blob.data), self._path_url(meta.path)
+            blob_data = self.format.process(blob.data)
+            path_url = self._path_url(meta.path)
         except FileParsingError as exception:
             exception.url = self._path_url(meta.path)
+        return blob_data, path_url

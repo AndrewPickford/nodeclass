@@ -1,8 +1,13 @@
 import os
 import yaml
 from .exceptions import YamlParsingError
+from .format import Format
 
-class Yaml:
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Dict, List, TextIO, Union
+
+class Yaml(Format):
 
     SafeLoader = yaml.CSafeLoader if yaml.__with_libyaml__ else yaml.SafeLoader
     extensions = ('yml', 'yaml')
@@ -10,7 +15,7 @@ class Yaml:
     name = 'yaml'
 
     @classmethod
-    def mangle_name(cls, file_name):
+    def mangle_name(cls, file_name: 'str') -> 'Union[str, None]':
         ''' Return class/node name from file name
 
             If file name extension is in the extensions list then return the file
@@ -23,12 +28,12 @@ class Yaml:
         return None
 
     @classmethod
-    def possible_class_paths(cls, base):
+    def possible_class_paths(cls, base: 'str') -> 'List[str]':
         basepaths = [ '{0}'.format(base), '{0}/init'.format(base) ]
         return [ '{0}.{1}'.format(path, ext) for ext in cls.extensions for path in basepaths ]
 
     @classmethod
-    def load(cls, file_pointer):
+    def load(cls, file_pointer: 'TextIO') -> 'Dict':
         ''' Return the yaml data in the file pointer
 
             In the case of an empty file the yaml.load method returns None, so
@@ -43,8 +48,11 @@ class Yaml:
         return data
 
     @classmethod
-    def process(cls, string):
+    def process(cls, string: 'str') -> 'Dict':
         try:
-            return yaml.load(string, Loader=cls.SafeLoader)
+            data = yaml.load(string, Loader=cls.SafeLoader)
         except Exception as exception:
             raise YamlParsingError(exception)
+        if data == None:
+            return {}
+        return data
