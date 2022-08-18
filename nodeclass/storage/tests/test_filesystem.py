@@ -19,8 +19,7 @@ uri_full = { 'classes': {
              },
            }
 
-uri_list = [ pytest.param(uri_simple, id='simple'),
-             pytest.param(uri_full, id='full') ]
+uri_list = [ uri_simple, uri_full ]
 
 class_one = {
     'classes': [ 'two', 'three' ],

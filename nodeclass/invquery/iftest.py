@@ -1,18 +1,16 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING
-
 from .conditional import Conditional
 from .logical import Logical
 
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, List, Set
     from ..utils.path import Path
     from ..value.hierarchy import Hierarchy
     from .tokenizer import Token
 
 
 class IfTest:
-    def __init__(self, tokens: list[Token]):
+    def __init__(self, tokens: 'List[Token]'):
         self.conditionals = []
         self.logicals = []
         pos = 0
@@ -24,16 +22,16 @@ class IfTest:
                 self.logicals.append(Logical(tokens[pos]))
             pos += 1
 
-    def __eq_(self, other: Any) -> bool:
+    def __eq_(self, other: 'Any') -> 'bool':
         if self.__class__ == other.__class__:
             if self.conditionals == other.conditionals and self.logicals == other.logicals:
                 return True
         return False
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: 'Any') -> 'bool':
         return not self.__eq__(other)
 
-    def __str__(self) -> str:
+    def __str__(self) -> 'str':
         if len(self.conditionals) == 1:
             return str(self.conditionals[0])
         result = [ str(self.conditionals[0]) ]
@@ -42,10 +40,10 @@ class IfTest:
             result.append(str(self.conditionals[i+1]))
         return ' '.join(result)
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> 'str':
         return '{0}({1})'.format(self.__class__.__name__, repr(self.conditionals))
 
-    def evaluate(self, node_exports: Hierarchy, context: Hierarchy) -> bool:
+    def evaluate(self, node_exports: 'Hierarchy', context: 'Hierarchy') -> 'bool':
         if len(self.conditionals) == 1:
             return self.conditionals[0].evaluate(node_exports, context)
         result = self.conditionals[0].evaluate(node_exports, context)
@@ -54,14 +52,14 @@ class IfTest:
         return result
 
     @property
-    def exports(self) -> set[Path]:
+    def exports(self) -> 'Set[Path]':
         result = set()
         for conditional in self.conditionals:
             result |= conditional.exports
         return result
 
     @property
-    def references(self) -> set[Path]:
+    def references(self) -> 'Set[Path]':
         result = set()
         for conditional in self.conditionals:
             result |= conditional.references

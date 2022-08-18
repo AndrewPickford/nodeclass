@@ -3,13 +3,11 @@
 #
 # This file is part of nodeclass
 #
-from __future__ import annotations
-from typing import TYPE_CHECKING
-
 from abc import ABC, abstractmethod
 
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Any, Union
+    from typing import Any, Set, Union
     from ..interpolator.inventory import InventoryDict
     from ..invquery.query import Query
     from ..utils.path import Path
@@ -29,32 +27,32 @@ class Item(ABC):
 
     __slots__ = ('contents', 'unresolved')
 
-    def __init__(self, contents: Any):
+    def __init__(self, contents: 'Any'):
         self.contents = contents
         self.unresolved = False
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: 'Any') -> 'bool':
         if self.__class__ != other.__class__:
             return False
         if self.contents == other.contents:
             return True
         return False
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> 'str':
         return '{0}({1})'.format(self.__class__.__name__, repr(self.contents))
 
-    def __str__(self) -> str:
+    def __str__(self) -> 'str':
         return str(self.contents)
 
     @property
-    def references(self) -> set[Path]:
+    def references(self) -> 'Set[Path]':
         '''
         Set of paths referenced by this Item
         '''
         return set()
 
     @property
-    def inventory_query(self) -> Query|None:
+    def inventory_query(self) -> 'Union[Query, None]':
         '''
         Return the inventory Query, if any of this Item or None if it does not have
         an inventory Query.
@@ -62,7 +60,7 @@ class Item(ABC):
         return None
 
     @abstractmethod
-    def resolve_to_item(self, context: Hierarchy, inventory: InventoryDict, environment: str) -> Item:
+    def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Item':
         '''
         Handle references which require a new Item when resolved.
 
@@ -84,9 +82,9 @@ class Item(ABC):
 
 class Renderable(Item):
     @abstractmethod
-    def render(self) -> RenderableValue:
+    def render(self) -> 'RenderableValue':
         pass
 
     @abstractmethod
-    def resolve_to_item(self, context: Hierarchy, inventory: InventoryDict, environment: str) -> Renderable:
+    def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Renderable':
         pass

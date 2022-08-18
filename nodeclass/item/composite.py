@@ -3,17 +3,17 @@
 #
 # This file is part of nodeclass
 #
-from __future__ import annotations
-from typing import TYPE_CHECKING
-
 from .exceptions import ItemResolveError
 from .item import Renderable
 from .scalar import Scalar
 
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from typing import List, Set
     from ..interpolator.inventory import InventoryDict
     from ..utils.path import Path
     from ..value.hierarchy import Hierarchy
+    from .item import RenderableValue
 
 
 class Composite(Renderable):
@@ -28,9 +28,9 @@ class Composite(Renderable):
 
     __slots__ = ('_references')
 
-    def __init__(self, items: list[Renderable]):
-        self.contents: list[Renderable]
-        self._references: set[Path]
+    def __init__(self, items: 'List[Renderable]'):
+        self.contents: 'List[Renderable]'
+        self._references: 'Set[Path]'
         super().__init__(items)
         self._references = set()
         for i in self.contents:
@@ -38,14 +38,14 @@ class Composite(Renderable):
                 self.unresolved = True
                 self._references |= i.references
 
-    def __str__(self) -> str:
+    def __str__(self) -> 'str':
         return ''.join(map(str, self.contents))
 
     @property
-    def references(self) -> set[Path]:
+    def references(self) -> 'Set[Path]':
         return self._references
 
-    def resolve_to_item(self, context: Hierarchy, inventory: InventoryDict, environment: str) -> Renderable:
+    def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Renderable':
         '''
         '''
         if len(self._references) > 0:
@@ -64,14 +64,14 @@ class Composite(Renderable):
             # no unresolved references so flatten to a single Scalar Item
             return self.flatten()
 
-    def resolve_to_value(self, context: Hierarchy, inventory: InventoryDict, environment: str) -> None:
+    def resolve_to_value(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'None':
         '''
         Composite items cannot resolve directly to a Value, so return None to
         indicate to use resolve_to_item.
         '''
         return None
 
-    def flatten(self) -> Renderable:
+    def flatten(self) -> 'Renderable':
         '''
         Join the composites parts into a single Scalar Item
         '''
@@ -80,7 +80,7 @@ class Composite(Renderable):
         else:
             return Scalar(''.join([ str(i.render()) for i in self.contents ]))
 
-    def render(self) -> bool|float|int|str|None:
+    def render(self) -> 'RenderableValue':
         '''
         Return the render of the flattened contents
         '''

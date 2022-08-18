@@ -3,8 +3,6 @@
 #
 # This file is part of nodeclass
 #
-from __future__ import annotations
-
 import enum
 import pyparsing as pp
 from collections import namedtuple

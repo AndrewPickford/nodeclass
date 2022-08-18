@@ -3,15 +3,14 @@
 #
 # This file is part of nodeclass
 #
-from __future__ import annotations
-from typing import TYPE_CHECKING
-
 from ..context import CONTEXT
 from ..utils.path import Path
 from .exceptions import ItemResolveError
 from .item import Item
 
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from typing import Set, Union
     from ..interpolator.inventory import InventoryDict
     from ..value.hierarchy import Hierarchy
     from ..value.value import Value
@@ -28,7 +27,7 @@ class Reference(Item):
 
     __slots__ = ('_references')
 
-    def __init__(self, item: Renderable):
+    def __init__(self, item: 'Renderable'):
         self.contents: Renderable
         super().__init__(item)
         self.unresolved = True
@@ -37,15 +36,15 @@ class Reference(Item):
         else:
             self._references = { Path.fromstring(str(self.contents.render())) }
 
-    def __str__(self) -> str:
+    def __str__(self) -> 'str':
         rs = CONTEXT.settings.reference_sentinels
         return '{0}{1}{2}'.format(rs[0], self.contents, rs[1])
 
     @property
-    def references(self) -> set[Path]:
+    def references(self) -> 'Set[Path]':
         return self._references
 
-    def resolve_to_item(self, context: Hierarchy, inventory: InventoryDict, environment: str) -> Item:
+    def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Item':
         '''
         Resolve one level of indirection, returning a new Item. This handles
         nested references.
@@ -68,7 +67,7 @@ class Reference(Item):
             except ItemResolveError:
                 raise ItemResolveError(self)
 
-    def resolve_to_value(self, context: Hierarchy, inventory: InventoryDict, environment:str) -> Value|None:
+    def resolve_to_value(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Union[Value, None]':
         '''
         Resolve one level of indirection, returning the Value this reference
         is pointing at. This handles simple single references, such as ${foo},
