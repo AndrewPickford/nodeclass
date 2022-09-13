@@ -25,6 +25,5 @@ def test_load_config_file():
 
 
 def test_load_config_file_no_config_file():
-    settings, uri, path = load_config_file()
     with pytest.raises(NoConfigFile):
         settings, uri, path = load_config_file(filename = 'missing.yml', search_path = [ directory ])
