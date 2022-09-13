@@ -45,6 +45,10 @@ class Hierarchy:
 
     @staticmethod
     def merge_multiple(hierarchies, category):
+        # Check for an empty hierarchies list. This occurs during inventory queries
+        # that include nodes with no included classes.
+        if len(hierarchies) == 0:
+            return Hierarchy.from_dict({}, '', category)
         result = copy.copy(hierarchies[0])
         try:
             for h in hierarchies[1:]:
