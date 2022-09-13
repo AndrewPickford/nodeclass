@@ -158,8 +158,8 @@ class FileSystemNodes:
         for (dirpath, dirnames, filenames) in os.walk(self.path):
             for file in filenames:
                 path = os.path.join(dirpath, file)
-                nodename, extension = os.path.splitext(file)
-                if extension[1:] in self.format.extensions:
+                nodename = self.format.mangle_name(file)
+                if nodename:
                     node_map[nodename].append(os.path.relpath(path, start=self.path))
         return node_map
 

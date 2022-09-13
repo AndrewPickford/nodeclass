@@ -1,7 +1,7 @@
 from ..exceptions import InputError
 from ..node.klass import Klass
 from ..node.protonode import ProtoNode
-from .exceptions import FileError, FileUnhandledError
+from .exceptions import FileError, FileUnhandledError, InvalidNodeName
 
 
 class KlassLoader:
@@ -50,18 +50,24 @@ class NodeLoader:
         self.storage = storage
         self.cache = {}
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: 'str') -> 'ProtoNode':
         if name not in self.cache:
+            try:
+                # node names can not begin with a '.'
+                if name[0] == '.':
+                    raise InvalidNodeName(name, self.storage)
+            except:
+                raise InvalidNodeName(name, self.storage)
             class_dict, url = self.storage.get(name)
             environment = class_dict.get('environment', None)
             klass = Klass.from_class_dict(name, class_dict, url)
             self.cache[name] = ProtoNode(name, environment, klass, url)
         return self.cache[name]
 
-    def __repr__(self):
+    def __repr__(self) -> 'str':
         return '{0}({1})'.format(self.__class__.__name__, self.storage)
 
-    def __str__(self):
+    def __str__(self) -> 'str':
         return '{0}'.format(self.storage)
 
     def nodes(self):
@@ -72,7 +78,7 @@ class NodeLoader:
         for nodename in self.storage.node_map:
             yield nodename
 
-    def primary(self, name, env_override):
+    def primary(self, name: 'str', env_override: 'str') -> 'ProtoNode':
         node = self.__getitem__(name)
         if env_override:
             node.environment = env_override

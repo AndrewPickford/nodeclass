@@ -63,6 +63,16 @@ class NodeNotFound(FileError):
         return super().message() + [ 'Node not found in {0}'.format(self.storage) ]
 
 
+class InvalidNodeName(FileError):
+    def __init__(self, nodename, storage):
+        super().__init__()
+        self.node = nodename
+        self.storage = storage
+
+    def message(self):
+        return super().message() + [ 'Invalid node name: {0} ({1})'.format(self.node, self.storage) ]
+
+
 class PygitConfigError(ConfigError):
     def __init__(self, details):
         super().__init__()

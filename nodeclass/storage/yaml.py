@@ -18,12 +18,12 @@ class Yaml(Format):
     def mangle_name(cls, file_name: 'str') -> 'Union[str, None]':
         ''' Return class/node name from file name
 
-            If file name extension is in the extensions list then return the file
-            name with the extension stripped. Otherwise return None as file is not
-            a class/node file.
+            If file name extension is in the extensions list and the file name does
+            not start with a '.' then return the file name with the extension stripped.
+            Otherwise return None as file is not a class/node file.
         '''
         name, extension = os.path.splitext(file_name)
-        if extension[1:] in cls.extensions:
+        if extension[1:] in cls.extensions and name[0] != '.':
             return name
         return None
 
