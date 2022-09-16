@@ -1,5 +1,6 @@
 import copy
 from ..context import CONTEXT
+from .exceptions import RecursiveClassInclude
 from .klass import Klass, KlassID
 
 class Node:
@@ -19,7 +20,7 @@ class Node:
         self.klasses = []
         self.applications = []
         self.classes = []
-        self.load_classes(self.nodeklass, self.name, klass_loader, classes_found=set(), applications_found=set(), is_node_klass=True)
+        self.load_classes(self.nodeklass, self.name, klass_loader, classes_processed=set(), classes_processing=set(), applications_found=set(), is_node_klass=True)
         self.all_klasses = copy.copy(self.klasses)
         self.all_klasses.extend([self.nodeklass, self.autoklass])
         self.all_classes = copy.copy(self.classes)
@@ -53,20 +54,30 @@ class Node:
         }
         return Klass.from_class_dict('__auto__', auto_klass_dict, '__auto__')
 
-    def load_classes(self, klass, classname, klass_loader, classes_found, applications_found, is_node_klass=False):
+    def load_classes(self, klass, classname, klass_loader, classes_processed, classes_processing, applications_found, is_node_klass=False):
         '''
         '''
-        classes_found.add(classname)
+        if not is_node_klass:
+            classes_processing.add(classname)
         for application in klass.applications:
             if application not in applications_found:
                 applications_found.add(application)
                 self.applications.append(application)
         for name in klass.classes:
-            if name not in classes_found:
-                self.load_classes(klass_loader[KlassID(name, self.environment)], name, klass_loader, classes_found, applications_found)
-        if is_node_klass is False:
+            if name in classes_processing:
+                raise RecursiveClassInclude(name, klass.url)
+            if name not in classes_processed:
+                try:
+                    self.load_classes(klass_loader[KlassID(name, self.environment)], name, klass_loader, classes_processed, classes_processing, applications_found)
+                except RecursiveClassInclude as exception:
+                    if exception.second is None and name == exception.classname:
+                        exception.second = klass.url
+                    raise
+        if not is_node_klass:
             self.classes.append(classname)
             self.klasses.append(klass)
+            classes_processed.add(classname)
+            classes_processing.remove(classname)
         return
 
     def to_dict(self):
