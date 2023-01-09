@@ -19,6 +19,9 @@ flakes:
 rpm:
 	python3 setup.py bdist_rpm
 
+wheel:
+	python3 setup.py bdist_wheel
+
 tests:
 	py.test-3 -v
 
