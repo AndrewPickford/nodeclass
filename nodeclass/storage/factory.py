@@ -1,5 +1,5 @@
 from collections import namedtuple
-from .exceptions import InvalidUri
+from .exceptions import InvalidResource, InvalidUri, RequiredUriOptionMissing, UriFormatError
 from .filesystem import FileSystemClasses, FileSystemNodes
 from .gitrepo import GitRepoClasses, GitRepoNodes
 from .loader import KlassLoader, NodeLoader
@@ -30,12 +30,20 @@ class Factory:
             if isinstance(uri, str):
                 resource, _ = uri.split(':', 1)
             elif 'resource' not in uri:
-                raise InvalidUri(uri, 'resource not defined')
+                raise RequiredUriOptionMissing(uri, 'resource', section='classes')
             else:
                 resource = uri['resource']
             if resource not in cls.storage_classes:
-                raise InvalidUri(uri, 'unknown storage type {0}'.format(resource))
+                raise InvalidResource(uri, resource, 'classes')
             return resource
+
+        def get_storage(resource, uri, cache):
+            try:
+                return cls.storage_classes[resource].storage(uri=uri, cache=cache, **cls.storage_classes[resource].kwargs)
+            except InvalidUri as exception:
+                exception.uri = uri
+                exception.section = 'classes'
+                raise
 
         storages = []
         if isinstance(uri, str):
@@ -49,10 +57,10 @@ class Factory:
                         mangled_uri.update(env_uri)
                         resource = get_resource(mangled_uri)
                         mangled_uri = cls.storage_classes[resource].storage.clean_uri(mangled_uri)
-                        storage = cls.storage_classes[resource].storage(uri=mangled_uri, cache=cache, **cls.storage_classes[resource].kwargs)
+                        storage = get_storage(resource, mangled_uri, cache)
                         storages.append( (env_name, storage) )
         default_resource = get_resource(default_uri)
-        default_storage = cls.storage_classes[default_resource].storage(uri=default_uri, cache=cache, **cls.storage_classes[default_resource].kwargs)
+        default_storage = get_storage(default_resource, default_uri, cache)
         storages.append( ('*', default_storage) )
         return KlassLoader(storages)
 
@@ -61,12 +69,17 @@ class Factory:
         if isinstance(uri, str):
             resource, _ = uri.split(':', 1)
         elif 'resource' not in uri:
-            raise InvalidUri(uri, 'resource not defined')
+            raise RequiredUriOptionMissing(uri, 'resource', section='nodes')
         else:
             resource = uri['resource']
         if resource not in cls.storage_nodes:
-            raise InvalidUri(uri, 'unknown storage type {0}'.format(resource))
-        nodes = cls.storage_nodes[resource].storage(uri=uri, cache=cache, **cls.storage_classes[resource].kwargs)
+            raise InvalidResource(uri, resource, 'nodes')
+        try:
+            nodes = cls.storage_nodes[resource].storage(uri=uri, cache=cache, **cls.storage_classes[resource].kwargs)
+        except InvalidUri as exception:
+            exception.uri = uri
+            exception.section = 'nodes'
+            raise
         return NodeLoader(nodes)
 
     @classmethod
@@ -100,7 +113,7 @@ class Factory:
             try:
                 resource, _ = uri.split(':', 1)
             except ValueError:
-                raise InvalidUri(uri, '{0}'.format(uri))
+                raise UriFormatError(uri)
             klass_uri = cls.storage_classes[resource].storage.subpath(uri)
             node_uri = cls.storage_nodes[resource].storage.subpath(uri)
             klass_loader = cls.klass_loader(klass_uri, cache)
@@ -111,4 +124,4 @@ class Factory:
                 klass_loader = cls.klass_loader(uri['classes'], cache)
                 node_loader = cls.node_loader(uri['nodes'], cache)
                 return klass_loader, node_loader
-        raise InvalidUri(uri, 'unable to make class and nodes loaders from uri')
+        raise UriFormatError(uri)

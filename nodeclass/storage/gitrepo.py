@@ -3,7 +3,7 @@ import distutils.version
 import os
 from ..utils.holdlock import HoldLock
 from ..utils.misc import ensure_directory_present
-from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, FileParsingError, InvalidUri, NodeNotFound, PygitConfigError
+from .exceptions import BadNodeBranch, ClassNotFound, DuplicateClass, DuplicateNode, FileParsingError, InvalidUriOption, NodeNotFound, NoMatchingBranch, PygitConfigError, RequiredUriOptionMissing
 
 try:
     # NOTE: in some distros pygit2 could require special effort to acquire.
@@ -24,6 +24,11 @@ if TYPE_CHECKING:
 GitFileMetaData = collections.namedtuple('GitFileMetaData', ['name', 'path', 'id'], rename=False)
 
 
+class NoSuchBranch(Exception):
+    def __init__(self, branch):
+        self.branch = branch
+
+
 class GitRepo:
     '''
     '''
@@ -36,13 +41,13 @@ class GitRepo:
     def validate_uri(cls, uri: 'ConfigData') -> 'ConfigData':
         def validate_option(option: 'str') -> 'str':
             if option not in cls.valid_options:
-                raise InvalidUri(uri, 'invalid option {0}'.format(option))
+                raise InvalidUriOption(uri, option)
             return option
 
         options = { validate_option(option): value for option, value in uri.items() if option not in cls.ignored_options }
         for required in cls.required_options:
             if required not in options:
-                raise InvalidUri(uri, 'required option not present: {0}'.format(required))
+                raise RequiredUriOptionMissing(uri, required)
         return options
 
     @classmethod
@@ -162,7 +167,10 @@ class GitRepo:
         return self.repo.get(id)
 
     def files_in_branch(self, branch: 'str') -> 'Generator[GitFileMetaData, None, None]':
-        tree = self.repo.revparse_single(branch).tree
+        try:
+            tree = self.repo.revparse_single(branch).tree
+        except KeyError:
+            raise NoSuchBranch(branch)
         return self._files_in_tree(tree, '')
 
 
@@ -196,7 +204,11 @@ class GitRepoClasses:
 
     def _make_index(self, branch: 'str') -> 'Dict[str, GitFileMetaData]':
         index: 'Dict[str, GitFileMetaData]' = {}
-        for file in self.git_repo.files_in_branch(branch):
+        try:
+            files = self.git_repo.files_in_branch(branch)
+        except NoSuchBranch:
+            raise NoMatchingBranch(branch)
+        for file in files:
             name = self.format.mangle_name(file.name)
             if name:
                 index[file.path] = file
@@ -234,6 +246,7 @@ class GitRepoClasses:
             exception.url = self._path_url(meta.path)
         return blob_data, path_url
 
+
 class GitRepoNodes:
     '''
     '''
@@ -256,7 +269,11 @@ class GitRepoNodes:
 
     def _make_node_map(self) -> 'Dict[str, List[GitFileMetaData]]':
         node_map = collections.defaultdict(list)
-        for file in self.git_repo.files_in_branch(self.branch):
+        try:
+            files = self.git_repo.files_in_branch(self.branch)
+        except NoSuchBranch:
+            raise BadNodeBranch(self.branch)
+        for file in files:
             if self.path is None or file.path.startswith(self.path):
                 name = self.format.mangle_name(file.name)
                 if name:

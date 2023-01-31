@@ -41,16 +41,64 @@ class DuplicateNode(FileError):
 
 
 class InvalidUri(ConfigError):
-    def __init__(self, uri, details, location=None):
+    def __init__(self, uri, location=None, section=None):
         super().__init__()
         self.uri = uri
-        self.details = details
         self.location = location
+        self.section = section
 
     def message(self):
         return super().message() + \
-               [ 'Invalid uri: {0}'.format(self.details),
-                 'in {0}'.format(self.location) ]
+               [ 'Error in {0}:'.format(self.location), 2 ]
+
+
+class UriFormatError(InvalidUri):
+    def __init__(self, uri):
+        super().__init__(uri)
+
+    def message(self):
+        return super().message() + \
+               [ 'Invalid uri: {0}'.format(self.uri) ]
+
+
+class InvalidUriOption(InvalidUri):
+    def __init__(self, uri, option):
+        super().__init__(uri)
+        self.option = option
+
+    def message(self):
+        return super().message() + \
+               [ 'uri:{0} - invalid option: {1}'.format(self.section, self.option) ]
+
+
+class RequiredUriOptionMissing(InvalidUri):
+    def __init__(self, uri, option, section=None):
+        super().__init__(uri, section=section)
+        self.option = option
+
+    def message(self):
+        return super().message() + \
+               [ 'uri:{0} - required option {1} missing'.format(self.section, self.option) ]
+
+class InvalidResource(InvalidUri):
+    def __init__(self, uri, resource, section):
+        super().__init__(uri, section=section)
+        self.resource = resource
+
+    def message(self):
+        return super().message() +\
+               [ 'uri:{0}:resource - invalid value: {1}'.format(self.section, self.resource) ]
+
+
+class BadNodeBranch(InvalidUri):
+    def __init__(self, branch):
+        super().__init__(uri=None)
+        self.branch = branch
+
+    def message(self):
+        return super().message() +\
+               [ 'uri:nodes:repo: {0}'.format(self.uri.get('repo', None)),
+                 'uri:nodes:branch - no such branch {0}'.format(self.branch) ]
 
 
 class NodeNotFound(FileError):
@@ -121,3 +169,15 @@ class FileUnhandledError(FileError):
                  str(self.exception) ] + \
                self.traceback() +\
                self.traceback_other(self.exception)
+
+
+class NoMatchingBranch(FileError):
+    def __init__(self, branch):
+        super().__init__()
+        self.branch = branch
+        self.environment = None
+
+    def message(self):
+        return super().message() + \
+               [ 'In repo: {0}'.format(self.storage.repo),
+                 'No branch {0} for environment {1}'.format(self.branch, self.environment) ]

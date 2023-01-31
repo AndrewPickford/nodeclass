@@ -1,7 +1,7 @@
 import collections
 import contextlib
 import os
-from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, FileParsingError, InvalidUri, NodeNotFound
+from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, FileParsingError, InvalidUriOption, NodeNotFound, RequiredUriOptionMissing
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -23,13 +23,13 @@ class FileSystem:
     def validate_uri(cls, uri: 'ConfigData') -> 'ConfigData':
         def validate_option(option: 'str') -> 'str':
             if option not in cls.valid_options:
-                raise InvalidUri(uri, 'invalid option {0}'.format(option))
+                raise InvalidUriOption(uri, option)
             return option
 
         options = { validate_option(option): value for option, value in uri.items() if option not in cls.ignored_options }
         for required in cls.required_options:
             if required not in options:
-                raise InvalidUri(uri, 'required option not present: {0}'.format(required))
+                raise RequiredUriOptionMissing(uri, required)
         return options
 
     @classmethod
