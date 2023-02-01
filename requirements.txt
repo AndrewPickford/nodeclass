@@ -1,6 +1,0 @@
-** centos7 **
-pygit2 - No rpm for python3.6 for centos7 in epel, so install via pip. But the latest versions available via pip will not install. 
-         First install dependences via yum:
-             yum install python3-devel libgit2-devel
-         Second install version 0.28.2 via pip:
-             pip3.6 install pygit2==0.28.2

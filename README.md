@@ -27,5 +27,12 @@ The interpolator (for a node):
 * Path: 
 * Context: thread-local storage of configuration settings that control behaviour at low level
 * Klass loader: takes care of loading classes from some (set of) URI(s) and presenting it to the interpolator in a standard way
-* Node loader: same for the node files  
+* Node loader: same for the node files
 * Hierarchy: top-level dictionary like parameters or exports
+
+## centos7
+pygit2 - No rpm for python3.6 for centos7 in epel, so install via pip. But the latest versions available via pip will not install.
+         First install dependences via yum:
+             yum install python3-devel libgit2-devel
+         Second install version 0.28.2 via pip:
+             pip3.6 install pygit2==0.28.2
