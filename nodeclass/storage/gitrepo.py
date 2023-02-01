@@ -1,6 +1,6 @@
 import collections
-import distutils.version
 import os
+from packaging.version import Version
 from ..utils.holdlock import HoldLock
 from ..utils.misc import ensure_directory_present
 from .exceptions import BadNodeBranch, ClassNotFound, DuplicateClass, DuplicateNode, FileParsingError, InvalidUriOption, NodeNotFound, NoMatchingBranch, PygitConfigError, RequiredUriOptionMissing
@@ -88,10 +88,9 @@ class GitRepo:
 
     def _check_pygit2(self):
         if pygit2 is None:
-            raise PygitConfigError('No pygit module')
-        pygit2_version = pygit2.__version__
-        if distutils.version.LooseVersion(pygit2_version) < distutils.version.LooseVersion('0.23.2'):
-            raise PygitConfigError('Require version 0.23.2 of pygit or higher')
+            raise PygitConfigError('No pygit2 module')
+        if Version(pygit2.__version__) < Version('0.28.2'):
+            raise PygitConfigError('Require version 0.28.2 of pygit2 or higher')
 
     def _initialise(self):
         if os.path.exists(self.cache_dir):
@@ -112,10 +111,6 @@ class GitRepo:
                 credentials = pygit2.KeypairFromAgent(user)
             else:
                 credentials = pygit2.Keypair(user, pubkey, privkey, password)
-
-            pygit2_version = pygit2.__version__
-            if distutils.version.LooseVersion(pygit2_version) < distutils.version.LooseVersion('0.23.2'):
-                raise PygitConfigError('Require version 0.23.2 of pygit or higher')
 
             remotecallbacks = pygit2.RemoteCallbacks(credentials=credentials)
             return remotecallbacks
