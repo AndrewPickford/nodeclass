@@ -285,7 +285,7 @@ class GitRepoNodes:
 
     def get(self, name: 'str') -> 'Tuple[Dict, str]':
         if name not in self.node_map:
-            raise NodeNotFound(name, str(self))
+            raise NodeNotFound(name, '{0} branch {1}'.format(self.repo, self.branch))
         elif len(self.node_map[name]) != 1:
             duplicates = [ self._path_url(duplicate) for duplicate in self.node_map[name] ]
             raise DuplicateNode(name, str(self), duplicates)
