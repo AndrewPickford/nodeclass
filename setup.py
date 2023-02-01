@@ -5,12 +5,14 @@ from nodeclass.version import DESCRIPTION, VERSION
 
 el7 = {
     'requires': [
+        'python36-packaging',
         'python36-pyparsing',
     ],
 }
 
 el8 = {
     'requires': [
+        'python3-packaging',
         'python3-pyparsing',
     ],
 }
@@ -30,5 +32,6 @@ setup(
       data_files = [
           ('share/nodeclass/salt/modules/pillar', ['external/salt/modules/pillar/nodeclass.py']),
           ('share/nodeclass/salt/modules/tops', ['external/salt/modules/tops/nodeclass.py']),
-      ]
+      ],
+      options = options,
      )
