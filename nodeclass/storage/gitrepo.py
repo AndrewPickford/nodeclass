@@ -89,8 +89,8 @@ class GitRepo:
     def _check_pygit2(self):
         if pygit2 is None:
             raise PygitConfigError('No pygit2 module')
-        if Version(pygit2.__version__) < Version('0.28.2'):
-            raise PygitConfigError('Require version 0.28.2 of pygit2 or higher')
+        if Version(pygit2.__version__) < Version('0.26.4'):
+            raise PygitConfigError('Require version 0.26.4 of pygit2 or higher')
 
     def _initialise(self):
         if os.path.exists(self.cache_dir):
