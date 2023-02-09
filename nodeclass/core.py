@@ -3,6 +3,7 @@ from .exceptions import ProcessError
 from .interpolator.interpolator import Interpolator
 from .node.node import Node
 from .storage.factory import Factory as StorageFactory
+from .utils.path import Path
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -53,6 +54,20 @@ def node(nodename: 'str', uri: 'Union[str, Dict]') -> 'Node':
         proto_node = node_loader.primary(nodename, env_override=CONTEXT.settings.env_override)
         node = Node(proto_node, klass_loader)
         return node
+    except ProcessError as exception:
+        exception.node = nodename
+        raise
+
+
+def parameter_analysis(parameter: 'str', nodename: 'str', uri: 'Union[str, Dict]'):
+    klass_loader, node_loader = StorageFactory.loaders(uri)
+    interpolator = Interpolator()
+    parameter_path = Path.fromstring(parameter)
+    try:
+        proto_node = node_loader.primary(nodename, env_override=CONTEXT.settings.env_override)
+        node = Node(proto_node, klass_loader)
+        analysis = interpolator.parameter_analysis(parameter_path, node, node_loader, klass_loader)
+        return analysis
     except ProcessError as exception:
         exception.node = nodename
         raise

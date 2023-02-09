@@ -19,6 +19,9 @@ class Scalar(Renderable):
     def __init__(self, contents: 'RenderableValue'):
         super().__init__(contents)
 
+    def description(self) -> 'str':
+        return 'Scalar({0})'.format(repr(self.contents))
+
     def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Scalar':
         ''' Already resolved, return self
         '''

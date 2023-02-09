@@ -44,7 +44,7 @@ class Hierarchy:
             raise
 
     @staticmethod
-    def merge_multiple(hierarchies, category):
+    def merge_multiple(hierarchies, category, helper=None):
         # Check for an empty hierarchies list. This occurs during inventory queries
         # that include nodes with no included classes.
         if len(hierarchies) == 0:
@@ -52,7 +52,7 @@ class Hierarchy:
         result = copy.copy(hierarchies[0])
         try:
             for h in hierarchies[1:]:
-                result.merge(h)
+                result.merge(h, helper)
         except InterpolationError as exception:
             exception.category = category
             raise
@@ -106,6 +106,9 @@ class Hierarchy:
     def __str__(self):
         return '({0}; {1})'.format(str(self._dictionary), str(self.url))
 
+    def set_copy_on_change(self):
+        self._dictionary.set_copy_on_change()
+
     def extract(self, paths):
         extracted = self._dictionary._extract(paths, 0)
         return type(self)(extracted._dictionary, self.url, self.category)
@@ -129,17 +132,22 @@ class Hierarchy:
     def inventory_queries(self):
         return self._dictionary.inventory_queries()
 
-    def merge(self, other):
-        if self.frozen:
-            raise FrozenHierarchy(self.url, self.category)
-        if other.type == Value.HIERARCHY:
+    def merge(self, other, helper=None):
+        def inner():
             try:
                 self._dictionary = self._dictionary.merge(other._dictionary)
             except InterpolationError as exception:
                 exception.category = self.category
                 raise
-        else:
+
+        if self.__class__ != other.__class__:
             raise NotHierarchy(self.url, self.category, other)
+        if self.frozen:
+            raise FrozenHierarchy(self.url, self.category)
+        if helper:
+            helper.hierarchy_merge_wrapper(self, other, inner)
+        else:
+            inner()
 
     def pprint(self):
         print('Hierarchy, category={0}, url={1}'.format(self.category, self.url))

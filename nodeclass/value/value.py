@@ -53,6 +53,9 @@ class Value(ABC):
         Changes to this value will then copy the value, change the copy and return
         the changed copy.
         '''
+
+    @abstractmethod
+    def description(self) -> 'str':
         pass
 
     @abstractmethod

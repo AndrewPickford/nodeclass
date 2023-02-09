@@ -43,6 +43,9 @@ class Plain(Value):
     def unresolved(self):
         return self.item.unresolved
 
+    def description(self) -> 'str':
+        return self.item.description()
+
     def find_matching_contents_path(self, contents):
         if self.item.contents is contents:
             return []

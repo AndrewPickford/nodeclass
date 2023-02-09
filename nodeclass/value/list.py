@@ -83,6 +83,10 @@ class List(Value):
             return self._list[n]._unresolved_ancestor(path, depth + 1)
         return False
 
+    def description(self) -> 'str':
+        # Return str(self) for now, needs to be better
+        return str(self)
+
     def find_matching_contents_path(self, contents):
         for k, v in enumerate(self._list):
             p = v.find_matching_contents_path(contents)

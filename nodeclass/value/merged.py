@@ -59,6 +59,10 @@ class Merged(Value):
         '''
         return True
 
+    def description(self) -> 'str':
+        # Return str(self) for now, needs to be better
+        return str(self)
+
     def find_matching_contents_path(self, contents):
         for v in self._values:
             p = v.find_matching_contents_path(contents)

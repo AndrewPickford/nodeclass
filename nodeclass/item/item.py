@@ -60,6 +60,13 @@ class Item(ABC):
         return None
 
     @abstractmethod
+    def description(self) -> 'str':
+        '''
+        Return a description of the item, used when printing out unresolved items in parameter analysis.
+        '''
+        pass
+
+    @abstractmethod
     def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Item':
         '''
         Handle references which require a new Item when resolved.

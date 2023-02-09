@@ -46,6 +46,9 @@ class Composite(Renderable):
         return self._references
 
     def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Renderable':
+    def description(self) -> 'str':
+        return 'Composite({0})'.format(str(self))
+
         '''
         '''
         if len(self._references) > 0:

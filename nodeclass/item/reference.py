@@ -44,6 +44,9 @@ class Reference(Item):
     def references(self) -> 'Set[Path]':
         return self._references
 
+    def description(self) -> 'str':
+        return 'Ref({0})'.format(str(self))
+
     def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Item':
         '''
         Resolve one level of indirection, returning a new Item. This handles

@@ -33,6 +33,9 @@ class InvQuery(Item):
     def references(self) -> 'Set[Path]':
         return self.contents.references
 
+    def description(self) -> 'str':
+        return 'InvQuery({0})'.format(str(self.contents))
+
     def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Item':
         raise InvQueryResolveToItem(self)
 
