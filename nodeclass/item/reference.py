@@ -5,7 +5,7 @@
 #
 from ..context import CONTEXT
 from ..utils.path import Path
-from .exceptions import ItemResolveError
+from .exceptions import ItemResolveError, ReferenceRender
 from .item import Item
 
 from typing import TYPE_CHECKING
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from ..interpolator.inventory import InventoryDict
     from ..value.hierarchy import Hierarchy
     from ..value.value import Value
-    from .item import Renderable
+    from .item import RenderableValue
 
 
 class Reference(Item):
@@ -27,8 +27,8 @@ class Reference(Item):
 
     __slots__ = ('_references')
 
-    def __init__(self, item: 'Renderable'):
-        self.contents: Renderable
+    def __init__(self, item: 'Item'):
+        self.contents: 'Item'
         super().__init__(item)
         self.unresolved = True
         if self.contents.unresolved:
@@ -47,6 +47,9 @@ class Reference(Item):
     def description(self) -> 'str':
         return 'Ref({0})'.format(str(self))
 
+    def render(self) -> 'RenderableValue':
+        raise ReferenceRender(self)
+
     def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Item':
         '''
         Resolve one level of indirection, returning a new Item. This handles
@@ -55,10 +58,7 @@ class Reference(Item):
         It is an error here for references to resolve to Dictionary, List or Merge
         Values as they should have already been handled by resolve_to_value.
 
-        context: Dictionary of parameters
-        inventory: Dictionary of inventory query answers
-        environment: Environment to evaluate inventory queries in
-        returns: resolved Item
+        Returns the resolved Item.
         '''
         if self.contents.unresolved:
             ref = self.contents.resolve_to_item(context, inventory, environment)
@@ -79,11 +79,6 @@ class Reference(Item):
         In the case of nested references return None, indicating a call to
         resolve_to_item is required to get a new Item for wrapping in a Plain
         Value.
-
-        context: Dictionary of parameters
-        inventory: Dictionary of inventory query answers
-        environment: Environment to evaluate inventory queries in
-        returns: a new Value or None
         '''
         if self.contents.unresolved:
             return None

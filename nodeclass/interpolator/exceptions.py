@@ -6,6 +6,11 @@
 from ..exceptions import InterpolationError, ProcessError
 from ..utils.path import Path
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..exceptions import MessageList
+
+
 class MergableInterpolationError(InterpolationError):
     pass
 
@@ -18,7 +23,7 @@ class NoSuchReference(MergableInterpolationError):
         self.reference = reference
         self.category = category
 
-    def msg(self):
+    def msg(self) -> 'MessageList':
         path = Path.fromstring(self.category) + self.path
         return [ 'Cannot resolve {0}, at {1}, in {2}'.format(self.reference.as_ref(), path, self.url) ]
 
@@ -30,7 +35,7 @@ class ExcessivePathRevisits(MergableInterpolationError):
         self.path = path
         self.category = category
 
-    def msg(self):
+    def msg(self) -> 'MessageList':
         path = Path.fromstring(self.category) + self.path
         return [ 'Too many path revisits during interpolation at {0}, in {1}'.format(path, self.url) ]
 
@@ -42,7 +47,7 @@ class CircularReference(MergableInterpolationError):
         self.path = path
         self.reference = reference
 
-    def msg(self):
+    def msg(self) -> 'MessageList':
         path = Path.fromstring(self.category) + self.path
         return [ 'Circular reference {0}, at {1}, in {2}'.format(self.reference.as_ref(), path, self.url) ]
 
@@ -52,7 +57,7 @@ class MultipleInterpolationErrors(InterpolationError):
         super().__init__()
         self.exceptions = exceptions
 
-    def message(self):
+    def message(self) -> 'MessageList':
         msg = []
         for exception in self.exceptions:
             msg.extend(exception.msg())
@@ -69,7 +74,7 @@ class InterpolateUnhandledError(InterpolationError):
         self.path = path
         self.value = value
 
-    def message(self):
+    def message(self) -> 'MessageList':
         return super().message() + \
                [ 'url: {0}'.format(self.url),
                  'category: {0}'.format(self.category),
@@ -87,7 +92,7 @@ class InventoryError(ProcessError):
         super().__init__()
         self.exception = exception
 
-    def message(self):
+    def message(self) -> 'MessageList':
         return super().message() + \
                [ 'Error during processing inventory:' ] +\
                self.exception.message()
@@ -101,7 +106,7 @@ class InventoryQueryError(InterpolationError):
         self.path = None
         self.url = None
 
-    def message(self):
+    def message(self) -> 'MessageList':
         path = Path.fromstring(self.category) + self.path
         return super().message() + \
                [ 'Failed inv query: {0}'.format(str(self.query)),

@@ -1,7 +1,18 @@
+from typing import cast
 from ..context import CONTEXT
 from .exceptions import MergeIncompatibleTypes
 from .merged import Merged
 from .value import Value
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Any, List, Set, Union
+    from ..interpolator.inventory import InventoryDict
+    from ..invquery.query import Query
+    from ..item.item import Item, RenderableValue
+    from ..utils.path import Path
+    from ..utils.url import Url
+    from .hierarchy import Hierarchy
 
 
 class Plain(Value):
@@ -12,52 +23,52 @@ class Plain(Value):
 
     type = Value.PLAIN
 
-    def __init__(self, item, url, copy_on_change=True):
+    def __init__(self, item: 'Item', url: 'Url', copy_on_change: 'bool' = True):
         super().__init__(url=url, copy_on_change=copy_on_change)
         self.item = item
 
-    def __copy__(self):
+    def __copy__(self) -> 'Plain':
         return type(self)(self.item, self.url, copy_on_change=False)
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'Any') -> 'bool':
         if self.__class__ != other.__class__:
             return False
         if self.item == other.item:
             return True
         return False
 
-    def __repr__(self):
+    def __repr__(self) -> 'str':
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self.item), repr(self.url))
 
-    def __str__(self):
+    def __str__(self) -> 'str':
         return '({0}; {1})'.format(str(self.item), str(self.url))
 
-    def _unresolved_ancestor(self, path, depth):
+    def _unresolved_ancestor(self, path: 'List[int]', depth: 'int'):
         return True
 
     @property
-    def references(self):
+    def references(self) -> 'Set[Path]':
         return self.item.references
 
     @property
-    def unresolved(self):
+    def unresolved(self) -> 'bool':
         return self.item.unresolved
 
     def description(self) -> 'str':
         return self.item.description()
 
-    def find_matching_contents_path(self, contents):
+    def find_matching_contents_path(self, contents: 'Item') -> 'Union[None, List[str]]':
         if self.item.contents is contents:
             return []
         return None
 
-    def inventory_queries(self):
+    def inventory_queries(self) -> 'Set[Query]':
         query = self.item.inventory_query
         if query is None:
             return set()
         return { query }
 
-    def merge(self, other):
+    def merge(self, other: 'Value') -> 'Value':
         if other.type == Value.PLAIN:
             # if both Plain objects have no references handle the merge now
             # by returning the other object, otherwise return a Merged object
@@ -75,10 +86,10 @@ class Plain(Value):
                 return other
                 raise MergeIncompatibleTypes(self, other)
         elif other.type == Value.MERGED:
-            return other.prepend(self)
+            return cast(Merged, other).prepend(self)
         raise MergeIncompatibleTypes(self, other)
 
-    def resolve(self, context, inventory, environment):
+    def resolve(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Value':
         '''
         Step through one level of indirection.
 
@@ -90,11 +101,6 @@ class Plain(Value):
         of indirection. Then either return a new Plain value containing the new item
         or set self.item to the new item and return self, depending on if copy_on_change
         is set.
-
-        context: Dictionary of resolved parameter values
-        inventory: Dictionary of required inventory query answers
-        environment: Environment to evaluate inventory queries
-        returns: resolved Value
         '''
         value = self.item.resolve_to_value(context, inventory, environment)
         if value is None:
@@ -107,7 +113,7 @@ class Plain(Value):
             value.set_copy_on_change()
             return value
 
-    def render(self):
+    def render(self) -> 'RenderableValue':
         '''
         Return a render of the underlying Item in this Value
         '''
@@ -116,13 +122,13 @@ class Plain(Value):
     def render_all(self):
         return self.render()
 
-    def repr_all(self):
+    def repr_all(self) -> 'str':
         return repr(self)
 
     def set_copy_on_change(self):
         self.copy_on_change = True
 
-    def unresolved_paths(self, path):
+    def unresolved_paths(self, path: 'Path') -> 'Set[Path]':
         if self.item.unresolved:
             return { path }
         else:

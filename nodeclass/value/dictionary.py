@@ -1,9 +1,14 @@
 import copy
 from collections import defaultdict
 from ..context import CONTEXT
-from .exceptions import MergeError, MergeOverImmutable, MergeIncompatibleTypes, NoSuchPath
+from .exceptions import DictionaryResolve, MergeError, MergeOverImmutable, MergeIncompatibleTypes, NoSuchPath
 from .merged import Merged
 from .value import Value
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..interpolator.inventory import InventoryDict
+    from .hierarchy import Hierarchy
 
 
 class Dictionary(Value):
@@ -177,6 +182,12 @@ class Dictionary(Value):
 
     def repr_all(self):
         return { k: v.repr_all() for k, v in self._dictionary.items() }
+
+    def resolve(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Value':
+        '''
+        The interpolator should never call resolve on a Dictionary, so raise an error
+        '''
+        raise DictionaryResolve(self)
 
     def set_copy_on_change(self):
         self.copy_on_change = True

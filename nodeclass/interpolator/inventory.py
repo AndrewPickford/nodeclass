@@ -1,15 +1,26 @@
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict
+from typing import NamedTuple
 from ..exceptions import ProcessError
 from ..node.node import Node
 from ..value.hierarchy import Hierarchy
 from .exceptions import InventoryQueryError
 
-InventoryResult = namedtuple('InventoryResult', [ 'environment', 'exports' ])
-CachedMerge = namedtuple('CachedMerge', [ 'exports', 'parameters' ])
-
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Dict
+
+
+class InventoryResult(NamedTuple):
+    environment: 'str'
+    exports: 'Hierarchy'
+
+
+class CachedMerge(NamedTuple):
+    exports: 'Hierarchy'
+    parameters: 'Hierarchy'
+
+
+if TYPE_CHECKING:
     InventoryDict = Dict[str, InventoryResult]
 
 

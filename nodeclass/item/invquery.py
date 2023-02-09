@@ -3,7 +3,7 @@
 #
 # This file is part of nodeclass
 #
-from .exceptions import InvQueryResolveToItem
+from .exceptions import InvQueryRender, InvQueryResolveToItem
 from .item import Item
 
 from typing import TYPE_CHECKING
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from ..utils.path import Path
     from ..value.hierarchy import Hierarchy
     from ..value.value import Value
+    from .item import RenderableValue
 
 
 class InvQuery(Item):
@@ -35,6 +36,9 @@ class InvQuery(Item):
 
     def description(self) -> 'str':
         return 'InvQuery({0})'.format(str(self.contents))
+
+    def render(self) -> 'RenderableValue':
+        raise InvQueryRender(self)
 
     def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Item':
         raise InvQueryResolveToItem(self)

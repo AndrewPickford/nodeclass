@@ -4,7 +4,7 @@
 # This file is part of nodeclass
 #
 from .exceptions import ItemResolveError
-from .item import Renderable
+from .item import Item
 from .scalar import Scalar
 
 from typing import TYPE_CHECKING
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from .item import RenderableValue
 
 
-class Composite(Renderable):
+class Composite(Item):
     '''
     Holds a list of other Scalar or Reference Items. Inventory queries cannot be
     part of a composite item.
@@ -28,8 +28,8 @@ class Composite(Renderable):
 
     __slots__ = ('_references')
 
-    def __init__(self, items: 'List[Renderable]'):
-        self.contents: 'List[Renderable]'
+    def __init__(self, items: 'List[Item]'):
+        self.contents: 'List[Item]'
         self._references: 'Set[Path]'
         super().__init__(items)
         self._references = set()
@@ -45,10 +45,10 @@ class Composite(Renderable):
     def references(self) -> 'Set[Path]':
         return self._references
 
-    def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Renderable':
     def description(self) -> 'str':
         return 'Composite({0})'.format(str(self))
 
+    def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Item':
         '''
         '''
         if len(self._references) > 0:
@@ -74,7 +74,7 @@ class Composite(Renderable):
         '''
         return None
 
-    def flatten(self) -> 'Renderable':
+    def flatten(self) -> 'Item':
         '''
         Join the composites parts into a single Scalar Item
         '''

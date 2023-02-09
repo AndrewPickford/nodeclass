@@ -1,10 +1,13 @@
 import collections
+from typing import NamedTuple
 from ..config_file import load_config_file
 from ..exceptions import UnknownConfigSetting
 from ..settings import Settings
 from .exceptions import BadArguments, NoInventoryUri
 
-URI = collections.namedtuple('URI', ['config', 'location'], rename=False)
+class URI(NamedTuple):
+    config: 'str'
+    location: 'str'
 
 ARG_SETTINGS_KEYS = [ 'env_override' ]
 

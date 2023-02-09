@@ -1,5 +1,14 @@
 from abc import ABC, abstractmethod
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Set
+    from ..interpolator.inventory import InventoryDict
+    from ..invquery.query import Query
+    from ..utils.path import Path
+    from .hierarchy import Hierarchy
+
+
 class Value(ABC):
     '''
     '''
@@ -8,7 +17,6 @@ class Value(ABC):
     DICTIONARY = 1
     LIST = 2
     MERGED = 3
-    HIERARCHY = 4
 
     __slots__ = ('copy_on_change', 'url')
 
@@ -17,7 +25,7 @@ class Value(ABC):
         self.copy_on_change = copy_on_change
 
     @property
-    def references(self):
+    def references(self) -> 'Set[Path]':
         '''
         Return a set of the references needed by this Value alone, excluding
         any references required by contained values.
@@ -25,19 +33,19 @@ class Value(ABC):
         return set()
 
     @property
-    def unresolved(self):
+    def unresolved(self) -> 'bool':
         '''
         Returns True if the Value requires any references, else returns False
         '''
         return False
 
-    def inventory_queries(self):
+    def inventory_queries(self) -> 'Set[Query]':
         '''
         Return a set of all the inventory queries in this Value and any contained Values.
         '''
         return set()
 
-    def unresolved_paths(self, path):
+    def unresolved_paths(self, path: 'Path') -> 'Set[Path]':
         '''
         Return a set of all the paths in this Value and any contained Values
         that have references.
@@ -47,19 +55,11 @@ class Value(ABC):
         return set()
 
     @abstractmethod
-    def set_copy_on_change(self):
-        '''
-        Set the copy on change flag on this Value and any Values this value contains.
-        Changes to this value will then copy the value, change the copy and return
-        the changed copy.
-        '''
-
-    @abstractmethod
     def description(self) -> 'str':
         pass
 
     @abstractmethod
-    def merge(self, other):
+    def merge(self, other: 'Value'):
         '''
         Merge a Value onto another Value in preparation for interpolation.
         Potentially changes the current object, this depends on the type of
@@ -88,4 +88,24 @@ class Value(ABC):
         other: value to merge in
         returns: merged Value object
         '''
+        pass
+
+    @abstractmethod
+    def resolve(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Value':
+        '''
+        '''
+        pass
+
+    @abstractmethod
+    def set_copy_on_change(self):
+        '''
+        Set the copy on change flag on this Value and any Values this value contains.
+        Changes to this value will then copy the value, change the copy and return
+        the changed copy.
+        '''
+        pass
+
+    @property
+    @abstractmethod
+    def type(self) -> 'int':
         pass

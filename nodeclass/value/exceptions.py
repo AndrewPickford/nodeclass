@@ -3,29 +3,32 @@
 #
 # This file is part of nodeclass
 #
-from ..exceptions import InterpolationError
+from ..exceptions import InterpolationError, ProcessError
+from ..utils.path import Path
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .dictionary import Dictionary
+    from .list import List as ValueList
+    from ..exceptions import MessageList
 
 
 class MergeError(InterpolationError):
     def __init__(self, first, second):
         super().__init__()
-        self.url = first.url
         self.first = first
         self.second = second
-
-    def message(self):
-        return super().message()
 
 
 class MergeIncompatibleTypes(MergeError):
     def __init__(self, first, second):
         super().__init__(first, second)
 
-    def message(self):
-        return super().message() + \
-               [ 'Incompatible merge types: ',
-                 str(self.first),
-                 str(self.second) ]
+    def msg(self) -> 'MessageList':
+        path = Path.fromstring(self.category) + self.path
+        return [ 'Incompatible merge types at {0}, in:'.format(path), 2,
+                 self.first.url,
+                 self.second.url ]
 
 
 class MergeOverImmutable(MergeError):
@@ -33,34 +36,58 @@ class MergeOverImmutable(MergeError):
         super().__init__(first, second)
         self.reverse_path.append(path)
 
-    def message(self):
-        return super().message() + \
-               [ 'Merge over immutable in: ',
+    def msg(self) -> 'MessageList':
+        path = Path.fromstring(self.category) + self.path
+        return [ 'Merge over immutable at {0} in:'.format(path), 2,
                  self.first.url,
                  self.second.url ]
 
 
-class FrozenHierarchy(InterpolationError):
+class ValueError(InterpolationError):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+
+
+class DictionaryResolve(ValueError):
+    def __init__(self, value: 'Dictionary'):
+        super().__init__(value)
+
+    def msg(self) -> 'MessageList':
+        return [ 'Internal error: Dictionary reached resolve' ] + \
+               self.traceback()
+
+
+class ListResolve(ValueError):
+    def __init__(self, value: 'ValueList'):
+        super().__init__(value)
+
+    def msg(self) -> 'MessageList':
+        return [ 'Internal error: List reached resolve' ] + \
+               self.traceback()
+
+
+class FrozenHierarchy(ProcessError):
     def __init__(self, url, category):
         super().__init__()
         self.url = url
         self.category = category
 
-    def message(self):
+    def message(self) -> 'MessageList':
         return super().message() + \
                [ 'Internal error: attempt to change frozen hierarchy',
                  'url: {0}'.format(self.url) ] + \
                self.traceback()
 
 
-class NotHierarchy(InterpolationError):
+class NotHierarchy(ProcessError):
     def __init__(self, url, category, other):
         super().__init__()
         self.url = url
         self.category = category
         self.other = other
 
-    def message(self):
+    def message(self) -> 'MessageList':
         return super().message() + \
                [ 'Internal error: attempt to merge non hierarchy object',
                  'url: {0}'.format(self.url),

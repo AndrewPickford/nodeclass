@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from ..invquery.query import Query
     from ..utils.path import Path
     from ..value.hierarchy import Hierarchy
+    from ..value.value import Value
     RenderableValue = Union[bool, float, int, str, None]
 
 
@@ -67,6 +68,10 @@ class Item(ABC):
         pass
 
     @abstractmethod
+    def render(self) -> 'RenderableValue':
+        pass
+
+    @abstractmethod
     def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Item':
         '''
         Handle references which require a new Item when resolved.
@@ -78,20 +83,11 @@ class Item(ABC):
         representing the queries answer.
 
         If an Item has no references or inventory queries return self.
-
-        context: Value.Dictionary
-        inventory: Value.Dictionary
-        environment: node environment
-        returns: Item
         '''
         pass
 
-
-class Renderable(Item):
     @abstractmethod
-    def render(self) -> 'RenderableValue':
-        pass
-
-    @abstractmethod
-    def resolve_to_item(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Renderable':
+    def resolve_to_value(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Union[Value, None]':
+        '''
+        '''
         pass

@@ -5,23 +5,31 @@ from ..utils.path import Path
 from ..value.exceptions import NoSuchPath
 from .exceptions import ExcessivePathRevisits, CircularReference, InterpolateUnhandledError, MergableInterpolationError, MultipleInterpolationErrors, NoSuchReference
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Dict
+    from ..value.hierarchy import Hierarchy
+    from ..value.value import Value
+    from .inventory import InventoryDict
+
+
 class ParametersResolver:
     '''
     '''
 
-    def resolve(self, environment, parameters, inventory):
+    def resolve(self, environment: 'str', parameters: 'Hierarchy', inventory: 'InventoryDict') -> 'Hierarchy':
         '''
         environment: Environment to resolve the parameters in
-        parameters: Dictionary of already merged parameters to resolve
-        inventory: Dictionary of pre-evaluated inventory query answers
-        returns: Dictionary of resolved parameters
+        parameters: Hierarchy of already merged parameters to resolve
+        inventory: Hierarchy of pre-evaluated inventory query answers
+        returns: Hierarchy of resolved parameters
         '''
         self.environment = environment
         self.parameters = copy.copy(parameters)
         self.inventory = inventory
-        self.visit_count = defaultdict(int)
+        self.visit_count: 'Dict[Path, int]' = defaultdict(int)
         self.unresolved = dict.fromkeys(self.parameters.unresolved_paths(), False)
-        self.interpolation_exceptions = {}
+        self.interpolation_exceptions: 'Dict[Path, MergableInterpolationError]' = {}
         self.resolve_unresolved_paths()
         if len(self.interpolation_exceptions) > 0:
             raise MultipleInterpolationErrors(list(self.interpolation_exceptions.values()))
@@ -42,10 +50,9 @@ class ParametersResolver:
             except InterpolationError as exception:
                 exception.category = 'parameters'
                 raise
-
         return
 
-    def resolve_path(self, path):
+    def resolve_path(self, path: 'Path'):
         '''
         Resolve (dereference and/or merge) the Value at the given path, by repeatedly
         calling resolve_value until:
@@ -66,7 +73,7 @@ class ParametersResolver:
         del self.unresolved[path]
         return
 
-    def resolve_value(self, path, value):
+    def resolve_value(self, path: 'Path', value: 'Value'):
         '''
         Remove one level of indirection
 

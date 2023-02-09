@@ -1,8 +1,14 @@
 import copy
 from collections import defaultdict
-from .exceptions import MergeIncompatibleTypes
+from .exceptions import ListResolve, MergeIncompatibleTypes
 from .merged import Merged
 from .value import Value
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..interpolator.inventory import InventoryDict
+    from .hierarchy import Hierarchy
+
 
 class List(Value):
     '''
@@ -125,6 +131,12 @@ class List(Value):
 
     def repr_all(self):
         return [ i.repr_all() for i in self._list ]
+
+    def resolve(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Value':
+        '''
+        The interpolator should never call resolve on a List, so raise an error
+        '''
+        raise ListResolve(self)
 
     def set_copy_on_change(self):
         self.copy_on_change = True

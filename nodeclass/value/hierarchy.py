@@ -8,7 +8,6 @@ from .dictionary import Dictionary
 from .exceptions import FrozenHierarchy, NotHierarchy
 from .list import List
 from .plain import Plain
-from .value import Value
 
 
 class Hierarchy:
@@ -16,8 +15,6 @@ class Hierarchy:
     '''
 
     __slots__ = ('_dictionary', 'frozen', 'category', 'url')
-
-    type = Value.HIERARCHY
 
     @staticmethod
     def from_dict(dictionary, url, category):
@@ -92,7 +89,7 @@ class Hierarchy:
             exception.category = self.category
             raise
 
-    def __repr__(self):
+    def __repr__(self) -> 'str':
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self._dictionary), repr(self.url))
 
     def __setitem__(self, path, value):
@@ -103,7 +100,7 @@ class Hierarchy:
         else:
             self._dictionary._setsubitem(path, 0, value)
 
-    def __str__(self):
+    def __str__(self) -> 'str':
         return '({0}; {1})'.format(str(self._dictionary), str(self.url))
 
     def set_copy_on_change(self):
@@ -132,7 +129,7 @@ class Hierarchy:
     def inventory_queries(self):
         return self._dictionary.inventory_queries()
 
-    def merge(self, other, helper=None):
+    def merge(self, other: 'Hierarchy', helper=None):
         def inner():
             try:
                 self._dictionary = self._dictionary.merge(other._dictionary)
