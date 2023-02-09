@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod, abstractproperty
 from ..item.scalar import Scalar
+from ..utils.url import PseudoUrl
 from ..value.dictionary import Dictionary
 from ..value.list import List as ValueList
 from ..value.plain import Plain
@@ -136,7 +137,7 @@ class ListIfQuery(Query):
         for name, node in inventory.items():
             if node.environment == environment or self.all_envs:
                 if self.test.evaluate(node.exports, context):
-                    answer.append(Plain(Scalar(name), 'invquery'))
+                    answer.append(Plain(Scalar(name), PseudoUrl('invquery', 'invquery')))
         return ValueList(answer, 'invquery')
 
     @property

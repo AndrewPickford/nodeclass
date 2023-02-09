@@ -1,8 +1,10 @@
 import collections
 import os
 from packaging.version import Version
+from typing import NamedTuple
 from ..utils.holdlock import HoldLock
 from ..utils.misc import ensure_directory_present
+from ..utils.url import GitUrl
 from .exceptions import BadNodeBranch, ClassNotFound, DuplicateClass, DuplicateNode, FileParsingError, InvalidUriOption, NodeNotFound, NoMatchingBranch, PygitConfigError, RequiredUriOptionMissing
 
 try:
@@ -21,7 +23,10 @@ if TYPE_CHECKING:
     from .format import Format
 
 
-GitFileMetaData = collections.namedtuple('GitFileMetaData', ['name', 'path', 'id'], rename=False)
+class GitFileMetaData(NamedTuple):
+    name: 'str'
+    path: 'str'
+    id: 'str'
 
 
 class NoSuchBranch(Exception):
@@ -69,8 +74,8 @@ class GitRepo:
 
     def __init__(self, repo: 'str', cache_dir: 'Optional[str]' = None, lock_dir: 'Optional[str]' = None, pubkey: 'Optional[str]' = None, privkey: 'Optional[str]' = None, password: 'Optional[str]' = None):
         self._check_pygit2()
-        self.transport, self.url = repo.split('://', 1)
-        self.id = self.url.replace('/', '_')
+        self.transport, self.remote = repo.split('://', 1)
+        self.id = self.remote.replace('/', '_')
         if cache_dir:
             self.cache_dir = '{0}/{1}'.format(cache_dir, self.id)
         else:
@@ -98,12 +103,12 @@ class GitRepo:
         else:
             os.makedirs(self.cache_dir)
             self.repo = pygit2.init_repository(self.cache_dir, bare=True)
-            self.repo.create_remote('origin', self.url)
+            self.repo.create_remote('origin', self.remote)
 
     def _setup_remotecallbacks(self, pubkey: 'Optional[str]', privkey: 'Optional[str]', password: 'Optional[str]') -> 'Union[pygit2.RemoteCallbacks, None]':
         if 'ssh' in self.transport:
-            if '@' in self.url:
-                user, _ = self.url.split('@', 1)
+            if '@' in self.remote:
+                user, _ = self.remote.split('@', 1)
             else:
                 user = 'gitlab'
 
@@ -197,12 +202,15 @@ class GitRepoClasses:
         if self.branch != '__env__':
             self.index_map[self.branch] = self._make_index(self.branch)
 
+    def __str__(self) -> 'str':
+        return '{0}:{1}'.format(self.resource, self.repo)
+
     def _make_index(self, branch: 'str') -> 'Dict[str, GitFileMetaData]':
         index: 'Dict[str, GitFileMetaData]' = {}
         try:
             files = self.git_repo.files_in_branch(branch)
         except NoSuchBranch:
-            raise NoMatchingBranch(branch)
+            raise NoMatchingBranch(branch, self.repo)
         for file in files:
             name = self.format.mangle_name(file.name)
             if name:
@@ -218,14 +226,14 @@ class GitRepoClasses:
         if len(present) == 1:
             return index[present[0]]
         elif len(present) > 1:
-            duplicates = [ self._path_url(duplicate) for duplicate in present ]
+            duplicates = [ self._path_url(name, duplicate) for duplicate in present ]
             raise DuplicateClass(name, duplicates)
-        raise ClassNotFound(name, [ self._path_url(path) for path in paths ])
+        raise ClassNotFound(name, [ self._path_url(name, path) for path in paths ])
 
-    def _path_url(self, path: 'str') -> 'str':
-        return '{0}:{1} {2} {3}'.format(self.resource, self.repo, self.branch, path)
+    def _path_url(self, name: 'str', path: 'str') -> 'GitUrl':
+        return GitUrl(name, self.resource, self.repo, self.branch, path)
 
-    def get(self, name: 'str', environment: 'str') -> 'Tuple[Dict, str]':
+    def get(self, name: 'str', environment: 'str') -> 'Tuple[Dict, GitUrl]':
         if self.branch == '__env__':
             if environment not in self.index_map:
                 self.index_map[environment] = self._make_index(environment)
@@ -236,9 +244,9 @@ class GitRepoClasses:
         blob = self.git_repo.get(meta.id)
         try:
            blob_data = self.format.process(blob.data)
-           path_url = self._path_url(meta.path)
+           path_url = self._path_url(name, meta.path)
         except FileParsingError as exception:
-            exception.url = self._path_url(meta.path)
+            exception.url = self._path_url(name, meta.path)
         return blob_data, path_url
 
 
@@ -262,6 +270,9 @@ class GitRepoNodes:
         self.format = format
         self.node_map = self._make_node_map()
 
+    def __str__(self) -> 'str':
+        return '{0}:{1}'.format(self.resource, self.repo)
+
     def _make_node_map(self) -> 'Dict[str, List[GitFileMetaData]]':
         node_map = collections.defaultdict(list)
         try:
@@ -275,20 +286,20 @@ class GitRepoNodes:
                     node_map[name].append(file)
         return node_map
 
-    def _path_url(self, path: 'GitFileMetaData') -> 'str':
-        return '{0}:{1} {2} {3}'.format(self.resource, self.repo, self.branch, path)
+    def _path_url(self, name: 'str', path: 'str') -> 'GitUrl':
+        return GitUrl(name, self.resource, self.repo, self.branch, path)
 
-    def get(self, name: 'str') -> 'Tuple[Dict, str]':
+    def get(self, name: 'str') -> 'Tuple[Dict, GitUrl]':
         if name not in self.node_map:
             raise NodeNotFound(name, '{0} branch {1}'.format(self.repo, self.branch))
         elif len(self.node_map[name]) != 1:
-            duplicates = [ self._path_url(duplicate) for duplicate in self.node_map[name] ]
+            duplicates = [ self._path_url(name, duplicate.path) for duplicate in self.node_map[name] ]
             raise DuplicateNode(name, str(self), duplicates)
         meta = self.node_map[name][0]
         blob = self.git_repo.get(meta.id)
         try:
             blob_data = self.format.process(blob.data)
-            path_url = self._path_url(meta.path)
+            path_url = self._path_url(name, meta.path)
         except FileParsingError as exception:
-            exception.url = self._path_url(meta.path)
+            exception.url = self._path_url(name, meta.path)
         return blob_data, path_url

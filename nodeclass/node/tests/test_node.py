@@ -8,6 +8,7 @@ from nodeclass.node.protonode import ProtoNode
 from nodeclass.settings import Settings
 from nodeclass.storage.factory import Factory as StorageFactory
 from nodeclass.utils.path import Path
+from nodeclass.utils.url import EmptyUrl
 from nodeclass.value.hierarchy import Hierarchy
 
 nodeclass_context(Settings())
@@ -40,14 +41,15 @@ auto_klass_parameters = {
 
 def test_node_automatic_parameters_true():
     with nodeclass_context(Settings({'automatic_parameters': True})):
-        klass = Klass.from_class_dict(name='one', class_dict=nodes['one'], url='')
-        proto = ProtoNode(name='one', environment=nodes['one']['environment'], klass=klass, url='')
+        klass = Klass.from_class_dict(name='one', class_dict=nodes['one'], url=EmptyUrl())
+        proto = ProtoNode(name='one', environment=nodes['one']['environment'], klass=klass, url=EmptyUrl())
         node = Node(proto, None)
     autoklasses = [ klass for klass in node.all_klasses if klass.name == '__auto__' ]
     assert(len(autoklasses) == 1)
     autoklass = autoklasses[0]
     assert(autoklass.name == '__auto__')
-    assert(autoklass.url == '__auto__')
+    assert(autoklass.url.name == '__auto__')
+    assert(str(autoklass.url.name) == '__auto__')
     assert(autoklass.classes == [])
     assert(autoklass.applications == [])
     assert(autoklass.exports == Hierarchy.from_dict({}, None, None))
@@ -56,14 +58,15 @@ def test_node_automatic_parameters_true():
 
 def test_node_automatic_parameters_false():
     with nodeclass_context(Settings({'automatic_parameters': False})):
-        klass = Klass.from_class_dict(name='one', class_dict=nodes['one'], url='')
-        proto = ProtoNode(name='one', environment=nodes['one']['environment'], klass=klass, url='')
+        klass = Klass.from_class_dict(name='one', class_dict=nodes['one'], url=EmptyUrl())
+        proto = ProtoNode(name='one', environment=nodes['one']['environment'], klass=klass, url=EmptyUrl())
         node = Node(proto, None)
     autoklasses = [ klass for klass in node.all_klasses if klass.name == '__auto__' ]
     assert(len(autoklasses) == 1)
     autoklass = autoklasses[0]
     assert(autoklass.name == '__auto__')
-    assert(autoklass.url == '__auto__')
+    assert(autoklass.url.name == '__auto__')
+    assert(str(autoklass.url.name) == '__auto__')
     assert(autoklass.classes == [])
     assert(autoklass.applications == [])
     assert(autoklass.exports == Hierarchy.from_dict({}, None, None))
@@ -72,14 +75,15 @@ def test_node_automatic_parameters_false():
 
 def test_node_automatic_parameters_name_change():
     with nodeclass_context(Settings({'automatic_parameters': True, 'automatic_parameters_name': '_new_name_'})):
-        klass = Klass.from_class_dict(name='one', class_dict=nodes['one'], url='')
-        proto = ProtoNode(name='one', environment=nodes['one']['environment'], klass=klass, url='')
+        klass = Klass.from_class_dict(name='one', class_dict=nodes['one'], url=EmptyUrl())
+        proto = ProtoNode(name='one', environment=nodes['one']['environment'], klass=klass, url=EmptyUrl())
         node = Node(proto, None)
     autoklasses = [ klass for klass in node.all_klasses if klass.name == '__auto__' ]
     assert len(autoklasses) == 1
     autoklass = autoklasses[0]
-    assert autoklass.name == '__auto__'
-    assert autoklass.url == '__auto__'
+    assert(autoklass.name == '__auto__')
+    assert(autoklass.url.name == '__auto__')
+    assert(str(autoklass.url.name) == '__auto__')
     assert Path.fromstring('_new_name_') in autoklass.parameters
 
 
@@ -89,11 +93,9 @@ def test_recursive_class_includes():
     with pytest.raises(RecursiveClassInclude) as info:
         node = Node(proto_node, klass_loader)
         assert node  # supress pyflakes warning that node variable is assigned but never used
-    first = info.value.first.split('/')[-1]
-    second = info.value.second.split('/')[-1]
     assert info.value.classname == 'one'
-    assert first == 'three.yml'
-    assert second == 'node_1.yml'
+    assert info.value.first.name == 'three'
+    assert info.value.second.name == 'node_1'
 
 
 def test_recursive_class_includes_single_class():
@@ -102,8 +104,6 @@ def test_recursive_class_includes_single_class():
     with pytest.raises(RecursiveClassInclude) as info:
         node = Node(proto_node, klass_loader)
         assert node  # supress pyflakes warning that node variable is assigned but never used
-    first = info.value.first.split('/')[-1]
-    second = info.value.second.split('/')[-1]
     assert info.value.classname == 'four'
-    assert first == 'four.yml'
-    assert second == 'node_2.yml'
+    assert info.value.first.name == 'four'
+    assert info.value.second.name == 'node_2'

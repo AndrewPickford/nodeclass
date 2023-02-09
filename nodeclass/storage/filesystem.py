@@ -1,6 +1,7 @@
 import collections
 import contextlib
 import os
+from ..utils.url import FileUrl
 from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, FileParsingError, InvalidUriOption, NodeNotFound, RequiredUriOptionMissing
 
 from typing import TYPE_CHECKING
@@ -102,8 +103,8 @@ class FileSystemClasses:
     def __str__(self) -> 'str':
         return '{0}:{1}'.format(self.resource, self.file_system)
 
-    def _path_url(self, path: 'str') -> 'str':
-        return '{0}:{1}'.format(self.resource, os.path.join(self.path, path))
+    def _path_url(self, name: 'str', path: 'str') -> 'FileUrl':
+        return FileUrl(name, self.resource, os.path.join(self.path, path))
 
     def name_to_path(self, name: 'str') -> 'str':
         base = name.replace('.', '/')
@@ -113,22 +114,22 @@ class FileSystemClasses:
         if len(present) == 1:
             return present[0]
         elif len(present) > 1:
-            duplicates = [ self._path_url(duplicate) for duplicate in present ]
+            duplicates = [ self._path_url(name, duplicate) for duplicate in present ]
             raise DuplicateClass(name, duplicates)
-        raise ClassNotFound(name, [ self._path_url(path) for path in paths ])
+        raise ClassNotFound(name, [ self._path_url(name, path) for path in paths ])
 
-    def get(self, name: 'str', environment: 'str') -> 'Tuple[Dict, str]':
+    def get(self, name: 'str', environment: 'str') -> 'Tuple[Dict, FileUrl]':
         path = self.name_to_path(name)
         try:
             if self.format.load:
                 with self.file_system.open(path) as file:
-                    return self.format.load(file), self._path_url(path)
+                    return self.format.load(file), self._path_url(name, path)
             else:
-                return self.format.process(self.file_system.get(path)), self._path_url(path)
+                return self.format.process(self.file_system.get(path)), self._path_url(name, path)
         except FileNotFoundError:
-            raise ClassNotFound(name, [ self._path_url(path) ])
+            raise ClassNotFound(name, [ self._path_url(name, path) ])
         except FileParsingError as exception:
-            exception.url = self._path_url(path)
+            exception.url = self._path_url(name, path)
             raise
 
 
@@ -163,24 +164,24 @@ class FileSystemNodes:
                     node_map[nodename].append(os.path.relpath(path, start=self.path))
         return node_map
 
-    def _path_url(self, path: 'str') -> 'str':
-        return '{0}:{1}'.format(self.resource, os.path.join(self.path, path))
+    def _path_url(self, name: 'str', path: 'str') -> 'FileUrl':
+        return FileUrl(name, self.resource, os.path.join(self.path, path))
 
-    def get(self, name: 'str') -> 'Tuple[Dict, str]':
+    def get(self, name: 'str') -> 'Tuple[Dict, FileUrl]':
         if name not in self.node_map:
             raise NodeNotFound(name, str(self))
         elif len(self.node_map[name]) != 1:
-            duplicates = [ self._path_url(duplicate) for duplicate in self.node_map[name] ]
+            duplicates = [ self._path_url(name, duplicate) for duplicate in self.node_map[name] ]
             raise DuplicateNode(name, str(self), duplicates)
         try:
             path = self.node_map[name][0]
             if self.format.load:
                 with self.file_system.open(path) as file:
-                    return self.format.load(file), self._path_url(path)
+                    return self.format.load(file), self._path_url(name, path)
             else:
-                return self.format.process(self.file_system.get(path)), self._path_url(path)
+                return self.format.process(self.file_system.get(path)), self._path_url(name, path)
         except FileNotFoundError:
             raise NodeNotFound(name, str(self))
         except FileParsingError as exception:
-            exception.url = self._path_url(path)
+            exception.url = self._path_url(name, path)
             raise

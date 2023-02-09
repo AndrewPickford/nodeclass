@@ -1,5 +1,6 @@
 import copy
 from ..context import CONTEXT
+from ..utils.url import PseudoUrl
 from .exceptions import RecursiveClassInclude
 from .klass import Klass, KlassID
 
@@ -36,8 +37,10 @@ class Node:
             str(self.applications), str(self.classes), str(self.nodeklass))
 
     def _make_auto_class_dict(self):
+        name = '__auto__'
+        url = PseudoUrl(name, name)
         if not CONTEXT.settings.automatic_parameters:
-            return Klass.from_class_dict('__auto__', {}, '__auto__')
+            return Klass.from_class_dict(name, {}, url)
         auto_klass_dict = {
             'applications': [],
             'classes': [],

@@ -1,6 +1,7 @@
 import os
 import pytest
 from nodeclass.storage.factory import Factory as StorageFactory
+from nodeclass.utils.url import FileUrl
 from nodeclass.value.hierarchy import Hierarchy
 
 directory = os.path.dirname(os.path.realpath(__file__))
@@ -64,7 +65,8 @@ def test_node_loader_filesystem_uri(uri):
     parameters = Hierarchy.from_dict(node_alpha['parameters'], proto.url, 'parameters')
     assert(proto.name == 'alpha')
     assert(proto.environment == node_alpha['environment'])
-    assert(proto.url == 'yaml_fs:{0}'.format(os.path.join(directory, 'data/nodes/alpha.yml')))
+    assert(proto.url.resource == 'yaml_fs')
+    assert(proto.url.path == os.path.join(directory, 'data/nodes/alpha.yml'))
     assert(proto.klass.classes == node_alpha['classes'])
     assert(proto.klass.applications == node_alpha['applications'])
     assert(proto.klass.exports == exports)
@@ -74,7 +76,7 @@ def test_node_loader_filesystem_uri(uri):
 def test_klass_loader_filesystem_uri(uri):
     klass_loader, _ = StorageFactory.loaders(uri)
     klass = klass_loader[('one', None)]
-    url = 'yaml_fs:{0}'.format(os.path.join(directory, 'data/classes/one.yml'))
+    url = FileUrl('one', 'yaml_fs', os.path.join(directory, 'data/classes/one.yml'))
     exports = Hierarchy.from_dict(class_one['exports'], url, 'exports')
     parameters = Hierarchy.from_dict(class_one['parameters'], url, 'parameters')
     assert(klass.name == 'one')
