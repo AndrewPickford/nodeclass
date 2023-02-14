@@ -1,26 +1,61 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Set
+    try:
+        # Python 3.10 and above
+        from typing import TypeGuard
+    except ImportError:
+        from typing_extensions import TypeGuard
+    from typing import List, Set, Union
     from ..interpolator.inventory import InventoryDict
     from ..invquery.query import Query
+    from ..item.item import Item
     from ..utils.path import Path
+    from ..utils.url import Url
+    from .dictionary import Dictionary
     from .hierarchy import Hierarchy
+    from .merged import Merged
+    from .plain import Plain
+    from .vlist import VList
+
+
+class ValueType(Enum):
+    PLAIN = 0
+    DICTIONARY = 1
+    LIST = 2
+    MERGED = 3
+
+    # Type checking helper classes (PEP 647 - User-Defined Type Guards)
+    @classmethod
+    def is_dictionary(cls, value: 'Value') -> 'TypeGuard[Dictionary]':
+        return value.type == cls.DICTIONARY
+
+    @classmethod
+    def is_list(cls, value: 'Value') -> 'TypeGuard[VList]':
+        return value.type == cls.LIST
+
+    @classmethod
+    def is_merged(cls, value: 'Value') -> 'TypeGuard[Merged]':
+        return value.type == cls.MERGED
+
+    @classmethod
+    def is_plain(cls, value: 'Value') -> 'TypeGuard[Plain]':
+        return value.type == cls.PLAIN
+
+    @classmethod
+    def is_renderable(cls, value: 'Value') -> 'TypeGuard[Union[Dictionary, VList, Plain]]':
+        return value.type != cls.MERGED
 
 
 class Value(ABC):
     '''
     '''
 
-    PLAIN = 0
-    DICTIONARY = 1
-    LIST = 2
-    MERGED = 3
-
     __slots__ = ('copy_on_change', 'url')
 
-    def __init__(self, url, copy_on_change):
+    def __init__(self, url: 'Url', copy_on_change: 'bool'):
         self.url = url
         self.copy_on_change = copy_on_change
 
@@ -56,6 +91,10 @@ class Value(ABC):
 
     @abstractmethod
     def description(self) -> 'str':
+        pass
+
+    @abstractmethod
+    def find_matching_contents_path(self, contents: 'Item') -> 'Union[None, List[str]]':
         pass
 
     @abstractmethod
@@ -107,5 +146,5 @@ class Value(ABC):
 
     @property
     @abstractmethod
-    def type(self) -> 'int':
+    def type(self) -> 'ValueType':
         pass

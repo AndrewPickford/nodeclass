@@ -6,7 +6,7 @@ from .item.tokenizer import make_full_tokenizer, make_simple_tokenizer
 from .invquery.tokenizer import make_expression_tokenizer
 from .settings import Settings
 
-def nodeclass_set_context(settings):
+def nodeclass_set_context(settings: 'Settings'):
     CONTEXT.settings = copy.copy(settings)
     CONTEXT.delimiter = settings.delimiter
     CONTEXT.path_split = r'(?<!\\)' + re.escape(CONTEXT.delimiter)
@@ -17,7 +17,7 @@ def nodeclass_set_context(settings):
     CONTEXT.item_parse_cache = {}
 
 @contextlib.contextmanager
-def nodeclass_context(settings):
+def nodeclass_context(settings: 'Settings'):
     old_settings = CONTEXT.settings
     old_delimiter = CONTEXT.delimiter
     old_path_split = CONTEXT.path_split

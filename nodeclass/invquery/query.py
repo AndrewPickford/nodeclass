@@ -2,11 +2,11 @@ from abc import ABC, abstractmethod, abstractproperty
 from ..item.scalar import Scalar
 from ..utils.url import PseudoUrl
 from ..value.dictionary import Dictionary
-from ..value.list import List as ValueList
 from ..value.plain import Plain
+from ..value.vlist import VList
 from .exceptions import InventoryQueryParseError
 from .iftest import IfTest
-from .operand import Operand
+from .operand import OperandPathed
 from .tokenizer import Tag
 
 from typing import TYPE_CHECKING
@@ -63,7 +63,7 @@ class Query(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Union[Dictionary, ValueList]':
+    def evaluate(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Union[Dictionary, VList]':
         pass
 
 
@@ -74,7 +74,7 @@ class IfQuery(Query):
             raise InventoryQueryParseError('if queries begin with an export to return, found {0}'.format(tokens[0]))
         if tokens[1].type != Tag.IF.value:
             raise InventoryQueryParseError('if queries begin with an export followed by "if", found {0}'.format(tokens[1]))
-        self.returned = Operand(tokens[0])
+        self.returned = OperandPathed(tokens[0])
         self.test = IfTest(tokens[2:])
 
     def __eq_(self, other: 'Any') -> 'bool':
@@ -99,7 +99,7 @@ class IfQuery(Query):
                 if self.returned.path in node.exports:
                     if self.test.evaluate(node.exports, context):
                         answer[name] = node.exports[self.returned.path]
-        return Dictionary(answer, 'invquery', check_for_prefix=False)
+        return Dictionary(answer, PseudoUrl('invquery', 'invquery'), check_for_prefix=False)
 
     @property
     def exports(self) -> 'Set[Path]':
@@ -132,13 +132,13 @@ class ListIfQuery(Query):
     def __repr__(self) -> 'str':
         return '{0}({1}if {2})'.format(self.__class__.__name__, self.options_str(), repr(self.test))
 
-    def evaluate(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'ValueList':
+    def evaluate(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'VList':
         answer = []
         for name, node in inventory.items():
             if node.environment == environment or self.all_envs:
                 if self.test.evaluate(node.exports, context):
                     answer.append(Plain(Scalar(name), PseudoUrl('invquery', 'invquery')))
-        return ValueList(answer, 'invquery')
+        return VList(answer, PseudoUrl('invquery', 'invquery'))
 
     @property
     def exports(self) -> 'Set[Path]':
@@ -154,7 +154,7 @@ class ValueQuery(Query):
         super().__init__(options)
         if tokens[0].type != Tag.EXPORT.value or len(tokens) > 1:
             raise InventoryQueryParseError('value queries consist of an export to return, found: {0}'.format(tokens))
-        self.returned = Operand(tokens[0])
+        self.returned = OperandPathed(tokens[0])
 
     def evaluate(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Dictionary':
         answer = {}
@@ -162,7 +162,7 @@ class ValueQuery(Query):
             if node.environment == environment or self.all_envs:
                 if self.returned.path in node.exports:
                     answer[name] = node.exports[self.returned.path]
-        return Dictionary(answer, 'invquery', check_for_prefix=False)
+        return Dictionary(answer, PseudoUrl('invquery', 'invquery'), check_for_prefix=False)
 
     @property
     def exports(self) -> 'Set[Path]':

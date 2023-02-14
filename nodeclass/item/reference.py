@@ -5,6 +5,7 @@
 #
 from ..context import CONTEXT
 from ..utils.path import Path
+from ..value.value import ValueType
 from .exceptions import ItemResolveError, ReferenceRender
 from .item import Item
 
@@ -65,10 +66,12 @@ class Reference(Item):
             return Reference(ref)
         else:
             path = Path.fromstring(str(self.contents.render()))
-            try:
-                return context[path].item
-            except ItemResolveError:
-                raise ItemResolveError(self)
+            value = context[path]
+            if ValueType.is_plain(value):
+                # The Value at context[path] should be a Plain Value as Dictionary, List or Merge
+                # Values should have already been handled by resolve_to_value.
+                return value.item
+            raise ItemResolveError(self)
 
     def resolve_to_value(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Union[Value, None]':
         '''

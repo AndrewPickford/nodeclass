@@ -27,9 +27,9 @@ class Interpolator:
     def interpolate(self, node, node_loader, klass_loader):
         return self._interpolate_node(node, node_loader, klass_loader, None)
 
-    def _interpolate_node(self, node, node_loader, klass_loader, helper):
+    def _interpolate_node(self, node, node_loader, klass_loader, analyser):
         exports_merged = Hierarchy.merge_multiple([ klass.exports for klass in node.all_klasses ], 'exports')
-        parameters_merged = Hierarchy.merge_multiple([ klass.parameters for klass in node.all_klasses ], 'parameters', helper=helper)
+        parameters_merged = Hierarchy.merge_multiple([ klass.parameters for klass in node.all_klasses ], 'parameters', analyser=analyser)
         inventory_queries = parameters_merged.inventory_queries()
         try:
             inventory_result = self.inventory.result(inventory_queries, node.inv_query_env, node_loader, klass_loader)

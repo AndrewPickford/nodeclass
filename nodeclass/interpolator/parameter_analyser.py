@@ -1,12 +1,13 @@
 import copy
 from ..utils.path import Path
+from .analyser import Analyser
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Callable, List, Tuple
     from ..value.hierarchy import Hierarchy
 
-class ParameterAnalyser:
+class ParameterAnalyser(Analyser):
     def __init__(self, parameter: 'Path'):
         self.parameter = parameter
         self.merge_history: 'List[Tuple[Hierarchy, Hierarchy, Hierarchy]]' = []

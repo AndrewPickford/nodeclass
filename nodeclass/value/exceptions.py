@@ -8,20 +8,23 @@ from ..utils.path import Path
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from .dictionary import Dictionary
-    from .list import List as ValueList
+    from typing import Any
     from ..exceptions import MessageList
+    from ..utils.url import Url
+    from .dictionary import Dictionary
+    from .value import Value
+    from .vlist import VList
 
 
 class MergeError(InterpolationError):
-    def __init__(self, first, second):
+    def __init__(self, first: 'Value', second: 'Value'):
         super().__init__()
         self.first = first
         self.second = second
 
 
 class MergeIncompatibleTypes(MergeError):
-    def __init__(self, first, second):
+    def __init__(self, first: 'Value', second: 'Value'):
         super().__init__(first, second)
 
     def msg(self) -> 'MessageList':
@@ -32,7 +35,7 @@ class MergeIncompatibleTypes(MergeError):
 
 
 class MergeOverImmutable(MergeError):
-    def __init__(self, first, second, path):
+    def __init__(self, first: 'Value', second: 'Value', path: 'Path'):
         super().__init__(first, second)
         self.reverse_path.append(path)
 
@@ -44,7 +47,7 @@ class MergeOverImmutable(MergeError):
 
 
 class ValueError(InterpolationError):
-    def __init__(self, value):
+    def __init__(self, value: 'Value'):
         super().__init__()
         self.value = value
 
@@ -59,7 +62,7 @@ class DictionaryResolve(ValueError):
 
 
 class ListResolve(ValueError):
-    def __init__(self, value: 'ValueList'):
+    def __init__(self, value: 'VList'):
         super().__init__(value)
 
     def msg(self) -> 'MessageList':
@@ -68,7 +71,7 @@ class ListResolve(ValueError):
 
 
 class FrozenHierarchy(ProcessError):
-    def __init__(self, url, category):
+    def __init__(self, url: 'Url', category: 'str'):
         super().__init__()
         self.url = url
         self.category = category
@@ -81,7 +84,7 @@ class FrozenHierarchy(ProcessError):
 
 
 class NotHierarchy(ProcessError):
-    def __init__(self, url, category, other):
+    def __init__(self, url: 'Url', category: 'str', other: 'Any'):
         super().__init__()
         self.url = url
         self.category = category
@@ -96,6 +99,6 @@ class NotHierarchy(ProcessError):
 
 
 class NoSuchPath(Exception):
-    def __init__(self, missing_path):
+    def __init__(self, missing_path: 'Path'):
         super().__init__()
         self.missing_path = missing_path

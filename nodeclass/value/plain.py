@@ -1,8 +1,7 @@
-from typing import cast
 from ..context import CONTEXT
 from .exceptions import MergeIncompatibleTypes
 from .merged import Merged
-from .value import Value
+from .value import Value, ValueType
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -21,7 +20,7 @@ class Plain(Value):
 
     __slots__ = ('item')
 
-    type = Value.PLAIN
+    type = ValueType.PLAIN
 
     def __init__(self, item: 'Item', url: 'Url', copy_on_change: 'bool' = True):
         super().__init__(url=url, copy_on_change=copy_on_change)
@@ -69,7 +68,7 @@ class Plain(Value):
         return { query }
 
     def merge(self, other: 'Value') -> 'Value':
-        if other.type == Value.PLAIN:
+        if other.type == ValueType.PLAIN:
             # if both Plain objects have no references handle the merge now
             # by returning the other object, otherwise return a Merged object
             # for later interpolation
@@ -77,7 +76,7 @@ class Plain(Value):
                 return Merged(self, other)
             else:
                 return other
-        elif other.type == Value.DICTIONARY or other.type == Value.LIST:
+        elif other.type == ValueType.DICTIONARY or other.type == ValueType.LIST:
             # if the current object is unresolved return a Merged object for later
             # interpolation
             if self.unresolved:
@@ -85,8 +84,8 @@ class Plain(Value):
             elif self.item.contents is None and CONTEXT.settings.allow_none_overwrite:
                 return other
                 raise MergeIncompatibleTypes(self, other)
-        elif other.type == Value.MERGED:
-            return cast(Merged, other).prepend(self)
+        elif ValueType.is_merged(other):
+            return other.prepend(self)
         raise MergeIncompatibleTypes(self, other)
 
     def resolve(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Value':
@@ -119,7 +118,7 @@ class Plain(Value):
         '''
         return self.item.render()
 
-    def render_all(self):
+    def render_all(self) -> 'RenderableValue':
         return self.render()
 
     def repr_all(self) -> 'str':

@@ -2,8 +2,14 @@ import errno
 import fcntl
 import time
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Optional, Type
+    from types import TracebackType
+
+
 class HoldLock:
-    def __init__(self, file: str, timeout: int = 120):
+    def __init__(self, file: 'str', timeout: 'int' = 120):
         self.file = file
         self.timeout = timeout
 
@@ -23,5 +29,5 @@ class HoldLock:
                 else:
                     time.sleep(0.1)
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type: 'Optional[Type[BaseException]]', value: 'Optional[BaseException]', traceback: 'Optional[TracebackType]'):
         self.fd.close()

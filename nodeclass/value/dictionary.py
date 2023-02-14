@@ -3,11 +3,16 @@ from collections import defaultdict
 from ..context import CONTEXT
 from .exceptions import DictionaryResolve, MergeError, MergeOverImmutable, MergeIncompatibleTypes, NoSuchPath
 from .merged import Merged
-from .value import Value
+from .value import Value, ValueType
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from typing import Any, Dict, List, Set, Union
     from ..interpolator.inventory import InventoryDict
+    from ..invquery.query import Query
+    from ..item.item import Item
+    from ..utils.path import Path
+    from ..utils.url import Url
     from .hierarchy import Hierarchy
 
 
@@ -25,9 +30,9 @@ class Dictionary(Value):
 
     __slots__ = ('_dictionary', '_immutables', '_overwrites')
 
-    type = Value.DICTIONARY
+    type = ValueType.DICTIONARY
 
-    def __init__(self, input, url, copy_on_change=True, check_for_prefix=True):
+    def __init__(self, input: 'Dict', url: 'Url', copy_on_change: 'bool' = True, check_for_prefix: 'bool' = True):
         def process_key(key):
             if not check_for_prefix:
                 return key
@@ -41,8 +46,8 @@ class Dictionary(Value):
             return key
 
         super().__init__(url=url, copy_on_change=copy_on_change)
-        self._immutables = set()
-        self._overwrites = set()
+        self._immutables: 'Set[Path]' = set()
+        self._overwrites: 'Set[Path]' = set()
         self._dictionary = { process_key(str(k)): v for k, v in input.items() }
 
     def __copy__(self):
@@ -55,20 +60,20 @@ class Dictionary(Value):
         new.copy_on_change = False
         return new
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'Any') -> 'bool':
         if self.__class__ != other.__class__:
             return False
         if (self._immutables, self._overwrites, self._dictionary) == (other._immutables, other._overwrites, other._dictionary):
             return True
         return False
 
-    def __repr__(self):
+    def __repr__(self) -> 'str':
         return '{0}({1}; {2})'.format(self.__class__.__name__, repr(self._dictionary), repr(self.url))
 
-    def __str__(self):
+    def __str__(self) -> 'str':
         return '({0}; {1})'.format(str(self._dictionary), str(self.url))
 
-    def _contains(self, path, depth):
+    def _contains(self, path: 'Path', depth: 'int') -> 'bool':
         if depth < path.last:
             next = self._dictionary.get(path[depth], None)
             if next is None:
@@ -78,23 +83,23 @@ class Dictionary(Value):
         else:
             return path[depth] in self._dictionary
 
-    def _extract(self, paths, depth):
+    def _extract(self, paths: 'Set[Path]', depth: 'int') -> 'Dictionary':
         extracted = type(self)(input={}, url=self.url, copy_on_change=False)
-        set_keys = set()
-        descend_keys = defaultdict(set)
+        set_keys: 'Set[str]' = set()
+        descend_keys: 'defaultdict[str, Set[Path]]' = defaultdict(set)
         for path in paths:
             if depth < path.last:
                 descend_keys[path[depth]].add(path)
             else:
                 set_keys.add(path[depth])
-        descend_keys = { k: v for k, v in descend_keys.items() if k not in set_keys }
+        descend_keys_stripped = { k: v for k, v in descend_keys.items() if k not in set_keys }
         for key in set_keys:
             extracted._dictionary[key] = self._dictionary[key]
-        for key, key_paths in descend_keys.items():
+        for key, key_paths in descend_keys_stripped.items():
             extracted._dictionary[key] = self._dictionary[key]._extract(key_paths, depth + 1)
         return extracted
 
-    def _getsubitem(self, path, depth):
+    def _getsubitem(self, path: 'Path', depth: 'int') -> 'Value':
         try:
             if depth < path.last:
                 return self._dictionary[path[depth]]._getsubitem(path, depth + 1)
@@ -102,13 +107,13 @@ class Dictionary(Value):
         except KeyError:
             raise NoSuchPath(path)
 
-    def _setsubitem(self, path, depth, value):
+    def _setsubitem(self, path: 'Path', depth: 'int', value: 'Value'):
         if depth < path.last:
             self._dictionary[path[depth]]._setsubitem(path, depth+1, value)
         else:
             self._dictionary[path[depth]] = value
 
-    def _setsubitem_copy_on_change(self, path, depth, value):
+    def _setsubitem_copy_on_change(self, path: 'Path', depth: 'int', value: 'Value') -> 'Dictionary':
         new = copy.copy(self) if self.copy_on_change else self
         if depth < path.last:
             new._dictionary[path[depth]] = new._dictionary[path[depth]]._setsubitem_copy_on_change(path, depth+1, value)
@@ -116,7 +121,7 @@ class Dictionary(Value):
             new._dictionary[path[depth]] = value
         return new
 
-    def _unresolved_ancestor(self, path, depth):
+    def _unresolved_ancestor(self, path: 'Path', depth: 'int') -> bool:
         if depth < path.last and path[depth] in self._dictionary:
             return self._dictionary[path[depth]]._unresolved_ancestor(path, depth + 1)
         return False
@@ -125,7 +130,7 @@ class Dictionary(Value):
         # Return str(self) for now, needs to be better
         return str(self)
 
-    def find_matching_contents_path(self, contents):
+    def find_matching_contents_path(self, contents: 'Item') -> 'Union[None, List[str]]':
         for k, v in self._dictionary.items():
             p = v.find_matching_contents_path(contents)
             if p is not None:
@@ -133,14 +138,14 @@ class Dictionary(Value):
                 return p
         return None
 
-    def inventory_queries(self):
+    def inventory_queries(self) -> 'Set[Query]':
         queries = set()
         for v in self._dictionary.values():
             queries.update(v.inventory_queries())
         return queries
 
-    def merge(self, other):
-        if other.type == Value.DICTIONARY:
+    def merge(self, other: 'Value') -> 'Value':
+        if ValueType.is_dictionary(other):
             merged = copy.copy(self) if self.copy_on_change else self
             # merge other Dictionary into this one
             for k, v in other._dictionary.items():
@@ -163,24 +168,24 @@ class Dictionary(Value):
                     merged._dictionary[k] = v
                 merged._immutables.update(other._immutables)
             return merged
-        elif other.type == Value.PLAIN:
+        elif other.type == ValueType.PLAIN:
             # if the Plain value is unresolved return a Merged object for later
             # interpolation
             if other.unresolved:
                 return Merged(self, other)
             else:
                 raise MergeIncompatibleTypes(self, other)
-        elif other.type == Value.MERGED:
+        elif ValueType.is_merged(other):
             return other.prepend(self)
         raise MergeIncompatibleTypes(self, other)
 
-    def render_all(self):
+    def render_all(self) -> 'Dict[str, Any]':
         '''
         Return a new dict containing the renders of all Values in this Dictionary
         '''
         return { k: v.render_all() for k, v in self._dictionary.items() }
 
-    def repr_all(self):
+    def repr_all(self) -> 'Dict[str, Any]':
         return { k: v.repr_all() for k, v in self._dictionary.items() }
 
     def resolve(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Value':
@@ -194,7 +199,7 @@ class Dictionary(Value):
         for v in self._dictionary.values():
             v.set_copy_on_change()
 
-    def unresolved_paths(self, path):
+    def unresolved_paths(self, path: 'Path') -> 'Set[Path]':
         paths = set()
         for k, v in self._dictionary.items():
             paths.update(v.unresolved_paths(path.subpath(k)))
