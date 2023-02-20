@@ -1,4 +1,5 @@
 import logging
+from .. import __name__ as adapter_name
 from ..core import nodeinfo as core_nodeinfo, node as core_node
 from ..cli.exceptions import NoInventoryUri
 from ..config_file import split_settings_location
@@ -6,7 +7,6 @@ from ..context import nodeclass_set_context
 from ..exceptions import UnknownConfigSetting
 from ..settings import Settings
 from ..storage.uri import Uri
-from ..version import NAME
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ def ext_pillar(minion_id: 'str', pillar: 'Dict', config: 'ConfigDict') -> 'Dict'
     try:
         settings = Settings(settings_config)
     except UnknownConfigSetting as exception:
-        exception.location = 'pillar configuration for {0}'.format(NAME)
+        exception.location = 'pillar configuration for {0}'.format(adapter_name)
         raise
     if uri_config is None:
         raise NoInventoryUri()
@@ -38,7 +38,7 @@ def top(minion_id: 'str', config: 'ConfigDict') -> 'Dict':
     try:
         settings = Settings(settings_config)
     except UnknownConfigSetting as exception:
-        exception.location = 'top configuration of {0}'.format(NAME)
+        exception.location = 'top configuration of {0}'.format(adapter_name)
         raise
     if uri_config is None:
         raise NoInventoryUri()

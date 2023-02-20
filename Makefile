@@ -14,7 +14,7 @@ clean:
 	rm -rf build dist nodeclass.egg-info
 
 flakes:
-	${PYFLAKES} nodeclass
+	${PYFLAKES} src/nodeclass tests
 
 rpm:
 	python3 setup.py bdist_rpm
@@ -23,10 +23,10 @@ wheel:
 	python3 setup.py bdist_wheel
 
 tests:
-	py.test-3 -v
+	PYTHONPATH=src py.test-3
 
 types:
-	mypy nodeclass
+	mypy src/nodeclass tests
 
 checks: tests types flakes
 

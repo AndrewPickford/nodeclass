@@ -5,6 +5,10 @@ from nodeclass.item.parser import parse as parse_expression
 from nodeclass.settings import Settings
 from nodeclass.utils.path import Path
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Any, List, Set, Tuple
+
 settings = Settings()
 simple_tokenizer = tokenizer.make_simple_tokenizer(settings)
 full_tokenizer = tokenizer.make_full_tokenizer(settings)
@@ -27,7 +31,7 @@ def clean(token):
             return (token[0], clean(token[1]) )
     return token
 
-test_data_simple = [
+test_data_simple: 'List[Tuple[str, Any, Set[Path]]]' = [
     # Basic test cases.
     ( '${foo}',                      # expression
       [(REF, [(STR, 'foo')])],       # tokens
@@ -64,7 +68,7 @@ test_data_simple = [
       { Pstr('foo') } ),
 ]
 
-test_data_complex = [
+test_data_complex: 'List[Tuple[str, Any, Set[Path]]]' = [
     # Single elements sanity check.
     ( 'foo',
       [(STR, 'foo')],
@@ -135,7 +139,7 @@ test_data_complex = [
       { Pstr('$[foo]') } ),
 ]
 
-test_data_tokenizer_only = [
+test_data_tokenizer_only: 'List[Tuple[str, Any, Set[Path]]]' = [
     # Inventory queries with nested references will be parsed to an inventory
     # query containing a string of the nested items. These will later fail the
     # inventory query expression parser.
@@ -158,6 +162,8 @@ full_tokenizer_test_errors = [
     'bar$[foo]', 'bar$[foo]baz', '$[foo]baz',
     '${bar}$[foo]', '${bar}$[foo]${baz}', '$[foo]${baz}',
 ]
+
+a = test_data_simple + test_data_complex
 
 tokenizer_simple_test_data = [ (expression, tokens) for expression, tokens, references in test_data_simple ]
 tokenizer_full_test_data = [ (expression, tokens) for expression, tokens, references in test_data_simple + test_data_complex + test_data_tokenizer_only ]

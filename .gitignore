@@ -1,6 +1,7 @@
 build
 dist
 nodeclass.egg-info
+src/nodeclass.egg-info
 .cache
 *.py[co]
 *.swp

@@ -20,8 +20,7 @@ def set_working_directory(path):
 
 def test_cli_node():
     with set_working_directory(directory):
-        cmd_path = os.path.abspath(os.path.join('..', 'nodeclass.py'))
-        config_path = 'nodeclass-config-001.yml'
+        cmd_path = os.path.abspath(os.path.join('../..', 'nodeclass-test.py'))
         process = subprocess.run([cmd_path, 'node', 'node_1', '--config-filename', 'nodeclass-config-001.yml'], capture_output=True)
     output = yaml.load(process.stdout, Loader=SafeLoader)
     assert(output == node_1)

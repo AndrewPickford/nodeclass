@@ -1,7 +1,6 @@
 import distro
 import platform
 from setuptools import setup, find_packages
-from nodeclass.version import DESCRIPTION, VERSION
 
 el7 = {
     'requires': [
@@ -26,9 +25,8 @@ if platform.system() == 'Linux':
             options['bdist_rpm']['requires'] = el8['requires']
 
 setup(
-      packages=find_packages(exclude=['tests']),
-      description = DESCRIPTION,
-      version = VERSION,
+      include_package_data = True,
+      description = 'An external node classifier for use with configuration management tools such as salt.',
       data_files = [
           ('share/nodeclass/salt/modules/pillar', ['external/salt/modules/pillar/nodeclass.py']),
           ('share/nodeclass/salt/modules/tops', ['external/salt/modules/tops/nodeclass.py']),

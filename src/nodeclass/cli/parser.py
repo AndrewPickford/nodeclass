@@ -1,5 +1,5 @@
 import argparse
-from ..version import NAME, DESCRIPTION
+from .. import __name__ as package_name
 
 CLI_DEFAULT_OPTS = {
     'log_level': 'WARNING',
@@ -68,7 +68,7 @@ def add_version_sub_parser(sub_parsers):
     return
 
 def make_parser() -> 'argparse.ArgumentParser':
-    parser = argparse.ArgumentParser(prog=NAME, description=DESCRIPTION)
+    parser = argparse.ArgumentParser(prog=package_name, description='An external node classifier for use with configuration management tools such as salt.')
     sub_parsers = parser.add_subparsers(dest='command')
     add_inventory_sub_parser(sub_parsers)
     add_node_sub_parser(sub_parsers)
