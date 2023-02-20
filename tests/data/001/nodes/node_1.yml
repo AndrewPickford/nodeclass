@@ -1,0 +1,17 @@
+classes:
+- one.a.b
+
+environment: prod
+
+parameters:
+  alpha: 1
+  beta: A
+  gamma:
+  - 91
+  - 92
+  delta:
+    one: 1
+    five: 5
+  epsilon: $[ exports:a if exports:b == 2 ]
+  zeta: $[ if exports:b == 2 ]
+  eta: $[ if exports:c == true ]

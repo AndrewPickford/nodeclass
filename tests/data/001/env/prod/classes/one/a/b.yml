@@ -1,0 +1,14 @@
+applications:
+- app_alpha
+
+classes:
+- one.a
+
+parameters:
+  gamma:
+  - 22
+  delta:
+    two: 2
+  theta: ${alpha}
+  iota: ${gamma}
+  kappa: ${delta:two}

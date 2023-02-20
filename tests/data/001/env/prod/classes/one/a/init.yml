@@ -1,0 +1,8 @@
+classes:
+- one
+
+parameters:
+  gamma:
+  - 11
+  delta:
+    one: 11

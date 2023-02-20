@@ -1,0 +1,11 @@
+uri:
+  classes:
+    resource: yaml_fs
+    path: data/001/env/prod/classes
+    env_overrides:
+    - dev:
+        resource: yaml_fs
+        path: data/001/env/dev/classes
+  nodes:
+    resource: yaml_fs
+    path: data/001/nodes
