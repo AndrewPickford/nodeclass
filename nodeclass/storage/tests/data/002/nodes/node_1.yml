@@ -1,0 +1,8 @@
+classes:
+- one
+
+envrionment: prod
+
+parameters:
+  alpha: $[ exports:a if exports:a == 0 ]
+  beta: $[ exports:b if exports:b == 1 ]

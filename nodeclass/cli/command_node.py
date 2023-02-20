@@ -6,16 +6,23 @@ from ..context import nodeclass_set_context
 from ..storage.exceptions import InvalidUri
 from .config import process_config_file_and_args
 
-def info(nodename, output, uri):
-    nodeinfo = core.nodeinfo(nodename, uri.config)
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import argparse
+    from typing import TextIO
+    from ..storage.uri import Uri
+
+
+def info(nodename: 'str', output: 'TextIO', uri: 'Uri'):
+    nodeinfo = core.nodeinfo(nodename, uri)
     yaml.dump(nodeinfo.as_dict(), output, default_flow_style=False, Dumper=yaml.CSafeDumper)
 
-def apps(nodename, output, uri):
-    node = core.node(nodename, uri.config)
+def apps(nodename: 'str', output: 'TextIO', uri: 'Uri'):
+    node = core.node(nodename, uri)
     print('applications:', file=output)
     yaml.dump(node.applications, output, default_flow_style=False, Dumper=yaml.CSafeDumper)
 
-def command_node(args):
+def command_node(args: 'argparse.Namespace'):
     settings, uri = process_config_file_and_args(args)
     nodeclass_set_context(settings)
     with contextlib.ExitStack() as stack:

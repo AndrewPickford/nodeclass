@@ -6,8 +6,8 @@ from .exceptions import ClassNotFound, DuplicateClass, DuplicateNode, FileParsin
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Dict, Generator, List, Optional, TextIO, Tuple, Union
-    from ..config_file import ConfigData
+    from typing import Dict, Generator, List, Optional, TextIO, Tuple
+    from ..settings import ConfigDict
     from .factory import StorageCache
     from .format import Format
 
@@ -21,7 +21,7 @@ class FileSystem:
     valid_options = required_options
 
     @classmethod
-    def validate_uri(cls, uri: 'ConfigData') -> 'ConfigData':
+    def validate_uri(cls, uri: 'ConfigDict') -> 'ConfigDict':
         def validate_option(option: 'str') -> 'str':
             if option not in cls.valid_options:
                 raise InvalidUriOption(uri, option)
@@ -34,22 +34,20 @@ class FileSystem:
         return options
 
     @classmethod
-    def uri_from_string(cls, uri_string: 'str') -> 'ConfigData':
+    def uri_from_string(cls, uri_string: 'str') -> 'ConfigDict':
         resource, path = uri_string.split(':', 1)
         return { 'resource': resource, 'path': path }
 
     @classmethod
-    def from_uri(cls, uri: 'Union[ConfigData, str]', cache: 'Optional[StorageCache]') -> 'Tuple[FileSystem, ConfigData]':
-        if isinstance(uri, str):
-            uri = cls.uri_from_string(uri)
+    def from_uri(cls, uri: 'ConfigDict', cache: 'Optional[StorageCache]') -> 'FileSystem':
         uri_valid = cls.validate_uri(uri)
         if cache is None:
-            return cls(**uri_valid), uri
+            return cls(**uri_valid)
         name = 'fs {0}'.format(uri['path'])
         if name not in cache:
             cache[name] = cls(**uri_valid)
         if isinstance(cache[name], FileSystem):
-            return cache[name], uri
+            return cache[name]
         raise RuntimeError('error')
 
     def __init__(self, path: 'str'):
@@ -84,21 +82,24 @@ class FileSystemClasses:
     valid_options = FileSystem.ignored_options + FileSystem.valid_options
 
     @classmethod
-    def clean_uri(cls, uri: 'ConfigData') -> 'ConfigData':
+    def clean_uri(cls, uri: 'ConfigDict') -> 'ConfigDict':
         return { k: v for k, v in uri.items() if k in cls.valid_options }
 
     @classmethod
-    def subpath(cls, uri: 'Union[ConfigData, str]') -> 'ConfigData':
-        if isinstance(uri, str):
-            uri = FileSystem.uri_from_string(uri)
+    def subpath(cls, uri_str: 'str') -> 'ConfigDict':
+        uri = cls.uri_from_string(uri_str)
         uri['path'] = os.path.join(uri['path'], 'classes')
         return uri
 
-    def __init__(self, uri: 'ConfigData', format: 'Format', cache: 'Optional[StorageCache]' = None):
-        self.file_system, uri = FileSystem.from_uri(uri, cache)
+    @classmethod
+    def uri_from_string(cls, uri_str: 'str') -> 'ConfigDict':
+        return FileSystem.uri_from_string(uri_str)
+
+    def __init__(self, classes_uri: 'ConfigDict', format: 'Format', cache: 'Optional[StorageCache]' = None):
+        self.file_system = FileSystem.from_uri(classes_uri, cache)
         self.format = format
-        self.resource = uri['resource']
-        self.path = uri['path']
+        self.resource = classes_uri['resource']
+        self.path = classes_uri['path']
 
     def __str__(self) -> 'str':
         return '{0}:{1}'.format(self.resource, self.file_system)
@@ -138,17 +139,20 @@ class FileSystemNodes:
     '''
 
     @classmethod
-    def subpath(cls, uri: 'Union[ConfigData, str]') -> 'ConfigData':
-        if isinstance(uri, str):
-            uri = FileSystem.uri_from_string(uri)
+    def subpath(cls, uri_str: 'str') -> 'ConfigDict':
+        uri = cls.uri_from_string(uri_str)
         uri['path'] = os.path.join(uri['path'], 'nodes')
         return uri
 
-    def __init__(self, uri: 'ConfigData', format: 'Format', cache: 'Optional[StorageCache]' = None):
-        self.file_system, uri = FileSystem.from_uri(uri, cache)
+    @classmethod
+    def uri_from_string(cls, uri_str: 'str') -> 'ConfigDict':
+        return FileSystem.uri_from_string(uri_str)
+
+    def __init__(self, nodes_uri: 'ConfigDict', format: 'Format', cache: 'Optional[StorageCache]' = None):
+        self.file_system = FileSystem.from_uri(nodes_uri, cache)
         self.format = format
-        self.resource = uri['resource']
-        self.path = uri['path']
+        self.resource = nodes_uri['resource']
+        self.path = nodes_uri['path']
         self.node_map = self._make_node_map()
 
     def __str__(self) -> 'str':

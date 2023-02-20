@@ -7,6 +7,7 @@ from nodeclass.node.node import Node
 from nodeclass.node.protonode import ProtoNode
 from nodeclass.settings import Settings
 from nodeclass.storage.factory import Factory as StorageFactory
+from nodeclass.storage.uri import Uri
 from nodeclass.utils.path import Path
 from nodeclass.utils.url import EmptyUrl
 from nodeclass.value.hierarchy import Hierarchy
@@ -15,8 +16,9 @@ nodeclass_context(Settings())
 directory = os.path.dirname(os.path.realpath(__file__))
 
 def uri(subpath):
-    return { 'classes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data', subpath, 'classes')),
-             'nodes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data', subpath, 'nodes')) }
+    uri_config =  { 'classes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data', subpath, 'classes')),
+                    'nodes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data', subpath, 'nodes')) }
+    return Uri(uri_config, 'test')
 
 nodes = {
     'one': {

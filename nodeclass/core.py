@@ -7,9 +7,10 @@ from .utils.path import Path
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Dict, List, Tuple, Union
+    from typing import List, Tuple
     from .interpolator.interpolatednode import InterpolatedNode
     from .storage.loader import KlassLoader, NodeLoader
+    from .storage.uri import Uri
 
 
 def nodeinfo_inner(nodename: 'str', interpolator: 'Interpolator', klass_loader: 'KlassLoader', node_loader: 'NodeLoader') -> 'InterpolatedNode':
@@ -22,14 +23,14 @@ def nodeinfo_inner(nodename: 'str', interpolator: 'Interpolator', klass_loader: 
         raise
 
 
-def nodeinfo(nodename: 'str', uri: 'Union[str, Dict]') -> 'InterpolatedNode':
+def nodeinfo(nodename: 'str', uri: 'Uri') -> 'InterpolatedNode':
     # The klass/node loaders abstract the source of the data
     klass_loader, node_loader = StorageFactory.loaders(uri)
     interpolator = Interpolator()
     return nodeinfo_inner(nodename, interpolator, klass_loader, node_loader)
 
 
-def nodeinfo_all(uri: 'Union[str, Dict]') -> 'Tuple[List[InterpolatedNode], List[ProcessError]]':
+def nodeinfo_all(uri: 'Uri') -> 'Tuple[List[InterpolatedNode], List[ProcessError]]':
     ''' Return a list of the nodeinfo data of all nodes
     '''
     exceptions = []
@@ -44,7 +45,7 @@ def nodeinfo_all(uri: 'Union[str, Dict]') -> 'Tuple[List[InterpolatedNode], List
     return nodeinfos, exceptions
 
 
-def node(nodename: 'str', uri: 'Union[str, Dict]') -> 'Node':
+def node(nodename: 'str', uri: 'Uri') -> 'Node':
     ''' Return the Node object of the named node without interpolation, which contains
         the list of classes loaded and applications.
         This is primarily to generate the salt top data for a node.
@@ -59,7 +60,7 @@ def node(nodename: 'str', uri: 'Union[str, Dict]') -> 'Node':
         raise
 
 
-def parameter_analysis(parameter: 'str', nodename: 'str', uri: 'Union[str, Dict]'):
+def parameter_analysis(parameter: 'str', nodename: 'str', uri: 'Uri'):
     klass_loader, node_loader = StorageFactory.loaders(uri)
     interpolator = Interpolator()
     parameter_path = Path.fromstring(parameter)

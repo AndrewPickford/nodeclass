@@ -18,7 +18,7 @@ except ImportError:
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Dict, Generator, List, Optional, Tuple, Union
-    from ..config_file import ConfigData
+    from ..settings import ConfigDict
     from .factory import StorageCache
     from .format import Format
 
@@ -43,7 +43,7 @@ class GitRepo:
     valid_options = [ 'cache_dir', 'lock_dir', 'pubkey', 'privkey', 'password' ] + required_options
 
     @classmethod
-    def validate_uri(cls, uri: 'ConfigData') -> 'ConfigData':
+    def validate_uri(cls, uri: 'ConfigDict') -> 'ConfigDict':
         def validate_option(option: 'str') -> 'str':
             if option not in cls.valid_options:
                 raise InvalidUriOption(uri, option)
@@ -56,21 +56,19 @@ class GitRepo:
         return options
 
     @classmethod
-    def uri_from_string(cls, uri_string: 'str') -> 'ConfigData':
+    def uri_from_string(cls, uri_string: 'str') -> 'ConfigDict':
         resource, repo = uri_string.split(':', 1)
         return { 'resource': resource, 'repo': repo }
 
     @classmethod
-    def from_uri(cls, uri: 'Union[ConfigData, str]', cache: 'Optional[StorageCache]') -> 'Tuple[GitRepo, ConfigData]':
-        if isinstance(uri, str):
-            uri = cls.uri_from_string(uri)
+    def from_uri(cls, uri: 'ConfigDict', cache: 'Optional[StorageCache]') -> 'GitRepo':
         uri_valid = cls.validate_uri(uri)
         if cache is None:
-            return cls(**uri_valid), uri
+            return cls(**uri_valid)
         name = 'git_repo {0}'.format(uri['repo'])
         if name not in cache:
             cache[name] = cls(**uri_valid)
-        return cache[name], uri
+        return cache[name]
 
     def __init__(self, repo: 'str', cache_dir: 'Optional[str]' = None, lock_dir: 'Optional[str]' = None, pubkey: 'Optional[str]' = None, privkey: 'Optional[str]' = None, password: 'Optional[str]' = None):
         self._check_pygit2()
@@ -181,22 +179,25 @@ class GitRepoClasses:
     valid_options = GitRepo.ignored_options + GitRepo.valid_options
 
     @classmethod
-    def clean_uri(cls, uri: 'ConfigData') -> 'ConfigData':
+    def clean_uri(cls, uri: 'ConfigDict') -> 'ConfigDict':
         return { k: v for k, v in uri.items() if k in cls.valid_options }
 
     @classmethod
-    def subpath(cls, uri: 'Union[ConfigData, str]') -> 'ConfigData':
-        if isinstance(uri, str):
-            uri = GitRepo.uri_from_string(uri)
+    def subpath(cls, uri_str: 'str') -> 'ConfigDict':
+        uri = cls.uri_from_string(uri_str)
         uri['path'] = 'classes'
         return uri
 
-    def __init__(self, uri: 'ConfigData', format: 'Format', cache: 'Optional[StorageCache]' = None):
-        self.git_repo, uri = GitRepo.from_uri(uri, cache)
-        self.repo = uri['repo']
-        self.resource = uri['resource']
-        self.branch = uri.get('branch', None) or 'master'
-        self.path = uri.get('path', None)
+    @classmethod
+    def uri_from_string(cls, uri_str: 'str') -> 'ConfigDict':
+        return GitRepo.uri_from_string(uri_str)
+
+    def __init__(self, classes_uri: 'ConfigDict', format: 'Format', cache: 'Optional[StorageCache]' = None):
+        self.git_repo = GitRepo.from_uri(classes_uri, cache)
+        self.repo = classes_uri['repo']
+        self.resource = classes_uri['resource']
+        self.branch = classes_uri.get('branch', None) or 'master'
+        self.path = classes_uri.get('path', None)
         self.format = format
         self.index_map: Dict[str, Dict[str, GitFileMetaData]] = {}
         if self.branch != '__env__':
@@ -255,18 +256,21 @@ class GitRepoNodes:
     '''
 
     @classmethod
-    def subpath(cls, uri: 'Union[ConfigData, str]') -> 'ConfigData':
-        if isinstance(uri, str):
-            uri = GitRepo.uri_from_string(uri)
+    def subpath(cls, uri_str: 'str') -> 'ConfigDict':
+        uri = cls.uri_from_string(uri_str)
         uri['path'] = 'nodes'
         return uri
 
-    def __init__(self, uri: 'Union[ConfigData, str]', format: 'Format', cache: 'Optional[StorageCache]'=None):
-        self.git_repo, uri = GitRepo.from_uri(uri, cache)
-        self.repo = uri['repo']
-        self.resource = uri['resource']
-        self.branch = uri.get('branch', None) or 'master'
-        self.path = uri.get('path', None)
+    @classmethod
+    def uri_from_string(cls, uri_str: 'str') -> 'ConfigDict':
+        return GitRepo.uri_from_string(uri_str)
+
+    def __init__(self, nodes_uri: 'ConfigDict', format: 'Format', cache: 'Optional[StorageCache]'=None):
+        self.git_repo = GitRepo.from_uri(nodes_uri, cache)
+        self.repo = nodes_uri['repo']
+        self.resource = nodes_uri['resource']
+        self.branch = nodes_uri.get('branch', None) or 'master'
+        self.path = nodes_uri.get('path', None)
         self.format = format
         self.node_map = self._make_node_map()
 

@@ -7,7 +7,8 @@ from .exceptions import UnknownConfigSetting
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Any, Dict, Optional, Tuple
+    from typing import Any, MutableMapping, Optional, Tuple
+    ConfigDict = MutableMapping[str, Any]
 
 class Settings:
     default_settings = {
@@ -23,7 +24,7 @@ class Settings:
         'reference_sentinels': ('${', '}')
     }
 
-    def __init__(self, settings: 'Optional[Dict[str, Any]]' = None):
+    def __init__(self, settings: 'Optional[ConfigDict]' = None):
         self.allow_none_overwrite: 'bool'
         self.automatic_parameters: 'bool'
         self.automatic_parameters_name: 'str'
@@ -42,7 +43,7 @@ class Settings:
     def __str__(self) -> 'str':
         return str({ name: getattr(self, name) for name in self.default_settings })
 
-    def update(self, settings: 'Dict[str, Any]'):
+    def update(self, settings: 'MutableMapping[str, Any]'):
         for name, value in settings.items():
             if name in self.allowed:
                 setattr(self, name, value)

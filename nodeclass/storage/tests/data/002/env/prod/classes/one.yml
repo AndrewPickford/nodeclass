@@ -1,0 +1,24 @@
+classes:
+- prod_two
+- prod_three
+
+applications:
+- prod_B
+- prod_A
+
+exports:
+  two:
+    a: -99
+    b: 'prod'
+
+parameters:
+  alpha: prod
+  beta: 1
+  gamma:
+    - 1
+    - 2
+  delta:
+    a: 1
+    b: 2
+    c: 3
+  epsilon:

@@ -4,16 +4,18 @@ from nodeclass.interpolator.interpolator import Interpolator
 from nodeclass.node.node import Node
 from nodeclass.settings import Settings
 from nodeclass.storage.factory import Factory as StorageFactory
+from nodeclass.storage.uri import Uri
 
 nodeclass_context(Settings())
 directory = os.path.dirname(os.path.realpath(__file__))
 
 def uri(subpath):
-    return { 'classes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data', subpath, 'classes')),
-             'nodes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data', subpath, 'nodes')) }
+    uri_config =  { 'classes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data', subpath, 'classes')),
+                    'nodes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data', subpath, 'nodes')) }
+    return Uri(uri_config, 'test')
 
 def uri_env(subpath):
-    return {
+    uri_config = {
         'classes': {
             'resource': 'yaml_fs',
             'path': os.path.join(directory, 'data', subpath, 'classes', 'prod'),
@@ -28,6 +30,7 @@ def uri_env(subpath):
         },
         'nodes': 'yaml_fs:{0}'.format(os.path.join(directory, 'data', subpath, 'nodes')),
     }
+    return Uri(uri_config, 'test')
 
 def test_parameter_merging():
     interpolator = Interpolator()
