@@ -4,6 +4,12 @@ from ..exceptions import ProcessError
 from ..value.exceptions import NoSuchPath
 from .exceptions import ExcessivePathRevisits, InterpolateUnhandledError, InventoryQueryError, NoSuchReference
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Dict
+    from ..utils.path import Path
+    from .exceptions import MergableInterpolationError
+
 class InventoryResolver:
     '''
     '''
@@ -21,10 +27,11 @@ class InventoryResolver:
         self.exports = copy.copy(exports)
         self.parameters = copy.copy(parameters)
         self.parameter_resolver.environment = None
-        self.parameter_resolver.inventory = None
         self.parameter_resolver.parameters = self.parameters
+        self.parameter_resolver.inventory = None
         self.parameter_resolver.visit_count = defaultdict(int)
         self.parameter_resolver.unresolved = None
+        self.parameter_resolver.interpolation_exceptions: 'Dict[Path, MergableInterpolationError]' = {}
         for query in queries:
             try:
                 self.resolve_query(query)

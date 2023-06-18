@@ -1,3 +1,5 @@
+import logging
+
 from collections import OrderedDict
 from typing import NamedTuple
 from ..exceptions import ProcessError
@@ -8,6 +10,9 @@ from .exceptions import InventoryQueryError
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Dict
+
+
+log = logging.getLogger(__name__)
 
 
 class InventoryResult(NamedTuple):
@@ -46,8 +51,11 @@ class Inventory:
                 try:
                     inventory[proto.name] = self.node_inventory(proto, klass_loader)
                 except InventoryQueryError as exception:
-                    exception.exception.node = proto.name
-                    raise
+                    if exception.query.ignore_errors:
+                       log.warning('failed to get inventory for {0}'.format(proto.name))
+                    else:
+                        exception.exception.node = proto.name
+                        raise
                 except ProcessError as exception:
                     exception.node = proto.name
                     raise

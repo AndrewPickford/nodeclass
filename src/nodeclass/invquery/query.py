@@ -43,6 +43,10 @@ class Query(ABC):
     def __hash__(self) -> 'int':
         return hash(str(self))
 
+    @abstractmethod
+    def __str__(self) -> 'str':
+        pass
+
     def options_str(self) -> 'str':
         opts = []
         if self.all_envs:
@@ -155,6 +159,9 @@ class ValueQuery(Query):
         if tokens[0].type != Tag.EXPORT.value or len(tokens) > 1:
             raise InventoryQueryParseError('value queries consist of an export to return, found: {0}'.format(tokens))
         self.returned = OperandPathed(tokens[0])
+
+    def __str__(self) -> 'str':
+        return '{0}{1}'.format(self.options_str(), self.returned)
 
     def evaluate(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Dictionary':
         answer = {}
