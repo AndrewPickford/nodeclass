@@ -1,0 +1,6 @@
+exports:
+  a: ${a}
+
+parameters:
+  a: ${b}
+  b: 2

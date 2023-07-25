@@ -185,6 +185,12 @@ class Dictionary(Value):
         '''
         return { k: v.render_all() for k, v in self._dictionary.items() }
 
+    def resolved_paths(self, path: 'Path') -> 'Set[Path]':
+        paths = set()
+        for k, v in self._dictionary.items():
+            paths.update(v.resolved_paths(path.subpath(k)))
+        return paths
+
     def repr_all(self) -> 'Dict[str, Any]':
         return { k: v.repr_all() for k, v in self._dictionary.items() }
 

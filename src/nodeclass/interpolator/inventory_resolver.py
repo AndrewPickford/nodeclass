@@ -1,4 +1,6 @@
 import copy
+import logging
+
 from collections import defaultdict
 from ..exceptions import ProcessError
 from ..value.exceptions import NoSuchPath
@@ -10,6 +12,8 @@ if TYPE_CHECKING:
     from ..utils.path import Path
     from .exceptions import MergableInterpolationError
 
+log = logging.getLogger(__name__)
+
 class InventoryResolver:
     '''
     '''
@@ -17,12 +21,13 @@ class InventoryResolver:
     def __init__(self, parameter_resolver):
         self.parameter_resolver = parameter_resolver
 
-    def resolve(self, exports, parameters, queries):
+    def resolve(self, exports, parameters, queries, name):
         '''
-        exports: Dictionary of merged exports
-        parameters: Dictionary of merged parameters
-        paths: set of paths in the exports to resolve
-        returns: Dictionary of resolved exports
+        exports: Hierarchy of merged exports
+        parameters: Hierarchy of merged parameters
+        queries: set of inventory queries to calculate
+        name: name of node being processed
+        returns: Tuple of hierary of resolved exports and set of failed queries
         '''
         self.exports = copy.copy(exports)
         self.parameters = copy.copy(parameters)
@@ -32,12 +37,17 @@ class InventoryResolver:
         self.parameter_resolver.visit_count = defaultdict(int)
         self.parameter_resolver.unresolved = None
         self.parameter_resolver.interpolation_exceptions: 'Dict[Path, MergableInterpolationError]' = {}
+        self.failed = set()
         for query in queries:
             try:
                 self.resolve_query(query)
             except ProcessError as exception:
-                raise InventoryQueryError(query, exception)
-        return self.exports
+                if query.ignore_errors:
+                    log.warning('in inventory query "{0}" failed to process node {1}; ignore_errors == True, skipping node'.format(query, name))
+                    self.failed.add(query)
+                else:
+                    raise InventoryQueryError(query, exception)
+        return self.exports, self.failed
 
     def resolve_query(self, query):
         self.unresolved = dict.fromkeys(query.exports, False)

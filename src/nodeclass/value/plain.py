@@ -124,6 +124,12 @@ class Plain(Value):
     def repr_all(self) -> 'str':
         return repr(self)
 
+    def resolved_paths(self, path: 'Path') -> 'Set[Path]':
+        if self.item.unresolved:
+            return set()
+        else:
+            return { path }
+
     def set_copy_on_change(self):
         self.copy_on_change = True
 

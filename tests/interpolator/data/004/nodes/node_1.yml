@@ -1,0 +1,7 @@
+classes:
+- one
+
+environment: alpha
+
+parameters:
+  value_1: $[ exports:a ]

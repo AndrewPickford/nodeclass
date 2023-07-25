@@ -124,6 +124,12 @@ class Merged(Value):
                 resolved = resolved.merge(v)
             return resolved
 
+    def resolved_paths(self, path: 'Path') -> 'Set[Path]':
+        '''
+        Merged Values always have at least one contained Item with references
+        '''
+        return set()
+
     def set_copy_on_change(self):
         self.copy_on_change = True
         map(lambda x: x.set_copy_onchange(), self._values)

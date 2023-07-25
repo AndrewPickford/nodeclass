@@ -12,7 +12,7 @@ from .tokenizer import Tag
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Any, List, Set, Union
-    from ..interpolator.inventory import InventoryDict
+    from ..interpolator.inventory import InventoryDict, InventoryResult
     from ..utils.path import Path
     from ..value.hierarchy import Hierarchy
     from .tokenizer import Token
@@ -58,6 +58,17 @@ class Query(ABC):
             string += ' '
         return string
 
+    def _common_evaluate_checks(self, node: 'InventoryResult', environment: 'str') -> 'bool':
+        # The node must be in the same environment or the +AllEnvs option is set
+        if node.environment != environment and self.all_envs == False:
+            return False
+        # In the case of queries with the +IgnoreErrors when the required paths in the node exports
+        # cannot be evaluated the query is added to the set of failed queries for the node.
+        # Fail the check if the query is on the list of failed_queries
+        if self in node.failed_queries:
+            return False
+        return True
+
     @abstractproperty
     def exports(self) -> 'Set[Path]':
         pass
@@ -99,7 +110,7 @@ class IfQuery(Query):
     def evaluate(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Dictionary':
         answer = {}
         for name, node in inventory.items():
-            if node.environment == environment or self.all_envs:
+            if self._common_evaluate_checks(node, environment):
                 if self.returned.path in node.exports:
                     if self.test.evaluate(node.exports, context):
                         answer[name] = node.exports[self.returned.path]
@@ -139,7 +150,7 @@ class ListIfQuery(Query):
     def evaluate(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'VList':
         answer = []
         for name, node in inventory.items():
-            if node.environment == environment or self.all_envs:
+            if self._common_evaluate_checks(node, environment):
                 if self.test.evaluate(node.exports, context):
                     answer.append(Plain(Scalar(name), PseudoUrl('invquery', 'invquery')))
         return VList(answer, PseudoUrl('invquery', 'invquery'))
@@ -160,13 +171,22 @@ class ValueQuery(Query):
             raise InventoryQueryParseError('value queries consist of an export to return, found: {0}'.format(tokens))
         self.returned = OperandPathed(tokens[0])
 
+    def __eq_(self, other: 'Any') -> 'bool':
+        if self.__class__ == other.__class__:
+            if self.returned == other.returned:
+                return super().__eq__(other)
+        return False
+
+    def __ne__(self, other: 'Any') -> 'bool':
+        return not self.__eq__(other)
+
     def __str__(self) -> 'str':
         return '{0}{1}'.format(self.options_str(), self.returned)
 
     def evaluate(self, context: 'Hierarchy', inventory: 'InventoryDict', environment: 'str') -> 'Dictionary':
         answer = {}
         for name, node in inventory.items():
-            if node.environment == environment or self.all_envs:
+            if self._common_evaluate_checks(node, environment):
                 if self.returned.path in node.exports:
                     answer[name] = node.exports[self.returned.path]
         return Dictionary(answer, PseudoUrl('invquery', 'invquery'), check_for_prefix=False)

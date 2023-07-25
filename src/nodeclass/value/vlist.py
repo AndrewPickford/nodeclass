@@ -143,6 +143,12 @@ class VList(Value):
         '''
         raise ListResolve(self)
 
+    def resolved_paths(self, path: 'Path') -> 'Set[Path]':
+        paths = set()
+        for k, v in enumerate(self._list):
+            paths.update(v.resolved_paths(path.subpath(k)))
+        return paths
+
     def set_copy_on_change(self):
         self.copy_on_change = True
         for v in self._list:

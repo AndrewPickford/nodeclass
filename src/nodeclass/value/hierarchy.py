@@ -164,6 +164,9 @@ class Hierarchy:
     def repr_all(self) -> 'Dict[str, Any]':
         return self._dictionary.repr_all()
 
+    def resolved_paths(self) -> 'Set[Path]':
+        return self._dictionary.resolved_paths(Path.empty())
+
     def unresolved_ancestor(self, path: 'Path') -> 'bool':
         return self._dictionary._unresolved_ancestor(path, 0)
 

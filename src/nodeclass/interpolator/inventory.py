@@ -9,15 +9,15 @@ from .exceptions import InventoryQueryError
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Dict
-
+    from typing import Dict, Set
+    from ..invquery.query import Query
 
 log = logging.getLogger(__name__)
-
 
 class InventoryResult(NamedTuple):
     environment: 'str'
     exports: 'Hierarchy'
+    failed_queries: 'Set[Query]'
 
 
 class CachedMerge(NamedTuple):
@@ -51,14 +51,14 @@ class Inventory:
                 try:
                     inventory[proto.name] = self.node_inventory(proto, klass_loader)
                 except InventoryQueryError as exception:
-                    if exception.query.ignore_errors:
-                       log.warning('failed to get inventory for {0}'.format(proto.name))
-                    else:
-                        exception.exception.node = proto.name
-                        raise
-                except ProcessError as exception:
-                    exception.node = proto.name
+                    exception.exception.node = proto.name
                     raise
+                except ProcessError as exception:
+                    if proto.ignore_errors:
+                        log.warning('failed to get inventory for {0}; ignore_errors == True, skipping node'.format(proto.name))
+                    else:
+                        exception.node = proto.name
+                        raise
         inventory = OrderedDict(sorted(inventory.items()))
         return inventory
 
@@ -67,10 +67,13 @@ class Inventory:
         for proto in proto_nodes.values():
             proto.queries = []
             proto.exports_required = set()
+            proto.ignore_errors = True
             for query in queries:
                 if query.all_envs or proto.inv_query_env == environment:
                     proto.queries.append(query)
                     proto.exports_required.update(query.exports)
+                    if query.ignore_errors == False:
+                        proto.ignore_errors = False
         return proto_nodes
 
     def node_inventory(self, proto, klass_loader):
@@ -81,14 +84,7 @@ class Inventory:
             self.merge_cache[klass_id] = self._cached_merge(node)
         exports_merged = Hierarchy.merge_multiple([ self.merge_cache[klass_id].exports, node.nodeklass.exports, node.autoklass.exports ], 'exports')
         parameters_merged = Hierarchy.merge_multiple([ self.merge_cache[klass_id].parameters, node.nodeklass.parameters, node.autoklass.parameters ], 'parameters')
-        exports_resolved = self.resolver.resolve(exports_merged, parameters_merged, proto.queries)
+        exports_resolved, queries_failed = self.resolver.resolve(exports_merged, parameters_merged, proto.queries, proto.name)
         paths_present = { path for path in proto.exports_required if path in exports_resolved }
         exports_pruned = exports_resolved.extract(paths_present)
-        return InventoryResult(proto.inv_query_env, exports_pruned)
-
-    #def parameters_required(self, proto, exports):
-    #    required = set()
-    #    for path in proto.exports_required:
-    #        if path in exports:
-    #            required |= set(exports[path].references)
-    #    return required
+        return InventoryResult(proto.inv_query_env, exports_pruned, queries_failed)

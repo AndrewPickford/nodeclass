@@ -1,7 +1,7 @@
 classes:
 - one
 
-envrionment: prod
+environment: prod
 
 parameters:
   alpha: $[ exports:a if exports:a == 0 ]
