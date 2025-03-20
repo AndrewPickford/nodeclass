@@ -101,7 +101,7 @@ class GitRepo:
         else:
             os.makedirs(self.cache_dir)
             self.repo = pygit2.init_repository(self.cache_dir, bare=True)
-            self.repo.create_remote('origin', self.remote)
+            self.repo.remotes.create('origin', self.remote)
 
     def _setup_remotecallbacks(self, pubkey: 'Optional[str]', privkey: 'Optional[str]', password: 'Optional[str]') -> 'Union[pygit2.RemoteCallbacks, None]':
         if 'ssh' in self.transport:
@@ -120,7 +120,7 @@ class GitRepo:
         return None
 
     def _fetch(self):
-        origin = self.repo.remotes[0]
+        origin = self.repo.remotes['origin']
         fetch_kwargs = {}
         if self.remotecallbacks is not None:
             fetch_kwargs['callbacks'] = self.remotecallbacks
